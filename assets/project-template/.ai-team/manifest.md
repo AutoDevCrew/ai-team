@@ -10,5 +10,8 @@
 - Evidence root: `.ai-team/evidence`
 - Script root: `.ai-team/scripts`
 - Project rules: `.ai-team/project-rules.md`
+- Delivery policy: `.ai-team/governance/workflow.md`
+- Role protocol: `.ai-team/governance/roles.md`
+- Artifact templates: `.ai-team/governance/templates.md`
 
 The root `AGENTS.md` is only the Codex entry point. This manifest is the sole path authority for AI delivery artifacts. Existing projects must perform a one-time migration before continuing with this skill; root-level `docs/`, `tasks/`, `discussions/`, and `scripts/` are not supported artifact locations.

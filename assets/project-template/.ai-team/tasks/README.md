@@ -10,23 +10,12 @@ Task cards use workflow revision `ai-team-2026-08-11` unless the project records
 - `TASK-<id>-<slug>.md` — one work item; IDs start at `TASK-001`, increase sequentially, and are never reused.
 - Batch or milestone subdirectories are allowed under the manifest-declared Task root. Every card and backlog link remains unique; the validator resolves the nearest `.ai-team/manifest.md` and confirms the card is inside its declared Task root.
 
-## State flow
+## Create or update a task
 
-```text
-analysis → awaiting-human-decision → task-design-ready → implementation-ready → implementing → awaiting-verification → complete
-```
+1. Copy the task-card structure from `../governance/templates.md` without renaming its required headings or fields.
+2. Give the card a unique ID and add its unique link to `backlog.md`.
+3. Follow `../governance/workflow.md` for lanes, states, gates, handoffs, validation, batching, completion, and re-entry.
+4. Follow `../governance/roles.md` for who may write the card, backlog, code, tests, findings, and verdicts.
+5. Keep the Handoff Snapshot current and place raw or historical material behind its Evidence index.
 
-`blocked` is additive and must link to a decision or prerequisite. Record it as `design-blocked` only when a frozen design input is missing, and as `implementation-blocked` when code changes await upstream implementation, environment, or project-stage opening. `cancelled/superseded` is terminal. The coordinator maintains backlog state/dependencies and advances the next eligible task after every design verdict or verified completion; the engineer updates only current-card progress/evidence. After independent verification and review pass, the coordinator marks the task `complete` with technical outcome `verified-complete` unless a named blocking acceptance checkpoint applies.
-
-## Create and promote a task
-
-1. Copy the task-card template from `../governance/05-templates.md`.
-2. Fill the source-linked Handoff Snapshot, sources, requirements, acceptance criteria, code context, applicable experience-design brief, decisions, lane (`fast`, `standard`, or `high-risk`), interface/protocol disposition (`changed`, `reuses-frozen-contract`, or `N/A`) with contract reference or rationale, fingerprint policy, test plan, Test Execution Manifest, stable test IDs, environment readiness, and security review where applicable. An engineering-baseline default may be cited but never replaces the task-level disposition.
-3. Assign `S/M/L/XL` complexity and record its concrete drivers. Assign an implementation batch or record why batching is not useful for a single-task change. Set `acceptance checkpoint: none` unless the backlog names a batch, milestone, complete user-facing flow, or human-requested checkpoint.
-4. Add the unique card link to `backlog.md` with `analysis` or `awaiting-human-decision`.
-5. Before recording the task-design verdict, before `verified-complete`, and before crossing a High-risk channel, run `../scripts/validate_task_handoff.py <task-card> --strict`. The independent verifier confirms the manifest's fast-gate, owner, affected, full-suite, and risk groups are executable or have an N/A rationale and, when triggered, the runtime-chain matrix has complete mappings and entry-path tests. Code/protocol/generated-output/dependency/runtime/High-risk tasks require `Fingerprint policy: required`; pure Fast-path documentation/style/metadata tasks may use a reasoned `N/A`. Strict validation automatically verifies the required SHA-256 ledger. Record the verdict's reviewed task IDs and artifact scope. Promote to `task-design-ready` when the task's design inputs are frozen. Pending upstream implementation is not a design blocker when its contract is frozen; record it as `implementation-blocked` and continue planning later eligible tasks. Promote to `implementation-ready` only when that task's design and implementation dependencies are satisfied, its task-scoped implementation readiness passes, its assigned batch entry criteria pass (or it is `batch-not-applicable`), no blocking decision remains, and the project stage permits implementation. A governance/foundation `PASS` never promotes a business task.
-6. Refresh the Handoff Snapshot and affected Test Execution Manifest before the next role handoff when sources, decisions, contracts, code, tests, commands, fixtures, environment, findings, or next action change. Put raw logs and superseded verdicts in the Evidence index; do not make them default role inputs.
-
-## Change and re-entry
-
-For human feedback, including a named checkpoint rejection or scope change, update the existing card and backlog, assess requirements/AC/tests/modules/interfaces/data/dependencies, and return affected work to analysis or decision. Preserve unaffected accepted work as Baseline. Rerun affected-scope readiness before implementation resumes.
+Do not restate global workflow or role rules here. Record project-specific deviations in `../project-rules.md` and authority-bearing choices in `../governance/decisions.md`.
