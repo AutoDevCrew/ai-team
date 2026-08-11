@@ -70,14 +70,29 @@ RUNTIME_FIELDS = (
     "REQ / AC / module / test mapping for each critical stage:",
 )
 
+LANE_FIELD = "Execution lane:"
+FINGERPRINT_POLICY_FIELD = "Fingerprint policy:"
+
+
+def normalize_heading(value: str) -> str:
+    """Normalize human-readable Markdown headings for tolerant matching."""
+    normalized = re.sub(r"[^\w]+", " ", value.casefold(), flags=re.UNICODE)
+    return re.sub(r"\s+", " ", normalized).strip()
+
 
 def section(text: str, heading: str) -> str:
-    start = text.find(heading)
-    if start == -1:
+    expected = normalize_heading(heading.lstrip("# "))
+    match = None
+    for candidate in re.finditer(r"^##\s+(.+?)\s*$", text, flags=re.MULTILINE):
+        actual = normalize_heading(candidate.group(1))
+        if actual == expected or actual.startswith(expected + " "):
+            match = candidate
+            break
+    if match is None:
         return ""
-    tail = text[start + len(heading) :]
-    end = tail.find("\n## ")
-    return tail if end == -1 else tail[:end]
+    tail = text[match.end() :]
+    end = re.search(r"^##\s+", tail, flags=re.MULTILINE)
+    return tail if end is None else tail[: end.start()]
 
 
 def missing_fields(content: str, fields: tuple[str, ...]) -> list[str]:
@@ -98,7 +113,16 @@ def is_placeholder(value: str) -> bool:
     return (
         not normalized
         or bool(re.fullmatch(r"<[^>]+>", normalized))
-        or normalized in {"tbd", "todo", "tba", "not reviewed"}
+        or normalized in {
+            "tbd",
+            "todo",
+            "tba",
+            "not reviewed",
+            "pending",
+            "待定",
+            "未填写",
+        }
+        or bool(re.fullmatch(r"[?._-]+", normalized))
     )
 
 
@@ -107,19 +131,50 @@ def has_reasoned_na(value: str) -> bool:
     return normalized.startswith("n/a") and len(normalized.removeprefix("n/a").strip(" -:")) > 0
 
 
-def strict_errors(snapshot: str, test_plan: str, runtime_chain: str) -> list[str]:
+def fingerprint_entries(text: str) -> list[tuple[str, str]]:
+    snapshot = section(text, "## Handoff Snapshot")
+    return re.findall(
+        r"^[ \t]*-[ \t]*`([^`\n]+)`[ \t]*=[ \t]*([0-9a-fA-F]{64})[ \t]*$",
+        snapshot,
+        flags=re.MULTILINE,
+    )
+
+
+def strict_errors(
+    snapshot: str, test_plan: str, runtime_chain: str, full_text: str
+) -> list[str]:
     errors: list[str] = []
 
     for field in STRICT_SNAPSHOT_FIELDS:
         if is_placeholder(field_value(snapshot, field)):
             errors.append(f"strict snapshot field is empty or placeholder: {field}")
 
+    lane = field_value(full_text, LANE_FIELD).strip().lower()
+    if lane not in {"fast", "standard", "high-risk"}:
+        errors.append("strict task field is missing or invalid: Execution lane:")
+
     for field in STRICT_MANIFEST_FIELDS:
         value = field_value(test_plan, field)
+        if field == "Fast-gate group and command:" and lane == "fast" and has_reasoned_na(value):
+            continue
         if is_placeholder(value) or (value.strip().lower() == "n/a"):
             errors.append(f"strict manifest field is empty or placeholder: {field}")
         elif value.strip().lower().startswith("n/a") and not has_reasoned_na(value):
             errors.append(f"strict manifest N/A lacks rationale: {field}")
+
+    fingerprint_policy = field_value(full_text, FINGERPRINT_POLICY_FIELD).strip().lower()
+    if is_placeholder(fingerprint_policy):
+        errors.append("strict task field is missing or placeholder: Fingerprint policy:")
+    elif fingerprint_policy.startswith("n/a"):
+        if not has_reasoned_na(fingerprint_policy):
+            errors.append("strict fingerprint N/A lacks rationale")
+        if lane != "fast":
+            errors.append("strict fingerprint N/A is allowed only for Fast path tasks")
+    elif fingerprint_policy != "required":
+        errors.append("strict Fingerprint policy must be 'required' or reasoned 'N/A'")
+
+    if fingerprint_policy == "required" and not fingerprint_entries(full_text):
+        errors.append("strict required fingerprint policy needs a SHA-256 ledger in Handoff Snapshot")
 
     trigger = field_value(runtime_chain, RUNTIME_TRIGGER)
     if is_placeholder(trigger):
@@ -165,9 +220,13 @@ def validate(text: str, strict: bool = False) -> list[str]:
 
     if strict and snapshot and test_plan:
         if not runtime_chain:
-            errors.append("strict missing Runtime-chain matrix section")
-        else:
-            errors.extend(strict_errors(snapshot, test_plan, runtime_chain))
+            lane = field_value(text, LANE_FIELD).strip().lower()
+            if lane == "fast":
+                runtime_chain = "- Trigger: N/A — Fast path; no runtime-chain trigger."
+            else:
+                errors.append("strict missing Runtime-chain matrix section")
+        if runtime_chain:
+            errors.extend(strict_errors(snapshot, test_plan, runtime_chain, text))
 
     return errors
 
@@ -175,11 +234,7 @@ def validate(text: str, strict: bool = False) -> list[str]:
 def fingerprint_errors(task_card: Path, text: str) -> list[str]:
     """Verify an explicit SHA-256 ledger without running project commands."""
     snapshot = section(text, "## Handoff Snapshot")
-    entries = re.findall(
-        r"^[ \t]*-[ \t]*`([^`\n]+)`[ \t]*=[ \t]*([0-9a-fA-F]{64})[ \t]*$",
-        snapshot,
-        flags=re.MULTILINE,
-    )
+    entries = fingerprint_entries(text)
     if not entries:
         return ["fingerprint verification requested but no SHA-256 ledger was found in Handoff Snapshot"]
 
@@ -220,7 +275,7 @@ def main() -> int:
     parser.add_argument(
         "--strict",
         action="store_true",
-        help="Require non-placeholder handoff, manifest, and applicable runtime-chain values.",
+        help="Require non-placeholder handoff, lane/fingerprint policy, manifest, and applicable runtime-chain values; verify required ledgers.",
     )
     parser.add_argument(
         "--verify-fingerprint",
@@ -231,7 +286,11 @@ def main() -> int:
 
     text = args.task_card.read_text(encoding="utf-8")
     errors = validate(text, strict=args.strict)
-    if args.verify_fingerprint:
+    strict_requires_fingerprint = (
+        args.strict
+        and field_value(text, FINGERPRINT_POLICY_FIELD).strip().lower() == "required"
+    )
+    if args.verify_fingerprint or strict_requires_fingerprint:
         errors.extend(fingerprint_errors(args.task_card, text))
 
     if errors:

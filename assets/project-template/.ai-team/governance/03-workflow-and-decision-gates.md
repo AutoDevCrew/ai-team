@@ -30,15 +30,17 @@ The coordinator advances only when a phase's exit conditions are met. AI autonom
 
 Record one lane on each task before design:
 
-- `fast`: S complexity with no contract/schema/generated-code, security, sensitive-data, dependency, external-side-effect, transaction/worker/async, material UX, or baseline trigger. Merge task-design and implementation-readiness review into one independent checklist, omit the runtime-chain matrix, and run only impact-justified focused/affected tests.
+- `fast`: first use the positive whitelist (pure documentation/comments/copy/style-token changes or local test additions with no business behavior change), then confirm no contract/schema/generated-code, security, sensitive-data, dependency, external-side-effect, transaction/worker/async, material UX, or baseline trigger. Merge task-design and implementation-readiness review into one independent checklist, allow a reasoned fast-gate `N/A`, omit the runtime-chain matrix, and run only impact-justified focused/affected tests. If the task is not clearly on the whitelist, use `standard`.
 - `standard`: ordinary M/L or shared UI/data/module/regression work; use the normal gates.
 - `high-risk`: XL or any security, permission, sensitive-data, protocol, migration, transaction, worker/async, external-side-effect, or production-capability boundary; use all applicable gates.
 
 Fast path is an impact classification, not a way to skip independent verification or scope checks. Reclassify when the change surface grows.
 
+The compact implementation-ready and technical-completion checklists below are the normative gate. The detailed sections explain exceptions and evidence; if wording differs, the checklist controls.
+
 Implementation-ready checklist: design dependencies frozen; implementation dependencies/environment ready; task-scoped readiness PASS; batch entry PASS or `batch-not-applicable`; no blocking decision/P0/P1; project stage open.
 
-Technical-completion checklist: approved scope; implementation self-check and omissions; required owner/affected/contract/final evidence; fresh independent verifier PASS; no unresolved code/security P0/P1; `verified-complete` recorded.
+Technical-completion checklist: approved scope; implementation self-check and omissions; required owner/affected/contract/final evidence; fresh independent verifier PASS; no unresolved code/security P0/P1; required fingerprint policy passes; `verified-complete` recorded.
 
 ## Handoff snapshots and test execution
 
@@ -48,7 +50,7 @@ The independent verifier freezes a **Test Execution Manifest** before implementa
 
 If two consecutive candidate revisions of the same task produce new P1 findings, the coordinator performs a task-scoped technical re-entry before another broad run. Classify every finding as in-scope implementation remediation, a correctable task-design artifact gap, or a material scope/contract decision; continue the first two autonomously, escalate only the third, and split independently testable slices before the next candidate revision. Preserve historical evidence and do not advance dependent work until the current task has a new frozen fingerprint and fresh independent PASS verdicts. Reuse unaffected baseline evidence only after recording an impact analysis that proves the changed files, contracts, runtime paths, and environment cannot affect it.
 
-For a stateful runtime, worker, asynchronous job, transaction, authorization boundary, or external side effect, the technical design includes `entry → authorization/precondition → scheduling or claim → state transition → side effect → recovery/compensation → observable result`, mapping each critical stage to a requirement, acceptance criterion, module, and test. A mock-only critical stage fails task design. Before recording `task-design-ready`, run `../scripts/validate_task_handoff.py <task-card> --strict`; the verifier independently confirms each manifest group is executable or has an N/A rationale and each triggered runtime-chain stage has its mapping and entry-path test. Strict validation detects blank/placeholder fields only, not evidence truth.
+For a stateful runtime, worker, asynchronous job, transaction, authorization boundary, or external side effect, the technical design includes `entry → authorization/precondition → scheduling or claim → state transition → side effect → recovery/compensation → observable result`, mapping each critical stage to a requirement, acceptance criterion, module, and test. A mock-only critical stage fails task design. Before recording `task-design-ready`, before `verified-complete`, and before crossing a High-risk channel, run `../scripts/validate_task_handoff.py <task-card> --strict`; the verifier independently confirms each manifest group is executable or has an N/A rationale and each triggered runtime-chain stage has its mapping and entry-path test. Code/protocol/generated-output/dependency/runtime/High-risk tasks require `Fingerprint policy: required`; a pure Fast-path documentation/style/metadata task may use a reasoned `N/A`. Strict validation verifies the required SHA-256 ledger automatically. It does not execute project commands or prove test evidence truth.
 
 ## Human decision triggers
 

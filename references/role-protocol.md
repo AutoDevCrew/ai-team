@@ -22,7 +22,7 @@ human input → product analysis → UX/UI design (when needed) → architecture
 
 The coordinator records one lane before task design:
 
-- `fast`: S complexity, no contract/schema/generated-code, security, sensitive-data, dependency, external-side-effect, transaction/worker/async, material UX, or baseline trigger. Merge task-design and implementation-readiness review into one independent checklist and omit the runtime-chain matrix.
+- `fast`: first use the positive whitelist of pure documentation/comments/copy/style-token changes or local test additions with no business behavior change, then confirm no contract/schema/generated-code, security, sensitive-data, dependency, external-side-effect, transaction/worker/async, material UX, or baseline trigger. Merge task-design and implementation-readiness review into one independent checklist, allow a reasoned fast-gate `N/A`, and omit the runtime-chain matrix. If the task is not clearly on the whitelist, use `standard`.
 - `standard`: ordinary M/L work or shared UI/data/module/regression impact. Use the normal gates.
 - `high-risk`: XL work or any security, permission, sensitive-data, protocol, migration, transaction, worker/async, external-side-effect, or production-capability boundary. Use all applicable gates, including security and runtime-chain review.
 
@@ -128,7 +128,7 @@ The technical lead uses Repomix output only as evidence for a compact architectu
 
 ## Task-design and implementation readiness reviews
 
-Run a task-design review as soon as a task has enough frozen inputs to define its implementation, tests, security treatment, and design risks. A frozen upstream contract is sufficient; wait for upstream implementation only when current design needs facts that the contract does not determine. Before recording `task-design-ready`, run `<script-root>/validate_task_handoff.py <task-card> --strict`; the verifier then independently confirms manifest groups have an executable command/runner or N/A rationale and, when triggered, every runtime-chain stage maps to requirement, acceptance criterion, module, and an entry-path test. The script rejects empty/placeholder fields only; it does not establish evidence truth. Record `task-design-ready` when the design passes, plus any separately scoped implementation blockers. Continue to the next planning-eligible task immediately.
+Run a task-design review as soon as a task has enough frozen inputs to define its implementation, tests, security treatment, and design risks. A frozen upstream contract is sufficient; wait for upstream implementation only when current design needs facts that the contract does not determine. Before recording `task-design-ready`, before `verified-complete`, and before crossing a High-risk channel, run `<script-root>/validate_task_handoff.py <task-card> --strict`; the verifier then independently confirms manifest groups have an executable command/runner or N/A rationale and, when triggered, every runtime-chain stage maps to requirement, acceptance criterion, module, and an entry-path test. Code/protocol/generated-output/dependency/runtime/High-risk tasks require `Fingerprint policy: required`; pure Fast-path documentation/style/metadata tasks may use a reasoned `N/A`. Strict validation verifies the required SHA-256 ledger automatically. Record `task-design-ready` when the design passes, plus any separately scoped implementation blockers. Continue to the next planning-eligible task immediately.
 
 ## Implementation readiness review
 

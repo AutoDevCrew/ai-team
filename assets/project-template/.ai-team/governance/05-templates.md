@@ -275,6 +275,7 @@ P0 / P1 / P2
 - Implementation batch:
 - Batch entry criteria:
 - Batch exit evidence:
+- Fingerprint policy: required / N/A — <reason; N/A only for pure Fast-path documentation/style/metadata work>
 
 ## Task-design review
 - Report:
@@ -538,6 +539,44 @@ authentication / authorization / sensitive data / payment / upload / external in
 
 ## Verdict
 design-ready / awaiting decision / blocked
+```
+
+## Minimal Fast-path example
+
+This is a filled excerpt; copy the complete task-card template and retain all required sections when creating a real card.
+
+```md
+# TASK-EXAMPLE-001: Update local button copy
+
+## Handoff Snapshot
+- Workflow revision: ai-team-2026-08-11
+- Snapshot ID and updated at: SNAP-EXAMPLE-001-01 / 2026-08-11T10:00+08:00
+- Current state and technical outcome: awaiting-verification / not complete
+- Source and decision references: REQ-EXAMPLE-001; DEC-000 / none
+- Frozen inputs and contracts: existing UI copy; no interface change
+- Current change-set fingerprint: N/A — no code or generated artifact change
+- Test Execution Manifest revision: TEM-EXAMPLE-001-01
+- Required reads: `.ai-team/specs/acceptance.md`; task card acceptance criteria
+- On-demand evidence / Evidence index: `.ai-team/evidence/EXAMPLE-001.md`
+- Open findings / blockers: none
+- Next action and exit condition: verifier runs TEST-EXAMPLE-001; exit on PASS
+- Invalidated by: source, copy scope, or affected UI behavior change
+
+## Delivery planning
+- Execution lane: fast
+- Complexity: S
+- Complexity drivers: one local copy change; no behavior change
+- Fingerprint policy: N/A — pure copy-only Fast-path task
+
+## Test plan and environment
+- Test Execution Manifest:
+  - Revision and frozen-at: TEM-EXAMPLE-001-01 / 2026-08-11
+  - Fast-gate group and command: N/A — Fast path; no contract/security/runtime trigger
+  - Owner test group and command: `npm test -- copy`
+  - Affected/regression test group and command: `npm test -- ui-smoke`
+  - Approved full suite and runner: `npm test`
+  - Independent risk/mutation group and runner: N/A — no applicable risk surface
+  - Expected evidence and invalidation conditions: command output and screenshot; copy or UI behavior change invalidates
 ```
 
 ## Implementation report

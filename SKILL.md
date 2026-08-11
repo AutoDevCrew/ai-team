@@ -57,7 +57,7 @@ Within the user-authorized stage, continue from each completed handoff to the ne
 
 Choose a lane before task design and record it on the task card:
 
-- **Fast path:** `S` complexity; no API/RPC/event/schema/generated-code change; no authentication, authorization, sensitive-data, payment, upload, secret, dependency, external-service, transaction, worker, asynchronous, or other runtime-chain trigger; no material UX or baseline impact. Combine task-design and implementation-readiness review into one independent checklist, skip the runtime-chain matrix, and use focused owner/affected tests plus only the regression evidence required by impact analysis. Independent verification and scope boundaries still apply.
+- **Fast path:** first look for a positive whitelist: pure documentation, comments, copy/text, style/token constants, or local test additions that do not change business behavior. Then confirm no API/RPC/event/schema/generated-code change; authentication, authorization, sensitive-data, payment, upload, secret, dependency, external-service, transaction, worker, asynchronous, runtime-chain, material UX, or baseline trigger. Combine task-design and implementation-readiness review into one independent checklist, allow a reasoned fast-gate `N/A`, skip the runtime-chain matrix, and use focused owner/affected tests plus only the regression evidence required by impact analysis. Independent verification and scope boundaries still apply. If the task is not clearly on the whitelist, use Standard path.
 - **Standard path:** ordinary `M/L` work or shared-module, UI, data, compatibility, or regression impact. Use the normal design, testability, readiness, implementation, and independent verification gates.
 - **High-risk path:** `XL` work or any security, permission, sensitive-data, external side effect, transaction, worker/async, protocol, migration, or production-capability boundary. Use the complete workflow, runtime-chain matrix when triggered, security review, reviewer-first fast-gate, affected regression, and independent full-suite evidence.
 
@@ -65,7 +65,7 @@ Never select Fast path merely to avoid a gate. A task moves to Standard or High-
 
 ## Compact gate checklists
 
-Use these checklists as the operational summary; the detailed sections define exceptions and evidence requirements.
+These checklists are the normative operational gate. The detailed sections explain exceptions and evidence requirements; if wording differs, the checklist controls the gate and the detailed section supplies the rationale.
 
 **Implementation-ready** — all must be checked:
 
@@ -83,7 +83,23 @@ Use these checklists as the operational summary; the detailed sections define ex
 3. Required owner, affected, contract, and approved final tests are executed or evidenced as omitted.
 4. Independent verifier has a fresh scoped `PASS`.
 5. Code/security reviewer has no unresolved P0/P1.
-6. The task records `verified-complete` before the coordinator advances.
+6. The task's fingerprint policy is satisfied and strict fingerprint verification passes when required.
+7. The task records `verified-complete` before the coordinator advances.
+
+### State flow at a glance
+
+```text
+analysis → task-design-ready → implementation-ready → implementing
+    │              │                    │                    │
+    ├─ decision ───┘                    ├─ implementation-blocked
+    └─ design-blocked                   └─ awaiting-verification
+                                                     ↓
+                                          verified-complete → next eligible task
+                                                     ↓
+                                  named human checkpoint (only when declared)
+```
+
+`blocked` is additive, not a replacement for the last valid stage. Human rejection or scope change returns only affected work to `analysis` or `awaiting-human-decision`; accepted unaffected work remains a logical baseline.
 
 ## Enforce project boundaries
 
@@ -228,7 +244,7 @@ Normal handoffs share current, traceable facts through artifacts; do not try to 
 - The coordinator maintains the active task card's `Handoff Snapshot`. Each assignment reads the snapshot and only its `Required reads`; open `On-demand evidence` only to answer a concrete question. Every summarized fact must cite a source, decision, test, evidence ID, or code-context location.
 - The snapshot is invalid when its recorded source/decision revision, current code fingerprint, frozen contract, test-manifest revision, open-finding set, or next action changes. Refresh the snapshot before assigning another role. Do not reuse a stale snapshot as proof.
 - Keep the coordinator and the one serial implementation engineer in their existing role thread for a batch when the environment supports it. For each candidate revision, keep at most one active serial implementation engineer, one independent verifier, and one code/security reviewer; retire or explicitly mark stale any restarted duplicate before assigning a fresh review. Verifiers and reviewers may retain their own evidence index, but must independently inspect the current diff and must not inherit implementation reasoning as evidence.
-- Keep raw logs and historical PASS/FAIL records behind the task card's `Evidence index`. Do not copy them into every handoff. Run `<script-root>/validate_task_handoff.py <task-card>` when the project copies that script and creates or materially revises an active task card; run `--strict` before recording `task-design-ready` and after a material design re-entry. When the snapshot contains a project-relative SHA-256 ledger, run `--verify-fingerprint` as an additional read-only check. Structural strict validation rejects blank or template-placeholder handoff/manifest values; fingerprint verification checks listed files but does not execute project commands or prove test evidence truth.
+- Keep raw logs and historical PASS/FAIL records behind the task card's `Evidence index`. Do not copy them into every handoff. Run `<script-root>/validate_task_handoff.py <task-card> --strict` when the project copies that script and creates or materially revises an active task card, before recording `task-design-ready`, after material design re-entry, before `verified-complete`, and before crossing a High-risk channel. For code, protocol, generated-output, dependency, runtime, or High-risk changes, set `Fingerprint policy: required`; strict validation then requires a SHA-256 ledger and automatically verifies it. A pure Fast-path documentation/style/metadata task may set a reasoned `Fingerprint policy: N/A`, but never for Standard or High-risk work. `--verify-fingerprint` remains available as an explicit read-only command. Structural validation checks fields and the ledger checks listed files; neither executes project commands or proves test evidence truth.
 
 Before implementation, the verifier freezes a `Test Execution Manifest` that names its revision, commands, test groups, evidence expectation, runner, and invalidation conditions. At minimum distinguish a fast-gate group for critical contracts/security, owner tests, affected/regression tests, approved full-suite tests, and independent risk or security tests.
 
