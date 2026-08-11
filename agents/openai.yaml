@@ -1,4 +1,4 @@
 interface:
-  display_name: "Codex AI Company"
+  display_name: "AI Team"
   short_description: "Run a local AI software delivery team with human decision gates"
-  default_prompt: "Use $codex-ai-company to run a local AI delivery team from a PRD and optional Figma or Demo inputs."
+  default_prompt: "Use $ai-team to run a local AI delivery team from a PRD and optional Figma or Demo inputs."

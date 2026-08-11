@@ -1,9 +1,9 @@
 ---
-name: codex-ai-company
+name: ai-team
 description: Launch or refine a Codex-run local software delivery team from a PRD with optional Figma and/or Demo inputs. Use when setting up reusable AI-team project rules, role handoffs, Markdown task tracking, scoped Demo inspection, structured multi-agent discussions, and human decision gates without building a separate orchestration system.
 ---
 
-# Codex AI Company
+# AI Team
 
 Run a Codex-native software delivery workflow. Use Codex as the coordinator and specialist subagents as temporary roles; do not build or install another multi-agent framework.
 
@@ -178,15 +178,22 @@ Normal handoffs share current, traceable facts through artifacts; do not try to 
 
 - The coordinator maintains the active task card's `Handoff Snapshot`. Each assignment reads the snapshot and only its `Required reads`; open `On-demand evidence` only to answer a concrete question. Every summarized fact must cite a source, decision, test, evidence ID, or code-context location.
 - The snapshot is invalid when its recorded source/decision revision, current code fingerprint, frozen contract, test-manifest revision, open-finding set, or next action changes. Refresh the snapshot before assigning another role. Do not reuse a stale snapshot as proof.
-- Keep the coordinator and the one serial implementation engineer in their existing role thread for a batch when the environment supports it. Verifiers and reviewers may retain their own evidence index, but must independently inspect the current diff and must not inherit implementation reasoning as evidence.
+- Keep the coordinator and the one serial implementation engineer in their existing role thread for a batch when the environment supports it. For each candidate revision, keep at most one active serial implementation engineer, one independent verifier, and one code/security reviewer; retire or explicitly mark stale any restarted duplicate before assigning a fresh review. Verifiers and reviewers may retain their own evidence index, but must independently inspect the current diff and must not inherit implementation reasoning as evidence.
 - Keep raw logs and historical PASS/FAIL records behind the task card's `Evidence index`. Do not copy them into every handoff. Run `scripts/validate_task_handoff.py <task-card>` when the project copies that script and creates or materially revises an active task card; run `--strict` before recording `task-design-ready` and after a material design re-entry. Strict validation rejects blank or template-placeholder handoff/manifest values, but does not prove a fingerprint is current.
 
-Before implementation, the verifier freezes a `Test Execution Manifest` that names its revision, commands, test groups, evidence expectation, runner, and invalidation conditions. At minimum distinguish owner tests, affected/regression tests, approved full-suite tests, and independent risk or security tests.
+Before implementation, the verifier freezes a `Test Execution Manifest` that names its revision, commands, test groups, evidence expectation, runner, and invalidation conditions. At minimum distinguish a fast-gate group for critical contracts/security, owner tests, affected/regression tests, approved full-suite tests, and independent risk or security tests.
 
+- For each frozen candidate revision, the code/security reviewer runs the complete scoped fast-gate and risk/mutation checks first. Do not start the expensive independent full-suite execution while that scoped gate has a deterministic P0/P1 or invalid evidence. The reviewer exhausts its declared scope before returning a verdict, unless a P0, environment failure, or evidence invalidation makes further checks meaningless.
 - The implementation engineer runs owner and affected groups while iterating. After its final implementation/test revision, it runs the approved full suite once and records the result against the manifest revision.
-- The independent verifier runs one fresh approved full-suite execution after implementation. The code/security reviewer independently reviews the diff and runs the frozen risk/mutation tests for the changed trust boundaries and any open P0/P1 finding; it does not repeat the full suite merely to duplicate the verifier unless the manifest or evidence is invalid.
+- Only after the scoped review has no deterministic P0/P1 does the independent verifier run one fresh approved full-suite execution. The code/security reviewer does not duplicate that full suite merely to duplicate the verifier unless the manifest or evidence is invalid.
 - When a deterministic P0/P1 is reproduced, stop unrelated broad test execution after preserving the failure evidence. Record partial-execution evidence: the manifest revision, executed test groups and results, and every unexecuted group with its stop reason. Return to focused test-first rework. After all blocking findings are closed, run the final approved suite and the required independent evidence again.
 - A change to implementation, tests, commands, fixtures, contracts, or relevant environment invalidates prior affected evidence. It requires one new final run at the resulting frozen revision, not a full-suite run after every intermediate edit.
+
+Reuse unaffected baseline evidence only when an impact check proves that the changed files, contracts, runtime paths, and test environment cannot affect that evidence; record the reused evidence IDs and rationale in the manifest. Otherwise rerun the affected group. Never use evidence from a changed relevant surface as proof.
+
+### Repeated-finding circuit breaker
+
+If two consecutive candidate revisions of the same task produce new P1 findings, do not launch another broad suite by default. The coordinator performs a task-scoped technical re-entry and classifies every finding as (1) in-scope implementation remediation, (2) a correctable task-design artifact gap, or (3) a material scope/contract decision. Continue the first two autonomously after updating the affected artifacts and tests. Escalate only the third. If independently testable slices exist, split the task before the next candidate revision; preserve historical evidence and do not advance a dependent task until the current task has a new frozen fingerprint and fresh independent PASS verdicts.
 
 For a task touching a runtime state machine, background worker, asynchronous job, transaction, authorization boundary, or external side effect, the technical lead and verifier must freeze a runtime-chain matrix before implementation. Map `entry -> authorization/precondition -> scheduling or claim -> state transition -> side effect -> recovery/compensation -> observable result` to requirement, acceptance criterion, module, and test. A critical stage that has only a unit mock and no entry-path test fails task design. At task-design review, the independent verifier confirms each manifest group has an executable command/runner or an N/A rationale, and each triggered runtime-chain stage has its required mapping and entry-path test.
 
@@ -280,4 +287,4 @@ Use TestSprite MCP only for Web UI automation, and only when it is installed/con
 Classify feedback before changing anything:
 
 - Update the **project documents only** when the rule is specific to one product, stack, organization, or permission model.
-- Update this **global skill** only when the improvement is reusable across future projects and the user explicitly asks to update `$codex-ai-company`.
+- Update this **global skill** only when the improvement is reusable across future projects and the user explicitly asks to update `$ai-team`.
