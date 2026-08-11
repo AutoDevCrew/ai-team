@@ -1,5 +1,15 @@
 # Canonical Artifact Templates
 
+## Catalog navigation
+
+For normal work, read only the named H2 section below; do not load the entire catalog. Use the manifest-declared `extract_markdown_section.py` so headings inside fenced templates do not terminate the read. Use `Task card` for Standard/High-risk work and `Minimal Fast-path task card` only for eligible Fast work.
+
+- Intake and specification: `Source register`, `Requirement traceability matrix`, `Acceptance specification`.
+- Design: `Architecture and code-context pack`, `Experience design brief`, `Engineering baseline`.
+- Governance: `Decision card`, `Discussion record`, `Readiness review`.
+- Delivery: `Task card`, `Test plan`, `Security-impact review`, `Implementation report`, `Acceptance checkpoint package`.
+- Focused examples: `Minimal Fast-path task card`, `Required fingerprint example`.
+
 ## Source register
 
 ```md
@@ -289,7 +299,8 @@ P0 / P1 / P2
 ## Implementation-readiness review
 - Report:
 - Reviewed scope:
-- Verdict: implementation-ready / implementation-blocked / not reviewed
+- Verdict: implementation-ready / conditional-pass / implementation-blocked / not reviewed
+- Conditional activation (Standard only): remaining mechanical conditions; required evidence; invalidation triggers; coordinator activation record / N/A
 
 ## Role boundary
 - Current role:
@@ -445,6 +456,9 @@ active / summarized / awaiting human decision / resolved
 
 ## Independent reviewer
 
+## Review mode
+task design / combined Standard design-and-readiness / separate High-risk implementation-readiness
+
 ## Inputs
 - Source register:
 - Traceability matrix:
@@ -469,7 +483,13 @@ active / summarized / awaiting human decision / resolved
 - 
 
 ## Verdict
-ready / not ready
+task-design-ready / implementation-ready / conditional-pass / not ready
+
+## Conditional Standard activation (when used)
+- Remaining mechanical conditions:
+- Required evidence:
+- Invalidation triggers:
+- Coordinator activation record:
 ```
 
 ## Test plan
@@ -551,7 +571,7 @@ This complete Fast-only skeleton contains every section required by strict valid
 # TASK-EXAMPLE-001: Clarify local contributor documentation
 
 ## Handoff Snapshot
-- Workflow revision: ai-team-2026-08-11-r2
+- Workflow revision: ai-team-2026-08-11-r3
 - Snapshot ID and updated at: SNAP-EXAMPLE-001-01 / 2026-08-11T10:00+08:00
 - Current state and technical outcome: awaiting-verification / not-complete
 - Source and decision references: REQ-EXAMPLE-001; no decision required

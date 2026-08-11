@@ -7,7 +7,7 @@ description: Launch or refine a Codex-run local software delivery team from a PR
 
 Run a Codex-native software delivery workflow from requirement input through local verification and named human acceptance checkpoints. Use one serial implementation engineer and independent verification; do not build another orchestration framework.
 
-Workflow revision: `ai-team-2026-08-11-r2`. A later revision requires an explicit project-document sync; preserve historical evidence.
+Workflow revision: `ai-team-2026-08-11-r3`. A later revision requires an explicit project-document sync; preserve historical evidence.
 
 ## Authority model
 
@@ -17,6 +17,7 @@ Do not restate one rule across several files. Use these global authorities:
 - `references/role-protocol.md` — role inputs, responsibilities, outputs, write boundaries, and exit conditions.
 - `assets/project-template/.ai-team/governance/templates.md` — exact artifact fields and Markdown syntax.
 - `scripts/validate_task_handoff.py` — executable structural, semantic, layout, and fingerprint validation.
+- `scripts/extract_markdown_section.py` — fence-aware, token-bounded reads of one named Markdown H2 section.
 
 Read the complete delivery policy and role protocol before initializing, migrating, or materially revising a project workflow. Read the template catalog when creating or changing an artifact schema.
 
@@ -38,7 +39,7 @@ The global Skill is the upgrade source, not a project runtime dependency. Never 
 2. If the namespaced layout is absent or incomplete, copy `assets/project-template/` without overwriting user material.
 3. Copy `references/delivery-policy.md` to `.ai-team/governance/workflow.md` and `references/role-protocol.md` to `.ai-team/governance/roles.md`. These become editable project-local snapshots; record project differences only in `.ai-team/project-rules.md` or confirmed decisions.
 4. Keep `.ai-team/governance/templates.md` as the only field/schema authority. Do not reproduce its field lists elsewhere.
-5. Copy `scripts/validate_task_handoff.py` to `.ai-team/scripts/validate_task_handoff.py` when task cards exist.
+5. Copy `scripts/validate_task_handoff.py` and `scripts/extract_markdown_section.py` to `.ai-team/scripts/` when task cards or role handoffs exist.
 6. Create `.ai-team/sources.md`, specifications, evidence, discussions, and task cards only when the current phase needs them. Conditional artifacts such as `engineering-baseline.md` and `experience-design.md` are not startup prerequisites unless the workflow triggers them.
 7. Preserve existing project material and history. Do not create root-level AI-team `docs/`, `tasks/`, `discussions/`, or helper-script trees.
 
@@ -48,7 +49,7 @@ Migrate only when the user explicitly requests it. Do not maintain a compatibili
 
 1. Inventory current instructions, governance, specifications, tasks, discussions, evidence, and AI-team helper scripts.
 2. Classify delivery artifacts under `.ai-team/`; do not move business source, project tooling, generated output, runtime data, or deployment material.
-3. Install the current local authority set: manifest, project rules, workflow, roles, templates, decisions, tasks, discussions, evidence, and validator.
+3. Install the current local authority set: manifest, project rules, workflow, roles, templates, decisions, tasks, discussions, evidence, validator, and Markdown section extractor.
 4. Rename older numbered governance files to `roles.md`, `workflow.md`, and `templates.md`; update all Markdown links, Required reads, evidence links, and script paths.
 5. Preserve IDs, decisions, historical PASS/FAIL evidence, accepted baselines, and active-task continuation state. Never mirror canonical files.
 6. Run the validator, link audit, stale-path audit, and active-task snapshot audit.
@@ -62,7 +63,7 @@ Follow the project-local workflow and roles. At a minimum:
 2. Scope Demo inspection to the current phase before using the browser. Inspect read-only and record exclusions; do not infer uninspected legacy behavior.
 3. Have product analysis produce traceable, testable acceptance criteria. Activate UX/UI only when UI evidence and existing patterns leave material experience details unspecified.
 4. Have the technical lead derive or create the engineering baseline and minimal design. For an unfamiliar or large repository, use `$repomix-explorer` for scoped read-only discovery; use targeted local search for known symbols.
-5. Have the independent verifier review intake/baseline when applicable, produce the test plan, and issue scoped design/readiness verdicts. Authors never approve their own artifacts.
+5. Have the independent verifier review intake/baseline when applicable, produce the test plan, and issue scoped design/readiness verdicts. Product, UX, technical, and implementation authors never approve the delivery artifacts they authored.
 6. Maintain one backlog and one card per work item. The exact card fields come only from the local template catalog.
 7. Start the one serial implementation engineer only after the local workflow's implementation-ready gate passes and the project stage permits code work.
 8. Run independent verification and code/security review. A task state becomes `complete` only with technical outcome `verified-complete`; human acceptance occurs only at a named checkpoint.

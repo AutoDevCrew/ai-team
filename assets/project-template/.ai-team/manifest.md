@@ -1,7 +1,7 @@
 # AI Team Layout Manifest
 
 - Layout version: `ai-team-layout-1`
-- Workflow revision: `ai-team-2026-08-11-r2`
+- Workflow revision: `ai-team-2026-08-11-r3`
 - Governance root: `.ai-team/governance`
 - Source register: `.ai-team/sources.md`
 - Task root: `.ai-team/tasks`
@@ -9,6 +9,8 @@
 - Discussion root: `.ai-team/discussions`
 - Evidence root: `.ai-team/evidence`
 - Script root: `.ai-team/scripts`
+- Handoff validator: `.ai-team/scripts/validate_task_handoff.py`
+- Markdown section extractor: `.ai-team/scripts/extract_markdown_section.py`
 - Project rules: `.ai-team/project-rules.md`
 - Delivery policy: `.ai-team/governance/workflow.md`
 - Role protocol: `.ai-team/governance/roles.md`

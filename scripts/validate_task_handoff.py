@@ -73,11 +73,15 @@ RUNTIME_FIELDS = (
 LANE_FIELD = "Execution lane:"
 FINGERPRINT_POLICY_FIELD = "Fingerprint policy:"
 TASK_ROOT_FIELD = "Task root:"
+READINESS_VERDICT_FIELD = "Verdict:"
+CONDITIONAL_ACTIVATION_FIELD = "Conditional activation (Standard only):"
 LAYOUT_AUTHORITY_FIELDS = (
     "Project rules:",
     "Delivery policy:",
     "Role protocol:",
     "Artifact templates:",
+    "Handoff validator:",
+    "Markdown section extractor:",
 )
 
 REFERENCE_PATTERN = re.compile(
@@ -252,6 +256,35 @@ def project_authority_errors(task_card: Path) -> list[str]:
     return errors
 
 
+def conditional_readiness_errors(text: str) -> list[str]:
+    """Validate the quality guardrails for a conditional Standard readiness PASS."""
+    readiness = section(text, "## Implementation-readiness review")
+    if not readiness:
+        return []
+    verdict = field_value(readiness, READINESS_VERDICT_FIELD).strip().lower()
+    if verdict != "conditional-pass":
+        return []
+
+    errors: list[str] = []
+    lane = field_value(text, LANE_FIELD).strip().lower()
+    if lane != "standard":
+        errors.append("conditional readiness is allowed only for Standard tasks")
+
+    activation = field_value(readiness, CONDITIONAL_ACTIVATION_FIELD)
+    if is_placeholder(activation) or has_reasoned_na(activation) or len(activation) < 30:
+        errors.append(
+            "conditional readiness must record mechanical conditions, required evidence, invalidation triggers, and coordinator activation state"
+        )
+
+    snapshot = section(text, "## Handoff Snapshot")
+    current_state = field_value(snapshot, "Current state and technical outcome:")
+    if not re.search(r"(?:^|[\s/])task-design-ready(?:[\s/]|$)", current_state):
+        errors.append(
+            "conditional readiness must remain task-design-ready until coordinator activation"
+        )
+    return errors
+
+
 def strict_errors(
     snapshot: str, test_plan: str, runtime_chain: str, full_text: str
 ) -> list[str]:
@@ -291,6 +324,8 @@ def strict_errors(
 
     if fingerprint_policy == "required" and not fingerprint_entries(full_text):
         errors.append("strict required fingerprint policy needs a SHA-256 ledger in Handoff Snapshot")
+
+    errors.extend(conditional_readiness_errors(full_text))
 
     trigger = field_value(runtime_chain, RUNTIME_TRIGGER)
     if is_placeholder(trigger):

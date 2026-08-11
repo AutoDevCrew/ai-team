@@ -62,6 +62,8 @@ class HandoffValidatorTests(unittest.TestCase):
                         "- Delivery policy: `.ai-team/governance/workflow.md`",
                         "- Role protocol: `.ai-team/governance/roles.md`",
                         "- Artifact templates: `.ai-team/governance/templates.md`",
+                        "- Handoff validator: `.ai-team/scripts/validate_task_handoff.py`",
+                        "- Markdown section extractor: `.ai-team/scripts/extract_markdown_section.py`",
                     )
                 ),
                 encoding="utf-8",
@@ -69,6 +71,10 @@ class HandoffValidatorTests(unittest.TestCase):
             (ai_team / "project-rules.md").write_text("rules\n", encoding="utf-8")
             for name in ("workflow.md", "roles.md", "templates.md"):
                 (governance / name).write_text(f"{name}\n", encoding="utf-8")
+            scripts = ai_team / "scripts"
+            scripts.mkdir()
+            for name in ("validate_task_handoff.py", "extract_markdown_section.py"):
+                (scripts / name).write_text(f"{name}\n", encoding="utf-8")
             card = tasks / "TASK-EXAMPLE-001.md"
             card.write_text(card_text, encoding="utf-8")
 
@@ -101,6 +107,8 @@ class HandoffValidatorTests(unittest.TestCase):
                         "- Delivery policy: `.ai-team/governance/workflow.md`",
                         "- Role protocol: `.ai-team/governance/roles.md`",
                         "- Artifact templates: `.ai-team/governance/templates.md`",
+                        "- Handoff validator: `.ai-team/scripts/validate_task_handoff.py`",
+                        "- Markdown section extractor: `.ai-team/scripts/extract_markdown_section.py`",
                     )
                 ),
                 encoding="utf-8",
@@ -110,6 +118,47 @@ class HandoffValidatorTests(unittest.TestCase):
 
             errors = validator.project_authority_errors(card)
             self.assertTrue(any("workflow.md" in error for error in errors), errors)
+
+    def test_conditional_standard_readiness_guardrails(self) -> None:
+        valid = """\
+## Handoff Snapshot
+- Current state and technical outcome: task-design-ready / not-complete
+
+## Delivery planning
+- Execution lane: standard
+
+## Implementation-readiness review
+- Verdict: conditional-pass
+- Conditional activation (Standard only): dependency TASK-002 completes; command evidence is recorded; any source/design/manifest change invalidates; coordinator activation pending
+"""
+        self.assertEqual([], validator.conditional_readiness_errors(valid))
+
+        invalid_lane = valid.replace("Execution lane: standard", "Execution lane: high-risk")
+        self.assertTrue(
+            any(
+                "only for Standard" in error
+                for error in validator.conditional_readiness_errors(invalid_lane)
+            )
+        )
+
+        activated_too_early = valid.replace("task-design-ready", "implementation-ready")
+        self.assertTrue(
+            any(
+                "must remain task-design-ready" in error
+                for error in validator.conditional_readiness_errors(activated_too_early)
+            )
+        )
+
+        missing_conditions = valid.replace(
+            "dependency TASK-002 completes; command evidence is recorded; any source/design/manifest change invalidates; coordinator activation pending",
+            "TBD",
+        )
+        self.assertTrue(
+            any(
+                "must record mechanical conditions" in error
+                for error in validator.conditional_readiness_errors(missing_conditions)
+            )
+        )
 
 
 if __name__ == "__main__":

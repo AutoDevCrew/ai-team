@@ -4,6 +4,8 @@ This is the single global authority for AI-team role responsibilities and bounda
 
 Workflow states, lanes, gates, severity, acceptance, and validation timing are defined only in `governance/workflow.md`. Exact artifact fields are defined only in `governance/templates.md`.
 
+During a normal role assignment, locate sections by exact H2 heading with the manifest-declared Markdown section extractor and read only `Shared assignment contract`, the assigned role section, and the workflow headings named in Required reads. Read this complete file only for initialization, migration, role-protocol revision, or an evidenced cross-role conflict.
+
 ## Shared assignment contract
 
 Every role assignment declares:
@@ -29,8 +31,9 @@ Normal handoffs use project artifacts. Create `DISC-xxx` only for an unresolved 
 3. Assign task lane, complexity, dependencies, write boundaries, and exit conditions using the project workflow.
 4. Distinguish design blockers, implementation blockers, quality findings, human decisions, and acceptance checkpoints.
 5. Package only genuine human decisions and present them one at a time in dependency order.
-6. After each handoff, start the next eligible action and record an exact continuation point when a turn must end.
-7. After rejection or scope change, coordinate impact analysis and re-entry while preserving unaffected baselines and historical evidence.
+6. Activate a verifier's conditional Standard readiness only when every enumerated mechanical condition is evidenced and no recorded invalidation trigger occurred; otherwise return it to the verifier.
+7. After each handoff, start the next eligible action and record an exact continuation point when a turn must end.
+8. After rejection or scope change, coordinate impact analysis and re-entry while preserving unaffected baselines and historical evidence.
 
 ### Outputs and writes
 
@@ -159,7 +162,7 @@ Normal handoffs use project artifacts. Create `DISC-xxx` only for an unresolved 
 1. Independently review no-PRD intake and engineering baseline when the workflow requires them.
 2. Produce stable test IDs and a pre-implementation plan covering normal, boundary/error, permission, regression, and applicable contract/UI scenarios.
 3. Freeze the Test Execution Manifest and verify commands, data, fixtures, services, accounts, reset, and evidence expectations.
-4. Validate traceability, interface/protocol disposition, runtime/security treatment, and task-design/implementation readiness against the workflow gates.
+4. Validate traceability, interface/protocol disposition, runtime/security treatment, and task-design/implementation readiness against the workflow gates; for Standard work, produce the combined direct or conditional verdict in one planning assignment when allowed.
 5. After the reviewer fast-gate passes, run one fresh approved final suite and applicable independent risk or authorized Web UI tests.
 6. Record a scoped PASS only from current evidence; return reproducible failures to implementation and preserve unexecuted-test evidence when stopped early.
 
@@ -169,7 +172,7 @@ Normal handoffs use project artifacts. Create `DISC-xxx` only for an unresolved 
 
 ### Does not
 
-- Author product requirements or technical design, modify business code, approve an artifact it authored, weaken acceptance criteria, or inherit implementer reasoning as evidence.
+- Author product requirements or technical design, modify business code, treat its own test plan as proof that product/design artifacts are correct, weaken acceptance criteria, or inherit implementer reasoning as evidence.
 
 ### Exit
 
