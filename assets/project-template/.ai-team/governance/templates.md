@@ -4,8 +4,12 @@
 
 For normal work, read only the named H2 section below; do not load the entire catalog. Use the manifest-declared `extract_markdown_section.py` so headings inside fenced templates do not terminate the read. Use `Task card` for Standard/High-risk work and `Minimal Fast-path task card` only for eligible Fast work.
 
+```sh
+python3 .ai-team/scripts/extract_markdown_section.py .ai-team/governance/templates.md "Task card"
+```
+
 - Intake and specification: `Source register`, `Requirement traceability matrix`, `Acceptance specification`.
-- Design: `Architecture and code-context pack`, `Experience design brief`, `Engineering baseline`.
+- Design: `Architecture and code-context pack`, `Experience design brief (UI scope only)`, `Engineering baseline (new project)`.
 - Governance: `Decision card`, `Discussion record`, `Readiness review`.
 - Delivery: `Task card`, `Test plan`, `Security-impact review`, `Implementation report`, `Acceptance checkpoint package`.
 - Focused examples: `Minimal Fast-path task card`, `Required fingerprint example`.
@@ -571,7 +575,7 @@ This complete Fast-only skeleton contains every section required by strict valid
 # TASK-EXAMPLE-001: Clarify local contributor documentation
 
 ## Handoff Snapshot
-- Workflow revision: ai-team-2026-08-11-r3
+- Workflow revision: ai-team-2026-08-11-r4
 - Snapshot ID and updated at: SNAP-EXAMPLE-001-01 / 2026-08-11T10:00+08:00
 - Current state and technical outcome: awaiting-verification / not-complete
 - Source and decision references: REQ-EXAMPLE-001; no decision required

@@ -2,6 +2,7 @@
 """Regression tests for fence-aware Markdown section extraction."""
 
 from pathlib import Path
+import re
 import subprocess
 import sys
 import unittest
@@ -47,6 +48,24 @@ class MarkdownSectionTests(unittest.TestCase):
         self.assertEqual(0, result.returncode, result.stderr)
         self.assertTrue(result.stdout.startswith("## Minimal Fast-path task card"))
         self.assertNotIn("## Required fingerprint example", result.stdout)
+
+    def test_every_catalog_navigation_heading_is_extractable(self) -> None:
+        text = TEMPLATES.read_text(encoding="utf-8")
+        navigation = extractor.extract_h2_section(text, "Catalog navigation")
+        self.assertIsNotNone(navigation)
+        headings = [
+            heading
+            for line in navigation.splitlines()
+            if line.startswith("- ")
+            for heading in re.findall(r"`([^`]+)`", line)
+        ]
+        self.assertTrue(headings)
+        missing = [
+            heading
+            for heading in headings
+            if extractor.extract_h2_section(text, heading) is None
+        ]
+        self.assertEqual([], missing)
 
 
 if __name__ == "__main__":

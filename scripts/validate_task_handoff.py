@@ -285,6 +285,22 @@ def conditional_readiness_errors(text: str) -> list[str]:
     return errors
 
 
+def strict_readiness_section_errors(text: str) -> list[str]:
+    """Require a readiness review for every non-Fast delivery lane."""
+    lane = field_value(text, LANE_FIELD).strip().lower()
+    if lane not in {"standard", "high-risk"}:
+        return []
+
+    readiness = section(text, "## Implementation-readiness review")
+    if not readiness:
+        return [
+            "strict Standard/High-risk task is missing Implementation-readiness review section"
+        ]
+    if READINESS_VERDICT_FIELD not in readiness:
+        return ["implementation-readiness review missing field: Verdict:"]
+    return []
+
+
 def strict_errors(
     snapshot: str, test_plan: str, runtime_chain: str, full_text: str
 ) -> list[str]:
@@ -325,6 +341,7 @@ def strict_errors(
     if fingerprint_policy == "required" and not fingerprint_entries(full_text):
         errors.append("strict required fingerprint policy needs a SHA-256 ledger in Handoff Snapshot")
 
+    errors.extend(strict_readiness_section_errors(full_text))
     errors.extend(conditional_readiness_errors(full_text))
 
     trigger = field_value(runtime_chain, RUNTIME_TRIGGER)

@@ -160,6 +160,68 @@ class HandoffValidatorTests(unittest.TestCase):
             )
         )
 
+    def test_non_fast_lane_requires_readiness_section_and_verdict(self) -> None:
+        standard_without_section = """\
+## Delivery planning
+- Execution lane: standard
+"""
+        errors = validator.strict_readiness_section_errors(standard_without_section)
+        self.assertTrue(any("missing Implementation-readiness" in error for error in errors))
+
+        high_risk_without_section = standard_without_section.replace(
+            "standard", "high-risk"
+        )
+        self.assertTrue(
+            validator.strict_readiness_section_errors(high_risk_without_section)
+        )
+
+        missing_verdict = standard_without_section + """\
+## Implementation-readiness review
+- Reviewer: verifier
+"""
+        self.assertTrue(
+            any(
+                "missing field: Verdict:" in error
+                for error in validator.strict_readiness_section_errors(missing_verdict)
+            )
+        )
+
+        valid_not_reviewed = standard_without_section + """\
+## Implementation-readiness review
+- Verdict: not reviewed
+"""
+        self.assertEqual(
+            [], validator.strict_readiness_section_errors(valid_not_reviewed)
+        )
+
+        fast_without_section = standard_without_section.replace("standard", "fast")
+        self.assertEqual(
+            [], validator.strict_readiness_section_errors(fast_without_section)
+        )
+
+        template_text = TEMPLATES.read_text(encoding="utf-8")
+        match = re.search(
+            r"## Task card.*?```md\n(.*?)\n```",
+            template_text,
+            flags=re.DOTALL,
+        )
+        self.assertIsNotNone(match)
+        standard_card = match.group(1).replace(
+            "- Execution lane: fast / standard / high-risk",
+            "- Execution lane: standard",
+        )
+        standard_card = re.sub(
+            r"\n## Implementation-readiness review\n.*?(?=\n## |\Z)",
+            "",
+            standard_card,
+            flags=re.DOTALL,
+        )
+        errors = validator.validate(standard_card, strict=True)
+        self.assertTrue(
+            any("missing Implementation-readiness" in error for error in errors),
+            errors,
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
