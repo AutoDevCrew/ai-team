@@ -72,6 +72,16 @@ RUNTIME_FIELDS = (
 
 LANE_FIELD = "Execution lane:"
 FINGERPRINT_POLICY_FIELD = "Fingerprint policy:"
+TASK_ROOT_FIELD = "Task root:"
+
+REFERENCE_PATTERN = re.compile(
+    r"(?:https?://\S+|`[^`]+`|\b(?:REQ|AC|DEC|TASK|TEST|EVID|DISC|SNAP|TEM)-[A-Za-z0-9._-]+\b)",
+    flags=re.IGNORECASE,
+)
+PROJECT_PATH_PATTERN = re.compile(
+    r"(?:`[^`]+`|(?:^|[\s;,(])(?:\.ai-team/|[A-Za-z0-9_.-]+/)[^\s;,)]*)",
+    flags=re.IGNORECASE,
+)
 
 
 def normalize_heading(value: str) -> str:
@@ -131,6 +141,72 @@ def has_reasoned_na(value: str) -> bool:
     return normalized.startswith("n/a") and len(normalized.removeprefix("n/a").strip(" -:")) > 0
 
 
+def snapshot_semantic_errors(snapshot: str) -> list[str]:
+    errors: list[str] = []
+    snapshot_id = field_value(snapshot, "Snapshot ID and updated at:")
+    if not re.search(r"\bSNAP-[A-Za-z0-9._-]+\b", snapshot_id, flags=re.IGNORECASE):
+        errors.append("strict snapshot ID must contain a concrete SNAP-... identifier")
+    if not re.search(r"\b\d{4}-\d{2}-\d{2}\b", snapshot_id):
+        errors.append("strict snapshot updated-at must contain an ISO-style date")
+
+    references = field_value(snapshot, "Source and decision references:")
+    if not REFERENCE_PATTERN.search(references):
+        errors.append("strict source/decision references need an ID, URL, or backticked path")
+
+    required_reads = field_value(snapshot, "Required reads:")
+    if not PROJECT_PATH_PATTERN.search(required_reads):
+        errors.append("strict Required reads needs a concrete project-relative path")
+
+    next_action = field_value(snapshot, "Next action and exit condition:")
+    if len(next_action.strip()) < 12:
+        errors.append("strict next action and exit condition is too short to be actionable")
+    elif not re.search(r"\bexit\b|退出|完成条件|结束条件", next_action, flags=re.IGNORECASE):
+        errors.append("strict next action must state an exit/completion condition")
+    return errors
+
+
+def markdown_path_value(value: str) -> str:
+    match = re.search(r"`([^`]+)`", value)
+    if match:
+        return match.group(1).strip()
+    return value.strip().split()[0] if value.strip() else ""
+
+
+def resolve_project_layout(task_card: Path) -> tuple[Path | None, Path | None, str | None]:
+    """Resolve project and declared task roots from the nearest ancestor manifest."""
+    card_path = task_card.resolve()
+    ai_team_root = next(
+        (
+            ancestor
+            for ancestor in card_path.parents
+            if ancestor.name == ".ai-team" and (ancestor / "manifest.md").is_file()
+        ),
+        None,
+    )
+    if ai_team_root is None:
+        return None, None, "fingerprint verification requires an ancestor .ai-team/manifest.md"
+
+    project_root = ai_team_root.parent.resolve()
+    manifest_text = (ai_team_root / "manifest.md").read_text(encoding="utf-8")
+    task_root_value = markdown_path_value(field_value(manifest_text, TASK_ROOT_FIELD))
+    if not task_root_value:
+        return None, None, "layout manifest is missing Task root:"
+
+    configured = Path(task_root_value)
+    if configured.is_absolute():
+        return None, None, "layout manifest Task root must be project-relative"
+    task_root = (project_root / configured).resolve()
+    try:
+        task_root.relative_to(ai_team_root)
+    except ValueError:
+        return None, None, "layout manifest Task root must remain under .ai-team/"
+    try:
+        card_path.relative_to(task_root)
+    except ValueError:
+        return None, None, "task card is outside the manifest-declared Task root"
+    return project_root, task_root, None
+
+
 def fingerprint_entries(text: str) -> list[tuple[str, str]]:
     snapshot = section(text, "## Handoff Snapshot")
     return re.findall(
@@ -146,8 +222,12 @@ def strict_errors(
     errors: list[str] = []
 
     for field in STRICT_SNAPSHOT_FIELDS:
-        if is_placeholder(field_value(snapshot, field)):
+        value = field_value(snapshot, field)
+        if field == "Current change-set fingerprint:" and fingerprint_entries(full_text):
+            continue
+        if is_placeholder(value):
             errors.append(f"strict snapshot field is empty or placeholder: {field}")
+    errors.extend(snapshot_semantic_errors(snapshot))
 
     lane = field_value(full_text, LANE_FIELD).strip().lower()
     if lane not in {"fast", "standard", "high-risk"}:
@@ -238,12 +318,10 @@ def fingerprint_errors(task_card: Path, text: str) -> list[str]:
     if not entries:
         return ["fingerprint verification requested but no SHA-256 ledger was found in Handoff Snapshot"]
 
-    card_path = task_card.resolve()
-    if card_path.parent.parent.name != ".ai-team":
-        return ["fingerprint verification requires a task card under .ai-team/tasks/"]
-    project_root = card_path.parent.parent.parent
-    if not (project_root / ".ai-team" / "manifest.md").is_file():
-        return ["fingerprint verification requires .ai-team/manifest.md"]
+    project_root, _, layout_error = resolve_project_layout(task_card)
+    if layout_error:
+        return [layout_error]
+    assert project_root is not None
     errors: list[str] = []
     for relative_path, expected in entries:
         candidate = Path(relative_path)

@@ -8,6 +8,7 @@ Task cards use workflow revision `ai-team-2026-08-11` unless the project records
 
 - `backlog.md` — maintained by the delivery coordinator.
 - `TASK-<id>-<slug>.md` — one work item; IDs start at `TASK-001`, increase sequentially, and are never reused.
+- Batch or milestone subdirectories are allowed under the manifest-declared Task root. Every card and backlog link remains unique; the validator resolves the nearest `.ai-team/manifest.md` and confirms the card is inside its declared Task root.
 
 ## State flow
 

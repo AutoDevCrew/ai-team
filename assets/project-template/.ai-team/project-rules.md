@@ -15,7 +15,7 @@ For an active task, read its `Handoff Snapshot` first, then only the listed `Req
 3. `governance/experience-design.md` — read when the task has UI scope and the file exists.
 4. `governance/02-roles-and-boundaries.md` — roles, boundaries, and handoffs.
 5. `governance/03-workflow-and-decision-gates.md` — workflow and escalation rules.
-6. `tasks/backlog.md` and relevant `tasks/TASK-*.md` — work state and acceptance criteria.
+6. `tasks/backlog.md` and relevant `tasks/**/TASK-*.md` — work state and acceptance criteria.
 7. Relevant `discussions/DISC-*.md` — unresolved questions or tradeoffs.
 8. `governance/05-templates.md` — artifact templates.
 

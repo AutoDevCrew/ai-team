@@ -239,6 +239,8 @@ awaiting confirmation / confirmed / obsolete
 - Source and decision references:
 - Frozen inputs and contracts:
 - Current change-set fingerprint:
+  - Required ledger syntax: one project-relative file per line as ``- `path` = <64-character SHA-256>``; replace every placeholder with the actual digest.
+  - `src/example.ts` = <64-character lowercase SHA-256>
 - Test Execution Manifest revision:
 - Required reads:
 - On-demand evidence / Evidence index:
@@ -577,6 +579,21 @@ This is a filled excerpt; copy the complete task-card template and retain all re
   - Approved full suite and runner: `npm test`
   - Independent risk/mutation group and runner: N/A — no applicable risk surface
   - Expected evidence and invalidation conditions: command output and screenshot; copy or UI behavior change invalidates
+```
+
+## Required fingerprint example
+
+This excerpt shows the exact ledger syntax for Standard, High-risk, and other tasks whose fingerprint policy is `required`. The digest values are illustrative; compute and replace them from the current files.
+
+```md
+## Handoff Snapshot
+- Current change-set fingerprint:
+  - `src/foo/bar.ts` = 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+  - `tests/foo/bar.test.ts` = fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210
+
+## Delivery planning
+- Execution lane: standard
+- Fingerprint policy: required
 ```
 
 ## Implementation report
