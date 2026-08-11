@@ -2,6 +2,8 @@
 
 Use this reference when bootstrapping or revising a project's role-and-boundary document. Adapt names and artifacts to the target project; retain the handoff boundaries.
 
+Resolve `governance-root`, `source-register`, `task-root`, `discussion-root`, `evidence-root`, and `script-root` from `.ai-team/manifest.md`. The namespaced `.ai-team/` layout is mandatory after project initialization or one-time migration; root-level legacy paths are not supported.
+
 ## MetaGPT-derived handoff chain
 
 MetaGPT's software-company flow is artifact-driven: product management turns a PRD or initial user request into a testable product specification; architecture turns that specification into a design; project management turns the design into dependent tasks; engineering implements tasks; QA tests code and returns failures to engineering. Mirror the chain with local Markdown artifacts and Codex subagents.
@@ -15,6 +17,18 @@ human input → product analysis → UX/UI design (when needed) → architecture
                                                                                                       ↓
                                                                             named human acceptance checkpoint only
 ```
+
+## Execution lane selection
+
+The coordinator records one lane before task design:
+
+- `fast`: S complexity, no contract/schema/generated-code, security, sensitive-data, dependency, external-side-effect, transaction/worker/async, material UX, or baseline trigger. Merge task-design and implementation-readiness review into one independent checklist and omit the runtime-chain matrix.
+- `standard`: ordinary M/L work or shared UI/data/module/regression impact. Use the normal gates.
+- `high-risk`: XL work or any security, permission, sensitive-data, protocol, migration, transaction, worker/async, external-side-effect, or production-capability boundary. Use all applicable gates, including security and runtime-chain review.
+
+The lane is an impact classification, not a shortcut. Reclassify when the change surface grows.
+
+Optional-tool failure is a soft blocker: use the approved fallback, record the gap and risk, and continue if the acceptance remains testable. Missing authoritative evidence, required authority, or required test environment is a hard blocker. Never turn unavailable-tool output into a PASS.
 
 ## Roles
 
@@ -79,7 +93,7 @@ human input → product analysis → UX/UI design (when needed) → architecture
 - Route all blockers to the coordinator. Only the coordinator requests a human decision.
 - Do not create a decision card for a normal evidence-backed, in-scope delivery choice; record a short rationale in the relevant artifact and continue.
 - Route verification and review failures back to the same implementation role with evidence, then repeat validation.
-- Write a human decision to `docs/decisions.md` before allowing a dependent task to enter implementation.
+- Write a human decision to `<governance-root>/decisions.md` before allowing a dependent task to enter implementation.
 - Give each role assignment read-only inputs, allowed write paths, forbidden paths, and an exit condition. Only the serial implementation engineer writes business source code.
 
 ## Handoff and test execution protocol
@@ -101,7 +115,7 @@ human input → product analysis → UX/UI design (when needed) → architecture
 
 1. The PRD is the current-phase scope authority; missing Figma must not block analysis.
 2. Demo inspection only verifies the interaction and current behavior of already-scoped pages. Browser actions must be read-only: no form submission, data creation/deletion, settings changes, or other state-changing actions.
-3. `docs/sources.md` records the current-phase scope, inspected pages/routes, observed behavior, explicit prior-phase exclusions, and evidence time.
+3. `<source-register>` records the current-phase scope, inspected pages/routes, observed behavior, explicit prior-phase exclusions, and evidence time.
 4. If the PRD does not identify the relevant pages or flow, create one scope decision card and wait for human confirmation before expanding beyond minimal route discovery.
 
 ## Code-context pack
@@ -114,7 +128,7 @@ The technical lead uses Repomix output only as evidence for a compact architectu
 
 ## Task-design and implementation readiness reviews
 
-Run a task-design review as soon as a task has enough frozen inputs to define its implementation, tests, security treatment, and design risks. A frozen upstream contract is sufficient; wait for upstream implementation only when current design needs facts that the contract does not determine. Before recording `task-design-ready`, run `scripts/validate_task_handoff.py <task-card> --strict`; the verifier then independently confirms manifest groups have an executable command/runner or N/A rationale and, when triggered, every runtime-chain stage maps to requirement, acceptance criterion, module, and an entry-path test. The script rejects empty/placeholder fields only; it does not establish evidence truth. Record `task-design-ready` when the design passes, plus any separately scoped implementation blockers. Continue to the next planning-eligible task immediately.
+Run a task-design review as soon as a task has enough frozen inputs to define its implementation, tests, security treatment, and design risks. A frozen upstream contract is sufficient; wait for upstream implementation only when current design needs facts that the contract does not determine. Before recording `task-design-ready`, run `<script-root>/validate_task_handoff.py <task-card> --strict`; the verifier then independently confirms manifest groups have an executable command/runner or N/A rationale and, when triggered, every runtime-chain stage maps to requirement, acceptance criterion, module, and an entry-path test. The script rejects empty/placeholder fields only; it does not establish evidence truth. Record `task-design-ready` when the design passes, plus any separately scoped implementation blockers. Continue to the next planning-eligible task immediately.
 
 ## Implementation readiness review
 

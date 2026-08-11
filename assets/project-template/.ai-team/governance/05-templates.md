@@ -197,7 +197,7 @@
 
 ## Decision card
 
-Use the same `DEC-<NNN>` ID when the human confirms this card in `docs/decisions.md`.
+Use the same `DEC-<NNN>` ID when the human confirms this card in `decisions.md`.
 
 ```md
 # DEC-<NNN>: <title>
@@ -233,6 +233,7 @@ awaiting confirmation / confirmed / obsolete
 # TASK-<id>: <title>
 
 ## Handoff Snapshot (current authoritative view)
+- Workflow revision:
 - Snapshot ID and updated at:
 - Current state and technical outcome:
 - Source and decision references:
@@ -268,6 +269,7 @@ P0 / P1 / P2
 - Awaiting: DEC-<NNN> / none
 
 ## Delivery planning
+- Execution lane: fast / standard / high-risk
 - Complexity: S / M / L / XL
 - Complexity drivers:
 - Implementation batch:
@@ -310,6 +312,7 @@ P0 / P1 / P2
 - Status: draft / task-design-approved / needs-design-remediation
 - Test Execution Manifest:
   - Revision and frozen-at:
+  - Fast-gate group and command:
   - Owner test group and command:
   - Affected/regression test group and command:
   - Approved full suite and runner:

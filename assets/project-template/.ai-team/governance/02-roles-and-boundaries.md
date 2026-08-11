@@ -8,6 +8,7 @@ This workflow adapts MetaGPT's artifact-driven sequence: product analysis produc
 - Do not access production, use real-user data, or record credentials in project files.
 - Decide from evidence where possible. Escalate only an unresolved evidence gap, missing authority, or material irreversible/external risk.
 - Use artifacts for handoffs. The active task's source-linked `Handoff Snapshot` and its required-read set are the default shared context; open raw evidence only through its Evidence index when needed. Every role assignment states read-only inputs, allowed writes, forbidden writes, and exit condition.
+- Record one execution lane before design: `fast` for S low-risk no-contract/no-runtime-chain work, `standard` for ordinary M/L or shared-surface work, and `high-risk` for XL or security/permission/sensitive-data/protocol/migration/transaction/worker/async/external-side-effect boundaries. Fast path may merge design/readiness review and omit the runtime-chain matrix only when its impact exclusions remain true; it never removes independent verification.
 
 ## Delivery coordinator
 
@@ -27,7 +28,7 @@ This workflow adapts MetaGPT's artifact-driven sequence: product analysis produc
 
 - **Inputs:** Product scope and acceptance criteria; scoped Figma/Demo evidence; existing UI/design-system evidence; confirmed decisions; and supported product surfaces.
 - **Does:** Activates only for a UI-relevant task when existing sources or UI patterns do not fully specify the flow, hierarchy, interactions, component states, responsive behavior, accessibility, or content/asset constraints. Records an implementation brief anchored to supplied Figma/Demo evidence and proposes only unspecified details, reusing local UI patterns. Maps experience rules to requirements and acceptance criteria.
-- **Writes:** Applicable sections of `docs/experience-design.md` and, only when needed to make a flow or state unambiguous, linked local low-fidelity wireframes or interaction prototypes.
+- **Writes:** Applicable sections of `experience-design.md` and, only when needed to make a flow or state unambiguous, linked local low-fidelity wireframes or interaction prototypes.
 - **Does not:** Redefine product intent, choose technology, alter online Figma/Demo, write business code, or elevate an unsupported visual preference into a requirement.
 
 ## Technical lead

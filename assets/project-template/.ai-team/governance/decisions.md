@@ -5,7 +5,7 @@ This file is the only source of confirmed human decisions. Use monotonically inc
 ## DEC-001: Markdown task management
 
 - **Decision:** Use repository Markdown for task tracking.
-- **Location:** `tasks/backlog.md` is the only backlog; every work item has one `tasks/TASK-<id>-<slug>.md` card.
+- **Location:** `../tasks/backlog.md` is the only backlog; every work item has one `../tasks/TASK-<id>-<slug>.md` card.
 - **Not used:** External task systems.
 
 ## DEC-002: Local-only AI authority

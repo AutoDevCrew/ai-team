@@ -2,16 +2,18 @@
 
 ## Source evidence
 
-Register online inputs in `docs/sources.md` when a phase starts.
+Register online inputs in `../sources.md` when a phase starts.
 
 - A PRD defines business intent and rules when provided. Without one, the initial user request is the primary source but not a frozen specification: the product analyst records it and creates the existing acceptance specification as a lightweight product brief before technical design. Optional Figma is visual evidence. Optional Demo is behavioral evidence, not the scope authority.
 - Before Demo browsing, the product analyst lists the current-phase pages/flows/routes and excluded legacy functionality from the PRD or no-PRD intake draft. Inspect only that scope in read-only mode; do not submit forms, create/delete data, change settings, or trigger state changes.
 - Record source URL, version/time, authority, inspected pages, observed behavior, exclusions, and evidence gaps. Do not infer unavailable behavior.
 - For unfamiliar or large repositories, use `$repomix-explorer` as scoped local read-only evidence. Do not upload private source, retain raw packs, or default to full-repository packing.
 
+Tool availability has two classes: missing/conflicting authoritative requirements, required authority, or required test environment is a hard blocker; missing optional Figma, Repomix, TestSprite, browser route, or convenience tool is a soft blocker. For a soft blocker, use the documented fallback, record the gap and risk, and continue while acceptance remains testable. Never claim unavailable-tool evidence as PASS; an explicitly required provider remains a blocker until available.
+
 ## No-PRD intake
 
-The product analyst records the verbatim request in `docs/sources.md`, then uses the existing acceptance specification and requirement traceability matrix to define target user/goal, scope and exclusions, user stories, normal/error/boundary behavior, and observable acceptance criteria. Classify every proposed rule as evidence-backed, a conventional low-risk MVP assumption with rationale, or awaiting a human decision. The independent verifier must confirm source classification, traceability, and testability before the intake can freeze. Escalate only a material product rule that available evidence cannot determine; do not escalate ordinary reversible MVP detail.
+The product analyst records the verbatim request in `../sources.md`, then uses the existing acceptance specification and requirement traceability matrix to define target user/goal, scope and exclusions, user stories, normal/error/boundary behavior, and observable acceptance criteria. Classify every proposed rule as evidence-backed, a conventional low-risk MVP assumption with rationale, or awaiting a human decision. The independent verifier must confirm source classification, traceability, and testability before the intake can freeze. Escalate only a material product rule that available evidence cannot determine; do not escalate ordinary reversible MVP detail.
 
 ## Delivery path
 
@@ -24,6 +26,20 @@ sources → product analysis → UX/UI design (when needed) → engineering base
 
 The coordinator advances only when a phase's exit conditions are met. AI autonomously resolves choices supported by a PRD or recorded initial user request, decisions, source evidence, code, tests, and project rules.
 
+## Execution lanes and compact gates
+
+Record one lane on each task before design:
+
+- `fast`: S complexity with no contract/schema/generated-code, security, sensitive-data, dependency, external-side-effect, transaction/worker/async, material UX, or baseline trigger. Merge task-design and implementation-readiness review into one independent checklist, omit the runtime-chain matrix, and run only impact-justified focused/affected tests.
+- `standard`: ordinary M/L or shared UI/data/module/regression work; use the normal gates.
+- `high-risk`: XL or any security, permission, sensitive-data, protocol, migration, transaction, worker/async, external-side-effect, or production-capability boundary; use all applicable gates.
+
+Fast path is an impact classification, not a way to skip independent verification or scope checks. Reclassify when the change surface grows.
+
+Implementation-ready checklist: design dependencies frozen; implementation dependencies/environment ready; task-scoped readiness PASS; batch entry PASS or `batch-not-applicable`; no blocking decision/P0/P1; project stage open.
+
+Technical-completion checklist: approved scope; implementation self-check and omissions; required owner/affected/contract/final evidence; fresh independent verifier PASS; no unresolved code/security P0/P1; `verified-complete` recorded.
+
 ## Handoff snapshots and test execution
 
 Normal role handoffs use the active task card's compact, source-linked **Handoff Snapshot**, not a full chat transcript. It records current state and technical outcome; source and decision references; frozen inputs/contracts; the current change-set fingerprint; Test Execution Manifest revision; required reads; on-demand Evidence index; open findings; next action and exit condition; and invalidation conditions. Each role reads that snapshot and its required-read set first. A material change to sources, decisions, contracts, code, tests, commands, fixtures, environment, findings, or next action refreshes the affected snapshot or manifest before handoff.
@@ -32,11 +48,11 @@ The independent verifier freezes a **Test Execution Manifest** before implementa
 
 If two consecutive candidate revisions of the same task produce new P1 findings, the coordinator performs a task-scoped technical re-entry before another broad run. Classify every finding as in-scope implementation remediation, a correctable task-design artifact gap, or a material scope/contract decision; continue the first two autonomously, escalate only the third, and split independently testable slices before the next candidate revision. Preserve historical evidence and do not advance dependent work until the current task has a new frozen fingerprint and fresh independent PASS verdicts. Reuse unaffected baseline evidence only after recording an impact analysis that proves the changed files, contracts, runtime paths, and environment cannot affect it.
 
-For a stateful runtime, worker, asynchronous job, transaction, authorization boundary, or external side effect, the technical design includes `entry → authorization/precondition → scheduling or claim → state transition → side effect → recovery/compensation → observable result`, mapping each critical stage to a requirement, acceptance criterion, module, and test. A mock-only critical stage fails task design. Before recording `task-design-ready`, run `scripts/validate_task_handoff.py <task-card> --strict`; the verifier independently confirms each manifest group is executable or has an N/A rationale and each triggered runtime-chain stage has its mapping and entry-path test. Strict validation detects blank/placeholder fields only, not evidence truth.
+For a stateful runtime, worker, asynchronous job, transaction, authorization boundary, or external side effect, the technical design includes `entry → authorization/precondition → scheduling or claim → state transition → side effect → recovery/compensation → observable result`, mapping each critical stage to a requirement, acceptance criterion, module, and test. A mock-only critical stage fails task design. Before recording `task-design-ready`, run `../scripts/validate_task_handoff.py <task-card> --strict`; the verifier independently confirms each manifest group is executable or has an N/A rationale and each triggered runtime-chain stage has its mapping and entry-path test. Strict validation detects blank/placeholder fields only, not evidence truth.
 
 ## Human decision triggers
 
-Create one decision card only if the evidence cannot determine the outcome, sources conflict, scope or acceptance is missing, authority is unavailable, or a choice has unresolved irreversible, security, privacy, permission, external-cost, or production impact. Present one dependency-ordered decision at a time; record a confirmed choice in `docs/decisions.md` before continuing dependent work.
+Create one decision card only if the evidence cannot determine the outcome, sources conflict, scope or acceptance is missing, authority is unavailable, or a choice has unresolved irreversible, security, privacy, permission, external-cost, or production impact. Present one dependency-ordered decision at a time; record a confirmed choice in `decisions.md` before continuing dependent work.
 
 Do not escalate normal evidence-backed, in-scope delivery choices: technical structure or test strategy, task split/order/batching, completing traceability/test/risk details already determined by sources, reusing local patterns/tools, adding regression or negative tests, or correcting artifact consistency. Record a short rationale in the relevant artifact and continue without a decision card.
 

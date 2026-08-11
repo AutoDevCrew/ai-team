@@ -7,24 +7,41 @@ description: Launch or refine a Codex-run local software delivery team from a PR
 
 Run a Codex-native software delivery workflow. Use Codex as the coordinator and specialist subagents as temporary roles; do not build or install another multi-agent framework.
 
+Workflow revision: `ai-team-2026-08-11`. Projects may record this revision in `AGENTS.md` and active task snapshots. A later revision requires a project-document sync before affected work resumes; historical evidence is never rewritten.
+
 ## Start or refine a project
 
-1. Inspect the target workspace for `AGENTS.md`, `docs/`, `tasks/`, and `discussions/`.
+1. Inspect the target workspace for root `AGENTS.md` and `.ai-team/manifest.md`.
 2. Read existing project instructions before creating files. Preserve user material and merge missing rules instead of overwriting it.
-3. When the structure is absent, initialize it from `assets/project-template/`. Do not overwrite existing project artifacts. When a project has only part of the structure, copy only the missing matching template files, then adapt them to the project:
-   - `AGENTS.md`
-   - `docs/README.md`, `docs/02-roles-and-boundaries.md`, `docs/03-workflow-and-decision-gates.md`, `docs/05-templates.md`, `docs/decisions.md`
-   - `tasks/README.md`, `tasks/backlog.md`
-   - `discussions/README.md`
-   - `scripts/validate_task_handoff.py` when task cards are created or migrated
+3. Resolve the artifact layout before creating files. `.ai-team/manifest.md` is the only supported layout manifest and defines `governance-root`, `task-root`, `discussion-root`, `evidence-root`, and `script-root`. If the manifest is missing or incomplete, initialize or repair the namespaced template from `assets/project-template/`:
+   - root `AGENTS.md` as a thin Codex entry point;
+   - `.ai-team/manifest.md` and `.ai-team/project-rules.md`;
+   - `.ai-team/governance/` for roles, workflow, decisions, and templates;
+   - `.ai-team/tasks/` for the backlog and task cards;
+   - `.ai-team/discussions/`, `.ai-team/evidence/`, and `.ai-team/scripts/` as needed;
+   - `.ai-team/sources.md` when a project phase starts;
+   - copy `scripts/validate_task_handoff.py` into the manifest's `script-root` when task cards are created or migrated.
 4. Use `references/role-protocol.md` when creating or revising role, handoff, and discussion rules. The asset template is the project-local, editable source of truth after initialization; do not edit the bundled asset to record project decisions.
-5. Keep `docs/` small. Merge overlapping rules into the role protocol or workflow; do not create a new document for each role or one-off concept.
-6. Migrate an existing project to the current acceptance model only when the user explicitly requests it. Preserve historical task, test, and acceptance evidence; replace universal per-task human acceptance with named checkpoints; mark independently verified, previously awaiting-human-acceptance technical tasks `complete` when no named checkpoint applies; do not modify business code during this migration.
+5. Keep the manifest's governance root small. Merge overlapping rules into the role protocol or workflow; do not create a new document for each role or one-off concept.
+6. Migrate an existing project to the current acceptance model or namespaced layout only when the user explicitly requests it. This is a one-time physical migration, not a compatibility mode. Preserve historical task, test, and acceptance evidence; replace universal per-task human acceptance with named checkpoints; mark independently verified, previously awaiting-human-acceptance technical tasks `complete` when no named checkpoint applies; do not modify business code during this migration.
+
+Path aliases in the remainder of this skill mean the manifest's `governance-root`, `source-register`, `task-root`, `discussion-root`, `evidence-root`, and `script-root`. They always resolve under `.ai-team/`. Never maintain two canonical copies of the same artifact.
+
+### One-time project migration
+
+Only when the user requests migration, perform this one-time sequence:
+
+1. Inventory the existing instructions, governance, source/specification, tasks, discussions, evidence, and AI-team helper scripts; record the inventory before moving anything.
+2. Classify each delivery artifact into `.ai-team/governance/`, `.ai-team/sources.md` or `.ai-team/specs/`, `.ai-team/tasks/`, `.ai-team/discussions/`, `.ai-team/evidence/`, or `.ai-team/scripts/`. Do not move business source, project tooling, generated output, runtime data, or deployment material into the AI-team artifact tree.
+3. Create or repair `.ai-team/manifest.md` and `.ai-team/project-rules.md`; move artifacts once, preserving task IDs, evidence IDs, decisions, and historical content. Never create mirrored copies.
+4. Rewrite relative Markdown links, required-read paths, script paths, and active-task references; update the root `AGENTS.md` to a thin entry point.
+5. Copy the validator into `.ai-team/scripts/`, run structural validation and a link/path audit, then inspect the backlog and active task snapshot for stale paths.
+6. Record a migration report and stop. Do not combine layout migration with product-scope analysis, business-code edits, test execution, Git actions, or deployment. After migration, root-level `docs/`, `tasks/`, `discussions/`, and `scripts/` are not valid AI-team artifact locations.
 
 ## Run the delivery workflow
 
-1. Register the provided inputs in `docs/sources.md` using the source template. A PRD is preferred but not required: an initial user request is a valid product source when no PRD exists. Figma and Demo are optional.
-2. When a Demo link is provided, have the product analyst derive a current-phase inspection scope from the PRD or, for a no-PRD intake, the current acceptance-specification draft before using the built-in browser: target flows or pages, entry routes or states, and explicitly excluded prior-phase functionality. Follow the available browser-control skill. Inspect only that scope in read-only mode; do not submit forms, create/delete data, change settings, or trigger other state-changing actions. Record inspected pages, observed behavior, excluded legacy content, and evidence time in `docs/sources.md`. If authorized browser access is unavailable, record the evidence gap and treat it as a blocker rather than inferring Demo behavior.
+1. Register the provided inputs in `<source-register>` using the source template. A PRD is preferred but not required: an initial user request is a valid product source when no PRD exists. Figma and Demo are optional.
+2. When a Demo link is provided, have the product analyst derive a current-phase inspection scope from the PRD or, for a no-PRD intake, the current acceptance-specification draft before using the built-in browser: target flows or pages, entry routes or states, and explicitly excluded prior-phase functionality. Follow the available browser-control skill. Inspect only that scope in read-only mode; do not submit forms, create/delete data, change settings, or trigger other state-changing actions. Record inspected pages, observed behavior, excluded legacy content, and evidence time in `<source-register>`. If authorized browser access is unavailable, record the evidence gap and use the hard/soft blocker policy below rather than inferring Demo behavior.
 3. Do not crawl the whole Demo or treat an uninspected prior-phase page as a requirement. If the PRD or no-PRD intake draft cannot identify the current-phase pages or flow, ask one decision-card question to establish that scope before browsing beyond minimal route discovery. If access requires credentials or a test account, request that authorization as one decision item before continuing.
 4. Start the product analyst to produce a source-traceable, testable scope. For a no-PRD intake, have the independent verifier review source classification, traceability, and acceptance testability before technical baseline or design finalization. For a UI-relevant scope, determine whether the scoped Figma, Demo, and existing design system fully specify the user flow, states, responsive behavior, and accessibility constraints. When they do, record the source linkage in the acceptance specification and continue without the UX/UI designer. When they do not, start the UX/UI designer after product analysis and before technical-design finalization. The designer produces a scoped experience-design brief anchored to any supplied source and proposes only the unspecified details; it must not redesign supplied nodes/routes. Product analysis remains the authority for product rules. The technical lead may inspect the code baseline in parallel, but must not finalize design until it receives the required product and experience artifacts. For an unfamiliar or large repository, invoke `$repomix-explorer` before finalizing the design and use its findings to create a scoped code-context pack. Do not use it for a known single-file or single-symbol lookup; use direct local search instead. Create a `DISC-xxx` record only for ambiguity, conflict, or a real tradeoff.
 5. Have the technical lead establish the engineering baseline when the project has no usable code baseline. Have the independent verifier review it before task design, then have the technical lead produce the minimal design and task proposal. For a sensitive change, run the security impact review before design finalization. Then have the product analyst, UX/UI designer when active, technical lead, and independent verifier hold a structured testability review: product owns intended behavior, UX/UI owns interaction detail, and technical ownership remains unchanged, while the verifier produces the pre-implementation test plan, stable test-case IDs, and any eligible automation-test plan; challenge untestable criteria, missing data/environment, and regression gaps.
@@ -34,12 +51,44 @@ Run a Codex-native software delivery workflow. Use Codex as the coordinator and 
 9. Run independent verification and review after implementation. Execute the approved test plan, add evidence-backed risk tests when needed, and return reproducible findings to the implementation role; do not let the implementation role approve itself. Use the frozen test execution manifest to separate focused development checks from final evidence runs.
 10. After independent verification and review pass, mark a task `complete` as a verified local technical outcome and continue to the next eligible task. Request human acceptance only at a named acceptance checkpoint; present the acceptance package defined below rather than a bare task ID. If the human rejects or changes scope, identify affected requirements, acceptance criteria, tests, modules, and downstream tasks; keep unaffected accepted items as a logical baseline, move affected cards back to analysis or awaiting-decision in the Markdown backlog, and require an affected-scope readiness review before implementation resumes. Do not perform version-control or deployment actions.
 
-Within the user-authorized stage, continue from each completed handoff to the next planning-eligible task or remediation item. Do not stop merely because a task card or review artifact was created, a foundation review passed, an implementation dependency is pending, or business-code work is prohibited by the current stage. When implementation is stage-blocked, keep advancing task design, test planning, security treatment, and independent design review using frozen upstream contracts. Stop only at a genuine human decision, missing external authority/evidence needed for the current planning work, completion of all allowed work, or a user request to pause. A new chat turn is still required after Codex has returned a final response; the project artifacts preserve the continuation point.
+Within the user-authorized stage, continue from each completed handoff to the next planning-eligible task or remediation item. Do not stop merely because a task card or review artifact was created, a foundation review passed, an implementation dependency is pending, or business-code work is prohibited by the current stage. When implementation is stage-blocked, keep advancing task design, test planning, security treatment, and independent design review using frozen upstream contracts. Stop only at a genuine human decision, missing external authority/evidence needed for the current planning work, completion of all allowed work, or a user request to pause. “Continue autonomously” means continue within the current Codex turn until a valid turn-ending condition; Codex is not a background daemon. After Codex returns a final response, a new chat turn is required to continue, and the project artifacts preserve the exact continuation point.
+
+## Execution lanes
+
+Choose a lane before task design and record it on the task card:
+
+- **Fast path:** `S` complexity; no API/RPC/event/schema/generated-code change; no authentication, authorization, sensitive-data, payment, upload, secret, dependency, external-service, transaction, worker, asynchronous, or other runtime-chain trigger; no material UX or baseline impact. Combine task-design and implementation-readiness review into one independent checklist, skip the runtime-chain matrix, and use focused owner/affected tests plus only the regression evidence required by impact analysis. Independent verification and scope boundaries still apply.
+- **Standard path:** ordinary `M/L` work or shared-module, UI, data, compatibility, or regression impact. Use the normal design, testability, readiness, implementation, and independent verification gates.
+- **High-risk path:** `XL` work or any security, permission, sensitive-data, external side effect, transaction, worker/async, protocol, migration, or production-capability boundary. Use the complete workflow, runtime-chain matrix when triggered, security review, reviewer-first fast-gate, affected regression, and independent full-suite evidence.
+
+Never select Fast path merely to avoid a gate. A task moves to Standard or High-risk when its impact analysis reveals a trigger, and a later material change re-evaluates the lane.
+
+## Compact gate checklists
+
+Use these checklists as the operational summary; the detailed sections define exceptions and evidence requirements.
+
+**Implementation-ready** — all must be checked:
+
+1. Design dependencies are frozen.
+2. Implementation dependencies and environment are ready.
+3. Task-scoped implementation-readiness is independently `PASS`.
+4. Assigned batch entry criteria pass, or the card says `batch-not-applicable`.
+5. No blocking decision or P0/P1 remains.
+6. The project stage permits implementation.
+
+**Technical completion** — all must be checked:
+
+1. Change stays within approved scope.
+2. Implementation self-check is recorded, including omissions and risks.
+3. Required owner, affected, contract, and approved final tests are executed or evidenced as omitted.
+4. Independent verifier has a fresh scoped `PASS`.
+5. Code/security reviewer has no unresolved P0/P1.
+6. The task records `verified-complete` before the coordinator advances.
 
 ## Enforce project boundaries
 
-- Treat `docs/decisions.md` as the only source of confirmed human decisions.
-- Assign every decision card a monotonically increasing `DEC-<NNN>` ID. Reuse that same ID when recording its confirmed outcome in `docs/decisions.md`; do not create a parallel `D-<NNN>` namespace.
+- Treat `<governance-root>/decisions.md` as the only source of confirmed human decisions.
+- Assign every decision card a monotonically increasing `DEC-<NNN>` ID. Reuse that same ID when recording its confirmed outcome in `<governance-root>/decisions.md`; do not create a parallel `D-<NNN>` namespace.
 - Keep online inputs as source references; record extracted rules in local artifacts so they survive a session.
 - Do not create branches, commits, pushes, pull requests, or deployments unless the user explicitly changes the project policy.
 - Use only authorized test accounts and non-production environments.
@@ -81,7 +130,7 @@ Before requesting a checkpoint, create an acceptance package that states the che
 
 When the user provides an informal request instead of a PRD, the delivery coordinator starts the product analyst rather than treating the request as a frozen specification.
 
-1. Record the verbatim request and its authority in `docs/sources.md` as the initial product source.
+1. Record the verbatim request and its authority in `<source-register>` as the initial product source.
 2. The product analyst writes the existing acceptance specification as a lightweight product brief: target user and goal; in-scope and out-of-scope behavior; user stories, normal/error/boundary states, and observable acceptance criteria; applicable quality constraints; and source differences from code, Demo, or Figma.
 3. In the acceptance specification and requirement traceability matrix, classify every proposed rule as `evidence-backed`, `conventional low-risk MVP assumption` with rationale, or `awaiting human decision`. A low-risk assumption may be used only when it is reversible and does not materially change product behavior, permissions, data handling, cost, security, or a confirmed boundary.
 4. Start the UX/UI designer when the UI behavior, states, responsive behavior, accessibility, or content constraints remain unspecified after product analysis; the designer may define only those interaction details, not product rules.
@@ -90,7 +139,7 @@ When the user provides an informal request instead of a PRD, the delivery coordi
 
 ## Engineering baseline for new projects
 
-Before task design for a greenfield project, the technical lead creates `docs/engineering-baseline.md`. For an existing repository, derive the same baseline from manifests, build/test configuration, and code-context evidence; do not replace an established stack without a task-level reason.
+Before task design for a greenfield project, the technical lead creates `<governance-root>/engineering-baseline.md`. For an existing repository, derive the same baseline from manifests, build/test configuration, and code-context evidence; do not replace an established stack without a task-level reason.
 
 The baseline freezes the implementation constraints required by the serial engineer and verifier:
 
@@ -115,7 +164,7 @@ When one or more unresolved confirmations exist:
 2. State the decision ID, one question, options, recommendation, impact, and what remains blocked.
 3. Stop. Do not start a dependent task, present the next decision, or advance the workflow phase.
 4. Accept a decision only when the human explicitly selects an option or explicitly approves the single stated recommendation. Do not treat an ambiguous acknowledgement as approval when options remain.
-5. Record the confirmed choice in `docs/decisions.md`, update affected discussion/task state, then assess the next unresolved confirmation.
+5. Record the confirmed choice in `<governance-root>/decisions.md`, update affected discussion/task state, then assess the next unresolved confirmation.
 6. Present the next decision only after the previous one is recorded. If no confirmation remains, continue the workflow.
 
 Keep unrelated read-only analysis within the current phase only when it cannot alter, bypass, or pre-empt the pending decision.
@@ -179,7 +228,7 @@ Normal handoffs share current, traceable facts through artifacts; do not try to 
 - The coordinator maintains the active task card's `Handoff Snapshot`. Each assignment reads the snapshot and only its `Required reads`; open `On-demand evidence` only to answer a concrete question. Every summarized fact must cite a source, decision, test, evidence ID, or code-context location.
 - The snapshot is invalid when its recorded source/decision revision, current code fingerprint, frozen contract, test-manifest revision, open-finding set, or next action changes. Refresh the snapshot before assigning another role. Do not reuse a stale snapshot as proof.
 - Keep the coordinator and the one serial implementation engineer in their existing role thread for a batch when the environment supports it. For each candidate revision, keep at most one active serial implementation engineer, one independent verifier, and one code/security reviewer; retire or explicitly mark stale any restarted duplicate before assigning a fresh review. Verifiers and reviewers may retain their own evidence index, but must independently inspect the current diff and must not inherit implementation reasoning as evidence.
-- Keep raw logs and historical PASS/FAIL records behind the task card's `Evidence index`. Do not copy them into every handoff. Run `scripts/validate_task_handoff.py <task-card>` when the project copies that script and creates or materially revises an active task card; run `--strict` before recording `task-design-ready` and after a material design re-entry. Strict validation rejects blank or template-placeholder handoff/manifest values, but does not prove a fingerprint is current.
+- Keep raw logs and historical PASS/FAIL records behind the task card's `Evidence index`. Do not copy them into every handoff. Run `<script-root>/validate_task_handoff.py <task-card>` when the project copies that script and creates or materially revises an active task card; run `--strict` before recording `task-design-ready` and after a material design re-entry. When the snapshot contains a project-relative SHA-256 ledger, run `--verify-fingerprint` as an additional read-only check. Structural strict validation rejects blank or template-placeholder handoff/manifest values; fingerprint verification checks listed files but does not execute project commands or prove test evidence truth.
 
 Before implementation, the verifier freezes a `Test Execution Manifest` that names its revision, commands, test groups, evidence expectation, runner, and invalidation conditions. At minimum distinguish a fast-gate group for critical contracts/security, owner tests, affected/regression tests, approved full-suite tests, and independent risk or security tests.
 
@@ -259,7 +308,7 @@ Run a security impact review before design finalization when a task touches auth
 - Figma is supplementary evidence, never a prerequisite. A PRD plus a scoped Demo is sufficient to start discovery. The product analyst scopes its authority; a UX/UI designer, when active, consumes only that scoped evidence.
 - The PRD defines the current phase. Before browsing, express the scope as named flows/pages/routes and list known prior-phase exclusions.
 - Treat the Demo as behavioral evidence for scoped pages only; the PRD remains the source of truth for intended scope.
-- Preserve the scope and evidence in `docs/sources.md` so a later agent can distinguish current work from inherited functionality.
+- Preserve the scope and evidence in `<source-register>` so a later agent can distinguish current work from inherited functionality.
 
 ## Repository analysis with Repomix
 
@@ -270,6 +319,16 @@ Use `$repomix-explorer` as a read-only aid for initial repository discovery and 
 - Treat generated packs as potentially sensitive even when Repomix excludes known credential patterns. Explicitly exclude credentials, environment files, private keys, generated artifacts, and unrelated large data.
 - Record only the derived evidence in the architecture artifact: target modules, entry points, relevant call paths, contracts/data, build and test commands, allowed and forbidden areas, baseline regression constraints, and open questions.
 - If Repomix is unavailable or its scoped output is still too large, fall back to `rg --files`, targeted `rg` searches, manifests, entry points, and test configuration. Do not infer missing code behavior.
+
+## Graceful degradation
+
+Tool unavailability is not automatically a project blocker. Classify the gap before stopping:
+
+- **Hard blocker:** missing or conflicting product/contract evidence, unavailable authority for a required action, or a required test environment/fixture. Stop the dependent work and record the exact gap.
+- **Soft blocker:** optional Figma, Repomix, TestSprite, an optional browser route, or a non-required convenience tool. Use the documented fallback (PRD/code evidence, targeted local search, provider-neutral test cases, or manual read-only inspection), record the limitation and risk, and continue when the acceptance criteria remain testable.
+- Never claim that an unavailable tool passed. If the acceptance condition explicitly requires that tool's evidence, it becomes a hard blocker until authorized and available.
+
+The handoff must name the unavailable tool, fallback used, affected evidence, and the condition that would require re-entry. This prevents optional integrations from freezing the whole delivery path.
 
 ## Optional TestSprite MCP Web UI testing
 

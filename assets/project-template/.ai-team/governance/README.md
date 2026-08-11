@@ -1,4 +1,4 @@
-# AI Company Project Documentation
+# AI Team Project Governance
 
 This documentation defines a human-governed, Codex-run local software delivery workflow with one serial implementation engineer.
 
@@ -13,7 +13,7 @@ This documentation defines a human-governed, Codex-run local software delivery w
 7. `../tasks/README.md` and `../tasks/backlog.md` — task state.
 8. `../discussions/README.md` — focused multi-role discussions.
 
-`../AGENTS.md` is the project entry point. For an active task, first read its source-linked Handoff Snapshot and required-read set, then open historical evidence only through its Evidence index when needed. Generate phase artifacts such as `sources.md`, `acceptance.md`, `experience-design.md` for an activated UI scope, and `architecture.md` only when work begins. For a new project, generate `engineering-baseline.md` before task design; an existing project derives it from the repository configuration and code context.
+The root `../../AGENTS.md` is the Codex entry point and `../manifest.md` is the path authority. For an active task, first read its source-linked Handoff Snapshot and required-read set, then open historical evidence only through its Evidence index when needed. Generate phase artifacts such as `../sources.md`, `acceptance.md`, `experience-design.md` for an activated UI scope, and `architecture.md` only when work begins. For a new project, generate `engineering-baseline.md` before task design; an existing project derives it from the repository configuration and code context.
 
 ## Core conventions
 

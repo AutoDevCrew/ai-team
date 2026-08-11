@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 from pathlib import Path
 import re
 
@@ -24,6 +25,7 @@ SNAPSHOT_FIELDS = (
 
 MANIFEST_FIELDS = (
     "Revision and frozen-at:",
+    "Fast-gate group and command:",
     "Owner test group and command:",
     "Affected/regression test group and command:",
     "Approved full suite and runner:",
@@ -54,6 +56,7 @@ STRICT_SNAPSHOT_FIELDS = (
 
 STRICT_MANIFEST_FIELDS = (
     "Revision and frozen-at:",
+    "Fast-gate group and command:",
     "Owner test group and command:",
     "Affected/regression test group and command:",
     "Approved full suite and runner:",
@@ -169,6 +172,46 @@ def validate(text: str, strict: bool = False) -> list[str]:
     return errors
 
 
+def fingerprint_errors(task_card: Path, text: str) -> list[str]:
+    """Verify an explicit SHA-256 ledger without running project commands."""
+    snapshot = section(text, "## Handoff Snapshot")
+    entries = re.findall(
+        r"^[ \t]*-[ \t]*`([^`\n]+)`[ \t]*=[ \t]*([0-9a-fA-F]{64})[ \t]*$",
+        snapshot,
+        flags=re.MULTILINE,
+    )
+    if not entries:
+        return ["fingerprint verification requested but no SHA-256 ledger was found in Handoff Snapshot"]
+
+    card_path = task_card.resolve()
+    if card_path.parent.parent.name != ".ai-team":
+        return ["fingerprint verification requires a task card under .ai-team/tasks/"]
+    project_root = card_path.parent.parent.parent
+    if not (project_root / ".ai-team" / "manifest.md").is_file():
+        return ["fingerprint verification requires .ai-team/manifest.md"]
+    errors: list[str] = []
+    for relative_path, expected in entries:
+        candidate = Path(relative_path)
+        if candidate.is_absolute():
+            errors.append(f"fingerprint path must be project-relative: {relative_path}")
+            continue
+        resolved = (project_root / candidate).resolve()
+        try:
+            resolved.relative_to(project_root)
+        except ValueError:
+            errors.append(f"fingerprint path escapes project root: {relative_path}")
+            continue
+        if not resolved.is_file():
+            errors.append(f"fingerprint file not found: {relative_path}")
+            continue
+        digest = hashlib.sha256(resolved.read_bytes()).hexdigest()
+        if digest.lower() != expected.lower():
+            errors.append(
+                f"fingerprint mismatch: {relative_path} expected {expected.lower()} got {digest}"
+            )
+    return errors
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(
         description="Validate Handoff Snapshot and Test Execution Manifest fields."
@@ -179,10 +222,17 @@ def main() -> int:
         action="store_true",
         help="Require non-placeholder handoff, manifest, and applicable runtime-chain values.",
     )
+    parser.add_argument(
+        "--verify-fingerprint",
+        action="store_true",
+        help="Verify the explicit SHA-256 file ledger in the Handoff Snapshot without running project commands.",
+    )
     args = parser.parse_args()
 
     text = args.task_card.read_text(encoding="utf-8")
     errors = validate(text, strict=args.strict)
+    if args.verify_fingerprint:
+        errors.extend(fingerprint_errors(args.task_card, text))
 
     if errors:
         print(f"FAIL {args.task_card}")
