@@ -229,6 +229,8 @@ awaiting confirmation / confirmed / obsolete
 
 ## Task card
 
+For `Fingerprint policy: required`, leave the value after `Current change-set fingerprint:` empty and add one actual ledger line per project-relative file using ``- `path` = <64-character lowercase SHA-256>``. For an eligible Fast-path `N/A`, put `N/A — <reason>` on the same line as the field. Do not retain instructional or placeholder ledger entries in a real card.
+
 ```md
 # TASK-<id>: <title>
 
@@ -238,9 +240,7 @@ awaiting confirmation / confirmed / obsolete
 - Current state and technical outcome:
 - Source and decision references:
 - Frozen inputs and contracts:
-- Current change-set fingerprint:
-  - Required ledger syntax: one project-relative file per line as ``- `path` = <64-character SHA-256>``; replace every placeholder with the actual digest.
-  - `src/example.ts` = <64-character lowercase SHA-256>
+- Current change-set fingerprint: <N/A — reason, or leave empty and add actual ledger lines below>
 - Test Execution Manifest revision:
 - Required reads:
 - On-demand evidence / Evidence index:
@@ -543,15 +543,15 @@ authentication / authorization / sensitive data / payment / upload / external in
 design-ready / awaiting decision / blocked
 ```
 
-## Minimal Fast-path example
+## Minimal Fast-path task card
 
-This is a filled excerpt; copy the complete task-card template and retain all required sections when creating a real card.
+This complete Fast-only skeleton contains every section required by strict validation. Replace the example IDs, paths, commands, evidence, and rationale. Use the full task-card template when the task does not qualify for Fast path.
 
 ```md
 # TASK-EXAMPLE-001: Clarify local contributor documentation
 
 ## Handoff Snapshot
-- Workflow revision: ai-team-2026-08-11
+- Workflow revision: ai-team-2026-08-11-r2
 - Snapshot ID and updated at: SNAP-EXAMPLE-001-01 / 2026-08-11T10:00+08:00
 - Current state and technical outcome: awaiting-verification / not-complete
 - Source and decision references: REQ-EXAMPLE-001; no decision required
@@ -579,6 +579,13 @@ This is a filled excerpt; copy the complete task-card template and retain all re
   - Approved full suite and runner: N/A — documentation-only Fast path
   - Independent risk/mutation group and runner: N/A — no applicable risk surface
   - Expected evidence and invalidation conditions: lint output and rendered Markdown inspection; documentation scope change invalidates
+
+## Evidence index
+- Current source/design/decision evidence: `CONTRIBUTING.md`; REQ-EXAMPLE-001
+- Current test and review evidence: `.ai-team/evidence/EXAMPLE-001.md`
+- Partial execution record (when stopped early): N/A — all planned checks executed
+- Raw logs or large outputs (on demand): `.ai-team/evidence/EXAMPLE-001-lint.txt`
+- Superseded snapshot, manifest, or verdict: N/A — first revision
 ```
 
 ## Required fingerprint example

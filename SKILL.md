@@ -7,7 +7,7 @@ description: Launch or refine a Codex-run local software delivery team from a PR
 
 Run a Codex-native software delivery workflow from requirement input through local verification and named human acceptance checkpoints. Use one serial implementation engineer and independent verification; do not build another orchestration framework.
 
-Workflow revision: `ai-team-2026-08-11`. A later revision requires an explicit project-document sync; preserve historical evidence.
+Workflow revision: `ai-team-2026-08-11-r2`. A later revision requires an explicit project-document sync; preserve historical evidence.
 
 ## Authority model
 

@@ -111,7 +111,7 @@ Pending upstream implementation or a closed project stage is an implementation b
 - Refresh the snapshot or Test Execution Manifest after material source, decision, contract, code, test, command, fixture, environment, finding, or next-action changes.
 - Run `<script-root>/validate_task_handoff.py <task-card> --strict` before `task-design-ready`, after material design re-entry, before `verified-complete`, and before crossing a High-risk channel.
 - For code, protocol, generated-output, dependency, runtime, Standard, or High-risk work, use `Fingerprint policy: required`. A pure Fast-path documentation/style/metadata task may use a reasoned `N/A`.
-- Strict validation locates the nearest ancestor manifest, confirms the card is under its declared Task root, validates key field semantics, and automatically verifies required project-relative SHA-256 ledger entries. It does not run project commands or prove test-result truth.
+- Strict validation locates the nearest ancestor manifest, confirms the card is under its declared Task root, verifies the manifest-declared project rules, workflow, roles, and template files exist, validates key field semantics, and automatically verifies required project-relative SHA-256 ledger entries. It does not run project commands or prove test-result truth.
 
 ## Test execution
 

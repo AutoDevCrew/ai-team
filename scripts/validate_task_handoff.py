@@ -73,6 +73,12 @@ RUNTIME_FIELDS = (
 LANE_FIELD = "Execution lane:"
 FINGERPRINT_POLICY_FIELD = "Fingerprint policy:"
 TASK_ROOT_FIELD = "Task root:"
+LAYOUT_AUTHORITY_FIELDS = (
+    "Project rules:",
+    "Delivery policy:",
+    "Role protocol:",
+    "Artifact templates:",
+)
 
 REFERENCE_PATTERN = re.compile(
     r"(?:https?://\S+|`[^`]+`|\b(?:REQ|AC|DEC|TASK|TEST|EVID|DISC|SNAP|TEM)-[A-Za-z0-9._-]+\b)",
@@ -146,7 +152,7 @@ def snapshot_semantic_errors(snapshot: str) -> list[str]:
     snapshot_id = field_value(snapshot, "Snapshot ID and updated at:")
     if not re.search(r"\bSNAP-[A-Za-z0-9._-]+\b", snapshot_id, flags=re.IGNORECASE):
         errors.append("strict snapshot ID must contain a concrete SNAP-... identifier")
-    if not re.search(r"\b\d{4}-\d{2}-\d{2}\b", snapshot_id):
+    if not re.search(r"\b\d{4}-\d{2}-\d{2}(?=[T\s]|$)", snapshot_id):
         errors.append("strict snapshot updated-at must contain an ISO-style date")
 
     references = field_value(snapshot, "Source and decision references:")
@@ -214,6 +220,36 @@ def fingerprint_entries(text: str) -> list[tuple[str, str]]:
         snapshot,
         flags=re.MULTILINE,
     )
+
+
+def project_authority_errors(task_card: Path) -> list[str]:
+    """Verify that strict validation has a complete project-local authority set."""
+    project_root, _, layout_error = resolve_project_layout(task_card)
+    if layout_error:
+        return [layout_error]
+    assert project_root is not None
+
+    ai_team_root = project_root / ".ai-team"
+    manifest_text = (ai_team_root / "manifest.md").read_text(encoding="utf-8")
+    errors: list[str] = []
+    for field in LAYOUT_AUTHORITY_FIELDS:
+        value = markdown_path_value(field_value(manifest_text, field))
+        if not value:
+            errors.append(f"layout manifest is missing {field}")
+            continue
+        configured = Path(value)
+        if configured.is_absolute():
+            errors.append(f"layout manifest {field} must be project-relative")
+            continue
+        resolved = (project_root / configured).resolve()
+        try:
+            resolved.relative_to(ai_team_root)
+        except ValueError:
+            errors.append(f"layout manifest {field} must remain under .ai-team/")
+            continue
+        if not resolved.is_file():
+            errors.append(f"layout authority file not found for {field} {value}")
+    return errors
 
 
 def strict_errors(
@@ -353,7 +389,7 @@ def main() -> int:
     parser.add_argument(
         "--strict",
         action="store_true",
-        help="Require non-placeholder handoff, lane/fingerprint policy, manifest, and applicable runtime-chain values; verify required ledgers.",
+        help="Require the project authority layout, non-placeholder handoff, lane/fingerprint policy, manifest, and applicable runtime-chain values; verify required ledgers.",
     )
     parser.add_argument(
         "--verify-fingerprint",
@@ -364,6 +400,8 @@ def main() -> int:
 
     text = args.task_card.read_text(encoding="utf-8")
     errors = validate(text, strict=args.strict)
+    if args.strict:
+        errors.extend(project_authority_errors(args.task_card))
     strict_requires_fingerprint = (
         args.strict
         and field_value(text, FINGERPRINT_POLICY_FIELD).strip().lower() == "required"
