@@ -7,7 +7,7 @@ description: Launch or refine a Codex-run local software delivery team from a PR
 
 Run a Codex-native software delivery workflow from requirement input through local verification and named human acceptance checkpoints. Use one serial implementation engineer and independent verification; do not build another orchestration framework.
 
-Workflow revision: `ai-team-2026-08-11-r4`. A later revision requires an explicit project-document sync; preserve historical evidence.
+Workflow revision: `ai-team-2026-08-12-r12`. A later revision requires an explicit project-document sync; preserve historical evidence.
 
 ## Authority model
 
@@ -15,20 +15,26 @@ Do not restate one rule across several files. Use these global authorities:
 
 - `references/delivery-policy.md` — lanes, states, gates, severity, handoffs, validation, acceptance, re-entry, and autonomous progression.
 - `references/role-protocol.md` — role inputs, responsibilities, outputs, write boundaries, and exit conditions.
+- `references/workflow-schema.json` — machine-readable workflow revision, active enums, compact field groups, stage authorization, and table contracts.
 - `assets/project-template/.ai-team/governance/templates.md` — exact artifact fields and Markdown syntax.
 - `scripts/validate_task_handoff.py` — executable structural, semantic, layout, and fingerprint validation.
-- `scripts/extract_markdown_section.py` — fence-aware, token-bounded reads of one named Markdown H2 section.
+- `scripts/extract_markdown_section.py` — fence-aware, section-scoped reads of one named Markdown H2 section.
+- `scripts/check_project_consistency.py` — read-only revision, layout, source, backlog, state-gate, evidence, and active-task drift checks.
+- `scripts/render_fingerprint_ledger.py` — read-only generation of the declared change-set inventory and SHA-256 ledger.
 
 Read the complete delivery policy and role protocol before initializing, migrating, or materially revising a project workflow. Read the template catalog when creating or changing an artifact schema.
 
 After initialization, the project-local copies are the runtime authority:
 
 - `.ai-team/manifest.md` — paths.
+- `.ai-team/governance/workflow-schema.json` — deterministic workflow contract consumed by project validators.
+- `.ai-team/stage.md` — current project-stage authorization and provenance.
 - `.ai-team/project-rules.md` — project overrides and authority index only.
 - `.ai-team/governance/workflow.md` — project delivery policy snapshot.
 - `.ai-team/governance/roles.md` — project role protocol snapshot.
 - `.ai-team/governance/templates.md` — exact project artifact schemas.
 - `.ai-team/governance/decisions.md` — confirmed human decisions.
+- `.ai-team/sources.md` plus the manifest-declared acceptance specification and requirement traceability matrix — current product evidence and frozen coverage.
 - `.ai-team/tasks/` — task state and evidence-linked cards.
 
 The global Skill is the upgrade source, not a project runtime dependency. Never link project artifacts to files under the installed Skill directory.
@@ -37,10 +43,10 @@ The global Skill is the upgrade source, not a project runtime dependency. Never 
 
 1. Inspect root `AGENTS.md` and `.ai-team/manifest.md`; read existing project instructions before creating files.
 2. If the namespaced layout is absent or incomplete, copy `assets/project-template/` without overwriting user material.
-3. Copy `references/delivery-policy.md` to `.ai-team/governance/workflow.md` and `references/role-protocol.md` to `.ai-team/governance/roles.md`. These become editable project-local snapshots; record project differences only in `.ai-team/project-rules.md` or confirmed decisions.
-4. Keep `.ai-team/governance/templates.md` as the only field/schema authority. Do not reproduce its field lists elsewhere.
-5. Copy `scripts/validate_task_handoff.py` and `scripts/extract_markdown_section.py` to `.ai-team/scripts/` when task cards or role handoffs exist.
-6. Create `.ai-team/sources.md`, specifications, evidence, discussions, and task cards only when the current phase needs them. Conditional artifacts such as `engineering-baseline.md` and `experience-design.md` are not startup prerequisites unless the workflow triggers them.
+3. Copy `references/delivery-policy.md` to `.ai-team/governance/workflow.md`, `references/role-protocol.md` to `.ai-team/governance/roles.md`, and `references/workflow-schema.json` to `.ai-team/governance/workflow-schema.json`. Treat them as migration-managed canonical snapshots; record project differences only in `.ai-team/project-rules.md` or confirmed decisions.
+4. Keep `.ai-team/governance/workflow-schema.json` as the machine-readable field-group and enum authority, and `.ai-team/governance/templates.md` as the exact Markdown syntax authority. Do not reproduce their contracts elsewhere.
+5. Copy `scripts/validate_task_handoff.py`, `scripts/extract_markdown_section.py`, `scripts/check_project_consistency.py`, and `scripts/render_fingerprint_ledger.py` to `.ai-team/scripts/` when task cards or role handoffs exist.
+6. Create or update `.ai-team/sources.md` when delivery intake starts. Before promoting Standard/High-risk work, create the manifest-declared frozen acceptance specification and requirement traceability matrix. A standalone Fast non-behavior task may rely on its card-local traceability when both files are intentionally absent. Create other artifacts only when needed.
 7. Preserve existing project material and history. Do not create root-level AI-team `docs/`, `tasks/`, `discussions/`, or helper-script trees.
 
 ## One-time migration
@@ -49,10 +55,10 @@ Migrate only when the user explicitly requests it. Do not maintain a compatibili
 
 1. Inventory current instructions, governance, specifications, tasks, discussions, evidence, and AI-team helper scripts.
 2. Classify delivery artifacts under `.ai-team/`; do not move business source, project tooling, generated output, runtime data, or deployment material.
-3. Install the current local authority set: manifest, project rules, workflow, roles, templates, decisions, tasks, discussions, evidence, validator, and Markdown section extractor.
-4. Rename older numbered governance files to `roles.md`, `workflow.md`, and `templates.md`; update all Markdown links, Required reads, evidence links, and script paths.
+3. Install the current local authority set: manifest, project rules, workflow, roles, templates, workflow Schema, project Stage, decisions, sources, tasks, discussions, evidence, validator, Markdown section extractor, fingerprint helper, and project consistency checker.
+4. Rename older numbered governance files to `roles.md`, `workflow.md`, and `templates.md`; update all Markdown links, compact-card references, evidence links, and script paths.
 5. Preserve IDs, decisions, historical PASS/FAIL evidence, accepted baselines, and active-task continuation state. Never mirror canonical files.
-6. Run the validator, link audit, stale-path audit, and active-task snapshot audit.
+6. Run the project consistency checker. For each active promoted card, use its combined `--task ... --gate ...` check; resolve revision, layout, linkage, semantic-gate, scope-authorization, and active-snapshot drift before continuing.
 7. Record a migration report and stop. Do not combine layout migration with product-scope analysis, business-code edits, test execution, Git actions, or deployment.
 
 ## Run delivery
@@ -60,15 +66,16 @@ Migrate only when the user explicitly requests it. Do not maintain a compatibili
 Follow the project-local workflow and roles. At a minimum:
 
 1. Register the PRD or verbatim initial request; Figma and Demo are optional evidence.
-2. Scope Demo inspection to the current phase before using the browser. Inspect read-only and record exclusions; do not infer uninspected legacy behavior.
+2. Scope Demo inspection to the current phase before using the browser. Authorized login, navigation, and non-mutating search/filter actions are allowed; do not change business data, settings, permissions, or external state. Record exclusions and do not infer uninspected legacy behavior.
 3. Have product analysis produce traceable, testable acceptance criteria. Activate UX/UI only when UI evidence and existing patterns leave material experience details unspecified.
-4. Have the technical lead derive or create the engineering baseline and minimal design. For an unfamiliar or large repository, use `$repomix-explorer` for scoped read-only discovery; use targeted local search for known symbols.
-5. Have the independent verifier review intake/baseline when applicable, produce the test plan, and issue scoped design/readiness verdicts. Product, UX, technical, and implementation authors never approve the delivery artifacts they authored.
-6. Maintain one backlog and one card per work item. The exact card fields come only from the local template catalog.
-7. Start the one serial implementation engineer only after the local workflow's implementation-ready gate passes and the project stage permits code work.
-8. Run independent verification and code/security review. A task state becomes `complete` only with technical outcome `verified-complete`; human acceptance occurs only at a named checkpoint.
+4. Have the technical lead derive an existing-repository baseline or create a greenfield baseline and minimal design. For an unfamiliar or large repository, use `$repomix-explorer` for scoped read-only discovery when available; otherwise continue with targeted local search and record the limitation.
+5. Have the independent verifier review intake/baseline when applicable and perform one batch-planning pass for task test coverage and readiness. Product, UX, technical, and implementation authors never approve the delivery artifacts they authored.
+6. Maintain one backlog and one compact delta card per work item. Keep project-wide requirements, baseline, design, default commands, and traceability in their existing project artifacts; never copy them into every card.
+7. When the host supports child agents, keep the root agent as coordinator. Reuse a bounded specialist within the same task or batch while role, scope, and frozen requirement/contract inputs remain unchanged; invalidate evidence rather than the Agent merely because code changes. Start exactly one serial implementation engineer only after implementation readiness and scoped `.ai-team/stage.md` authorization pass.
+8. For Fast and ordinary Standard work, one independent verifier may combine diff review and test verification while remaining independent from the implementer. Launch a separate code/security reviewer only for High-risk or interface, security, runtime-chain, or material baseline triggers.
+9. Run focused verification per task and one approved full regression at batch exit; High-risk work may retain a per-task full suite. A task becomes `complete / verified-complete` only from current evidence; human acceptance occurs only at a named checkpoint.
 
-Within the authorized stage, continue to the next eligible planning, remediation, implementation, or verification action. Stop only for a genuine human decision, missing required external authority/evidence, completion of all allowed work, a user pause/status request, or a forced turn end. Codex is not a background daemon; record the exact continuation point before returning when work remains.
+Within the authorized stage, continue to the next eligible planning, remediation, implementation, or verification action. At a task boundary, use one project-check command with `--task TASK-... --gate <gate> --next-action`; execute or dispatch an eligible local action instead of merely reporting it. Stop only for a genuine human decision, missing required external authority/evidence, completion of all allowed work, a user pause/status request, or a forced turn end.
 
 ## Project boundaries
 
@@ -80,4 +87,4 @@ Within the authorized stage, continue to the next eligible planning, remediation
 
 ## Improve this Skill
 
-Update project-local files for product-, stack-, organization-, or permission-specific rules. Update this global Skill only for reusable workflow improvements explicitly requested by the user. When changing a canonical rule, edit its single authority and update navigation or copy instructions—not parallel summaries.
+Update project-local files for product-, stack-, organization-, or permission-specific rules. Update this global Skill only for reusable workflow improvements explicitly requested by the user. Use a deletion-first audit: a new mandatory artifact, field, state, or script must replace existing complexity or address a frequent uncovered delivery failure. Reject net growth by default. Change only the single authority and its executable/template consumers—not parallel summaries.

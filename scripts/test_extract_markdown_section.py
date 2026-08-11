@@ -7,7 +7,10 @@ import subprocess
 import sys
 import unittest
 
-import extract_markdown_section as extractor
+try:
+    from . import extract_markdown_section as extractor
+except ImportError:
+    import extract_markdown_section as extractor
 
 
 SKILL_ROOT = Path(__file__).resolve().parent.parent
@@ -21,8 +24,8 @@ class MarkdownSectionTests(unittest.TestCase):
             TEMPLATES.read_text(encoding="utf-8"), "Task card"
         )
         self.assertIsNotNone(result)
-        self.assertIn("## Handoff Snapshot (current authoritative view)", result)
-        self.assertIn("## Baseline and re-entry impact", result)
+        self.assertIn("## Handoff Snapshot", result)
+        self.assertIn("## Verification and findings", result)
         self.assertNotIn("## Discussion record", result)
 
     def test_role_section_stops_before_next_role(self) -> None:
@@ -32,6 +35,34 @@ class MarkdownSectionTests(unittest.TestCase):
         self.assertIsNotNone(result)
         self.assertIn("### Responsibilities", result)
         self.assertNotIn("## Code and security reviewer", result)
+
+    def test_optional_suffix_match_supports_validator_headings(self) -> None:
+        text = """\
+## Handoff Snapshot (current authoritative view)
+- Current state: analysis
+
+## Delivery planning
+- Execution lane: standard
+"""
+        self.assertIsNone(extractor.extract_h2_section(text, "Handoff Snapshot"))
+        result = extractor.extract_h2_section(
+            text, "Handoff Snapshot", allow_suffix=True
+        )
+        self.assertIsNotNone(result)
+        self.assertIn("Current state: analysis", result)
+        self.assertNotIn("Delivery planning", result)
+
+    def test_visible_markdown_ignores_comments_and_reports_duplicate_h2(self) -> None:
+        text = """\
+<!-- ## Handoff Snapshot -->
+## Handoff Snapshot
+```md
+## Handoff Snapshot
+```
+## Handoff Snapshot
+"""
+        counts = extractor.h2_heading_counts(text)
+        self.assertEqual(2, counts[extractor.normalize_heading("Handoff Snapshot")])
 
     def test_cli_prints_requested_section(self) -> None:
         result = subprocess.run(

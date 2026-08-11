@@ -19,6 +19,7 @@ This file is the only source of confirmed human decisions. Use monotonically inc
 - **Decision:** Use Codex as the coordinator and temporary specialist roles; do not build a separate orchestration framework.
 - **Implementation:** One serial implementation engineer modifies business code.
 - **Handoffs:** Use project artifacts; use `DISC-xxx` only for unresolved questions.
+- **Runtime topology:** Keep Codex as root coordinator, one writable serial implementer, and at most two concurrent temporary read-only specialists/reviewers; retire children after handoff.
 
 ## DEC-004: Autonomous decisions and human escalation
 

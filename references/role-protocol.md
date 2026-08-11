@@ -1,8 +1,10 @@
 # Role Protocol
 
+Workflow revision: `ai-team-2026-08-12-r12`.
+
 This is the single global authority for AI-team role responsibilities and boundaries. Copy it to `.ai-team/governance/roles.md` during project initialization or migration. The project-local copy is the runtime authority.
 
-Workflow states, lanes, gates, severity, acceptance, and validation timing are defined only in `governance/workflow.md`. Exact artifact fields are defined only in `governance/templates.md`.
+Gate semantics and validation timing are defined only in `governance/workflow.md`. Machine-readable workflow values and field groups are defined in `governance/workflow-schema.json`; exact Markdown syntax is defined in `governance/templates.md`.
 
 During a normal role assignment, locate sections by exact H2 heading with the manifest-declared Markdown section extractor and read only `Shared assignment contract`, the assigned role section, and the workflow headings named in Required reads. Read this complete file only for initialization, migration, role-protocol revision, or an evidenced cross-role conflict.
 
@@ -15,8 +17,23 @@ Every role assignment declares:
 3. Forbidden paths/actions.
 4. The expected output artifact or verdict.
 5. Exit conditions and the receiving role.
+6. A stable `AGENT-...` identity for artifact authorship and independent-review separation.
 
 Normal handoffs use project artifacts. Create `DISC-xxx` only for an unresolved ambiguity, conflict, or material tradeoff. Route human decisions through the delivery coordinator.
+
+## Agent orchestration and lifecycle
+
+When the host provides child agents, use actual temporary agents for independent specialist work:
+
+1. Keep the root agent as the delivery coordinator and durable owner of backlog state.
+2. Allow exactly one writable serial implementation engineer. Never parallelize business-code writers.
+3. Allow at most two concurrent read-only specialists or reviewers, and only when their scopes are independent. Ordered artifact authorship still follows the delivery path.
+4. Give every child one role, one bounded scope, one current snapshot, exact authority headings, allowed/forbidden writes, expected output, receiving role, and exit condition.
+5. Reuse a specialist within the same task or batch while its role, scope, and frozen requirement/contract inputs remain unchanged. A code-only candidate change invalidates evidence, not the Agent; provide the refreshed Snapshot and diff before reuse.
+6. Retire a child when the task/batch scope closes, its role changes, requirement/contract authority changes, or its context cannot be refreshed safely. Do not accumulate duplicate reviewers or duplicate broad runs.
+7. If child agents are unavailable, execute the same roles sequentially with separate artifact authorship and disclose the limitation; do not weaken independent review criteria.
+
+The coordinator starts the next eligible child or performs the next eligible local action in the same turn. Preparing an assignment without dispatching or executing it is not progression.
 
 ## Delivery coordinator
 
@@ -26,14 +43,15 @@ Normal handoffs use project artifacts. Create `DISC-xxx` only for an unresolved 
 
 ### Responsibilities
 
-1. Select the current phase and start only the specialist roles required by the workflow.
-2. Maintain backlog, task cards, discussions, decisions, batches, and the active Handoff Snapshot.
-3. Assign task lane, complexity, dependencies, write boundaries, and exit conditions using the project workflow.
-4. Distinguish design blockers, implementation blockers, quality findings, human decisions, and acceptance checkpoints.
-5. Package only genuine human decisions and present them one at a time in dependency order.
-6. Activate a verifier's conditional Standard readiness only when every enumerated mechanical condition is evidenced and no recorded invalidation trigger occurred; otherwise return it to the verifier.
-7. After each handoff, start the next eligible action and record an exact continuation point when a turn must end.
-8. After rejection or scope change, coordinate impact analysis and re-entry while preserving unaffected baselines and historical evidence.
+1. Select the current phase and launch only the bounded specialist agents required by the workflow, following the lifecycle and concurrency limits above.
+2. Maintain backlog, task cards, discussions, decisions, batches, duplicate-free serial order, and named checkpoint mode/status together with the active Handoff Snapshot.
+3. Assign task lane, complexity, dependencies, write boundaries, exit conditions, and the compact control-trigger set using the project workflow.
+4. Keep project-wide source, baseline, design, commands, and traceability out of task cards; reference their current artifacts and record only task deltas.
+5. Distinguish design blockers, implementation blockers, quality findings, human decisions, and acceptance checkpoints.
+6. Package only genuine human decisions and present them one at a time in dependency order.
+7. Activate a verifier's conditional Standard readiness only when every enumerated mechanical condition is evidenced and no recorded invalidation trigger occurred; otherwise return it to the verifier.
+8. After each handoff, launch or execute the next eligible action in serial order; never allow two tasks to remain `implementing`. Record an exact continuation point when a turn must end.
+9. After rejection or scope change, coordinate impact analysis and re-entry while preserving unaffected baselines and historical evidence.
 
 ### Outputs and writes
 
@@ -45,7 +63,7 @@ Normal handoffs use project artifacts. Create `DISC-xxx` only for an unresolved 
 
 ### Exit
 
-- A specialist assignment is ready, a genuine human decision is presented, all currently allowed work is complete, or the user requested a pause/status response.
+- The next eligible specialist has been launched or local action executed, a genuine human decision is presented, all currently allowed work is complete, or the user requested a pause/status response.
 
 ## Product analyst
 
@@ -107,7 +125,7 @@ Normal handoffs use project artifacts. Create `DISC-xxx` only for an unresolved 
 ### Responsibilities
 
 1. Derive the existing engineering baseline or author a greenfield baseline without replacing supported stack choices unnecessarily.
-2. Use scoped `$repomix-explorer` for unfamiliar or large repositories; use targeted search for known symbols.
+2. Use scoped `$repomix-explorer` for unfamiliar or large repositories when available; otherwise apply the workflow's non-blocking degradation rule and continue with targeted local search.
 3. Produce the minimal design, module/data boundaries, failure/recovery paths, risks, task dependencies, and requirement-to-design/test mapping.
 4. Declare each task's interface/protocol disposition and freeze changed contracts and compatibility expectations.
 5. Freeze runtime-chain and security treatments when the workflow triggers them.
@@ -135,8 +153,8 @@ Normal handoffs use project artifacts. Create `DISC-xxx` only for an unresolved 
 
 1. Make only the approved local business-code and test changes.
 2. Preserve valid expectations for defects; add/update tests required by approved requirements.
-3. Run focused development checks and the final implementation self-check required by the workflow.
-4. Record commands, manifest/fingerprint revision, results, omissions, residual risks, and implementation evidence.
+3. Run focused development checks and the lane-specific final implementation self-check required by the workflow; do not duplicate the verifier-owned Standard final suite.
+4. Record the stable implementation-engineer identity, commands, manifest/fingerprint revision, results, omissions, residual risks, and implementation evidence.
 5. Address evidence-backed verifier or reviewer findings without redefining the approved contract.
 
 ### Outputs and writes
@@ -161,14 +179,14 @@ Normal handoffs use project artifacts. Create `DISC-xxx` only for an unresolved 
 
 1. Independently review no-PRD intake and engineering baseline when the workflow requires them.
 2. Produce stable test IDs and a pre-implementation plan covering normal, boundary/error, permission, regression, and applicable contract/UI scenarios.
-3. Freeze the Test Execution Manifest and verify commands, data, fixtures, services, accounts, reset, and evidence expectations.
+3. Freeze the compact task Test Manifest. Inherit project-default commands from the engineering baseline and record only task-specific checks, environment differences, and batch regression timing.
 4. Validate traceability, interface/protocol disposition, runtime/security treatment, and task-design/implementation readiness against the workflow gates; for Standard work, produce the combined direct or conditional verdict in one planning assignment when allowed.
-5. After the reviewer fast-gate passes, run one fresh approved final suite and applicable independent risk or authorized Web UI tests.
-6. Record a scoped PASS only from current evidence; return reproducible failures to implementation and preserve unexecuted-test evidence when stopped early.
+5. For ordinary Standard work, combine independent diff review with fresh task acceptance/affected-regression tests and defer the approved full regression to batch exit. For triggered or High-risk work, wait for the separate reviewer fast-gate and run the required risk/full suite.
+6. Record a verification-phase scoped PASS only from current evidence and bind it to the current Snapshot ID, Manifest revision, fingerprinted candidate, verifier identity, and verification time; return reproducible failures to implementation and preserve unexecuted-test evidence when stopped early.
 
 ### Outputs and writes
 
-- Baseline/intake verdicts, test plan and cases, Test Execution Manifest, design/readiness verdicts, independent test artifacts, verification evidence, and reproducible findings.
+- Baseline/intake verdicts, compact Test Manifest, design/readiness verdicts, independent test artifacts, verification evidence, and reproducible findings.
 
 ### Does not
 
@@ -186,14 +204,14 @@ Normal handoffs use project artifacts. Create `DISC-xxx` only for an unresolved 
 
 ### Responsibilities
 
-1. Before sensitive work, identify data/trust boundaries, authorization, abuse cases, input/output/logging, dependency/secret risks, mitigations, and negative tests.
+1. Activate for High-risk work or interface, security, runtime-chain, or material baseline triggers. Before sensitive work, identify data/trust boundaries, authorization, abuse cases, input/output/logging, dependency/secret risks, mitigations, and negative tests.
 2. For each frozen candidate, run the scoped fast-gate and diff-directed risk/mutation checks before expensive independent full-suite execution.
 3. Classify findings using the workflow severity policy and attach reproducible REQ/AC/TEST evidence.
 4. Recheck changed trust boundaries and open P0/P1 findings without duplicating the verifier's full suite unless evidence is invalid.
 
 ### Outputs and writes
 
-- Security-impact review, mitigation/test requirements, evidence-backed findings, and no-blocker verdicts. This role remains read-only for business source.
+- A separate current code-security-phase Review evidence record, security-impact review, mitigation/test requirements, evidence-backed findings, and no-blocker verdict. This role remains read-only for business source.
 
 ### Does not
 

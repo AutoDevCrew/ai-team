@@ -1,0 +1,46 @@
+{
+  "schema_version": "2",
+  "workflow_revision": "ai-team-2026-08-12-r12",
+  "enums": {
+    "gates": ["task-design", "implementation-ready", "verified-complete"],
+    "task_states": ["analysis", "awaiting-human-decision", "task-design-ready", "implementation-ready", "implementing", "awaiting-verification", "complete", "cancelled/superseded"],
+    "technical_outcomes": ["not-complete", "verified-complete"],
+    "lanes": ["fast", "standard", "high-risk"],
+    "complexities": ["s", "m", "l", "xl"],
+    "project_stages": ["analysis-only", "implementation-authorized", "verification-only"],
+    "control_triggers": ["none", "baseline-change", "experience", "web-ui", "testsprite", "interface", "security", "runtime-chain"],
+    "owner_roles": ["delivery coordinator", "product analyst", "ux/ui designer", "technical lead", "serial implementation engineer", "independent verifier", "code and security reviewer"],
+    "next_gates": ["task-design", "implementation-ready", "verified-complete", "human-acceptance", "none"],
+    "checkpoint_modes": ["none", "blocking", "non-blocking"],
+    "checkpoint_statuses": ["not-required", "pending", "accepted", "rejected", "conditional"],
+    "finding_severities": ["P0", "P1", "P2"]
+  },
+  "stage_authority": {
+    "task-design": ["analysis-only", "implementation-authorized", "verification-only"],
+    "implementation-ready": ["implementation-authorized"],
+    "verified-complete": ["implementation-authorized", "verification-only"]
+  },
+  "fields": {
+    "snapshot": ["Workflow revision:", "Snapshot ID and updated at:", "Current state and technical outcome:", "Scope, source, decision, and contract references:", "Delivery lane / complexity / control triggers:", "Batch / dependencies / entry:", "Change-set file inventory:", "Fingerprint policy:", "Current change-set fingerprint:", "Actor identities:", "Open findings / blockers:", "Next action, exit condition, and invalidation:"],
+    "planning": ["Baseline and design references:", "Test Manifest revision and frozen-at:", "Implementer checks:", "Independent task verification:", "Batch regression:", "Risk and contract checks:", "Environment / data / reset:", "Planning verifier and report:", "Design/readiness verdict and conditions:"],
+    "self_check": ["Implementation engineer identity:", "Build / generation / lint-typecheck results:", "Owner / affected / contract test results:", "Omitted checks, residual risks, and evidence:"],
+    "verification": ["Independent verifier identity:", "Separate code/security reviewer identity:", "Independent verifier verdict:", "Separate code/security reviewer verdict:", "Independent verification evidence:", "Separate code/security review evidence:", "Findings / severity / affected REQ-AC-TEST:", "Open P0/P1 / P2 follow-up:", "Verified Snapshot / Manifest / at:"],
+    "fast_gate": ["Independent verifier identity:", "Report:", "Scope / acceptance / checks:", "Verdict:", "Invalidated by:"],
+    "fast_completion": ["Implementer / self-check / evidence:", "Independent verifier / verdict / evidence:", "Findings / severity / affected / follow-up:", "Verified Snapshot / at:"],
+    "runtime": ["Trigger:", "Entry → authorization/precondition → scheduling or claim → state transition → side effect → recovery/compensation → observable result:", "REQ / AC / module / test mapping for each critical stage:"],
+    "security": ["Triggered:", "Review:", "Required mitigations and negative tests:"],
+    "testsprite_design": ["Eligibility and provider-neutral test IDs:", "Local service URL/port and project path:", "Account, allowed read/write actions, test-data cleanup:", "TestSprite plan/cases:"],
+    "testsprite_completion_extra": ["Implementation self-check evidence:", "Independent verifier evidence:"],
+    "layout_authority": ["Project rules:", "Delivery policy:", "Role protocol:", "Artifact templates:", "Workflow schema:", "Project stage:", "Handoff validator:", "Markdown section extractor:", "Project consistency checker:", "Fingerprint ledger helper:"],
+    "source_register": ["Type:", "URL or verbatim request:", "Authority:", "Status:", "Version or updated at:", "Read at:"],
+    "acceptance_intake": ["Source:", "Status:", "Product analyst:", "Independent review:", "Evidence-backed rules:", "Conventional low-risk MVP assumptions and rationale:", "Awaiting material human decision:"],
+    "acceptance_scope": ["In scope:", "Out of scope:"],
+    "review_evidence": ["Reviewer identity:", "Role:", "Review phase:", "Snapshot and Manifest:", "Reviewed scope and inputs:", "Commands or inspection performed:", "Evidence and findings:", "Verdict:", "Invalidated by:", "Recorded at:"],
+    "cancellation": ["Date:", "Outcome:", "Feedback and evidence:", "Classification:", "Linked requirements and tasks:", "Decision:", "Next action:"]
+  },
+  "tables": {
+    "traceability_columns": ["Requirement", "Requirement source and classification", "State", "Acceptance criteria", "Source/Demo evidence", "Baseline impact", "Quality treatment", "Design and task", "Test case/method", "Decision"],
+    "backlog_columns": ["ID", "Task", "State", "Lane", "Complexity", "Batch", "Owner role", "Dependencies", "Blocker / decision", "Next gate", "Card"],
+    "batch_columns": ["Batch", "Objective", "Member tasks", "Serial implementation order", "Entry criteria", "Exit evidence", "Acceptance checkpoint", "Checkpoint mode", "Checkpoint status"]
+  }
+}

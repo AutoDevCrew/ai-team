@@ -1,5 +1,7 @@
 # Canonical Artifact Templates
 
+Workflow revision: `ai-team-2026-08-12-r12`.
+
 ## Catalog navigation
 
 For normal work, read only the named H2 section below; do not load the entire catalog. Use the manifest-declared `extract_markdown_section.py` so headings inside fenced templates do not terminate the read. Use `Task card` for Standard/High-risk work and `Minimal Fast-path task card` only for eligible Fast work.
@@ -9,10 +11,10 @@ python3 .ai-team/scripts/extract_markdown_section.py .ai-team/governance/templat
 ```
 
 - Intake and specification: `Source register`, `Requirement traceability matrix`, `Acceptance specification`.
-- Design: `Architecture and code-context pack`, `Experience design brief (UI scope only)`, `Engineering baseline (new project)`.
-- Governance: `Decision card`, `Discussion record`, `Readiness review`.
-- Delivery: `Task card`, `Test plan`, `Security-impact review`, `Implementation report`, `Acceptance checkpoint package`.
-- Focused examples: `Minimal Fast-path task card`, `Required fingerprint example`.
+- Design: `Architecture and code-context pack`, `Experience design brief (UI scope only)`, `Engineering baseline`.
+- Governance: `Decision card`, `Discussion record`, `Role assignment envelope`, `Review evidence record`.
+- Delivery: `Task card`, `Conditional task annexes`, `Security-impact review`, `Acceptance checkpoint package`.
+- Focused examples: `Minimal Fast-path task card`, `Complete Standard task card example`, `Required fingerprint example`.
 
 ## Source register
 
@@ -23,7 +25,7 @@ python3 .ai-team/scripts/extract_markdown_section.py .ai-team/governance/templat
 - Type: PRD / initial user request
 - URL or verbatim request:
 - Authority: primary business-rule source
-- Status: provided / no-PRD intake / superseded
+- Status: provided / no-PRD intake
 - Version or updated at:
 - Read at:
 
@@ -36,6 +38,8 @@ python3 .ai-team/scripts/extract_markdown_section.py .ai-team/governance/templat
 ## Demo (optional)
 - URL and environment:
 - Authorized test-account method:
+- Allowed read-only actions: login / navigation / pagination / search / filter
+- Forbidden mutations and any separately authorized reversible test action:
 - Authority: scoped behavioral evidence
 - Current-phase read-only scope (flows/pages/routes):
 - Explicit legacy exclusions:
@@ -68,6 +72,8 @@ python3 .ai-team/scripts/extract_markdown_section.py .ai-team/governance/templat
 - Source: PRD / initial user request
 - Verbatim initial request (when no PRD):
 - Status: draft / frozen / needs-product-remediation
+- Product analyst: AGENT-<id>
+- Independent review: AGENT-<id> / PASS or FAIL / EVID-<id> / `.ai-team/evidence/<file>.md` / <ISO timestamp>
 - Evidence-backed rules:
 - Conventional low-risk MVP assumptions and rationale:
 - Awaiting material human decision:
@@ -75,6 +81,9 @@ python3 .ai-team/scripts/extract_markdown_section.py .ai-team/governance/templat
 ## Scope
 - In scope:
 - Out of scope:
+
+## Requirements
+- REQ-001: <one observable product rule>
 
 ## User stories and acceptance criteria
 ### AC-001: <name>
@@ -130,8 +139,8 @@ python3 .ai-team/scripts/extract_markdown_section.py .ai-team/governance/templat
 
 ## State and scope
 - Status: draft / frozen / needs-design-remediation
-- Product analyst:
-- UX/UI designer:
+- Product analyst: AGENT-<id>
+- UX/UI designer: AGENT-<id>
 - Linked requirements and acceptance criteria:
 - Source basis: Figma nodes / Demo routes / existing UI patterns / none
 
@@ -154,16 +163,17 @@ python3 .ai-team/scripts/extract_markdown_section.py .ai-team/governance/templat
 - 
 ```
 
-## Engineering baseline (new project)
+## Engineering baseline
 
 ```md
 # Engineering Baseline: <project>
 
 ## State
 - Version:
+- Mode: derived-existing-repository / greenfield
 - Status: draft / Engineering baseline PASS / needs-baseline-remediation
-- Technical lead:
-- Independent verifier:
+- Technical lead: AGENT-<id>
+- Independent verifier: AGENT-<id>
 - Reviewed scope and verdict:
 
 ## Product surfaces and platform
@@ -243,170 +253,86 @@ awaiting confirmation / confirmed / obsolete
 
 ## Task card
 
-For `Fingerprint policy: required`, leave the value after `Current change-set fingerprint:` empty and add one actual ledger line per project-relative file using ``- `path` = <64-character lowercase SHA-256>``. For an eligible Fast-path `N/A`, put `N/A — <reason>` on the same line as the field. Do not retain instructional or placeholder ledger entries in a real card.
+Use this compact delta card for Standard/High-risk work. Project-wide requirements, baseline, design, default commands, and traceability remain in their existing project artifacts; the card references them and records only task-specific differences. Append only triggered sections from `Conditional task annexes`.
 
 ```md
 # TASK-<id>: <title>
 
-## Handoff Snapshot (current authoritative view)
+## Handoff Snapshot
 - Workflow revision:
 - Snapshot ID and updated at:
 - Current state and technical outcome:
-- Source and decision references:
-- Frozen inputs and contracts:
-- Current change-set fingerprint: <N/A — reason, or leave empty and add actual ledger lines below>
-- Test Execution Manifest revision:
-- Required reads:
-- On-demand evidence / Evidence index:
+- Scope, source, decision, and contract references:
+- Delivery lane / complexity / control triggers: fast|standard|high-risk / S|M|L|XL / none — reason or comma-separated trigger names
+- Batch / dependencies / entry: batch ID or batch-not-applicable / dependency IDs or none / concrete entry evidence
+- Change-set file inventory: `path`; `path` / N/A — Fast-only reason
+- Fingerprint policy: required / N/A — Fast-only reason
+- Current change-set fingerprint: <N/A — Fast-only reason, or leave empty and add actual ledger lines below>
+- Actor identities: product=AGENT-<id>; technical=AGENT-<id>; implementer=AGENT-<id>; verifier=AGENT-<id>; reviewer=AGENT-<id> / N/A — merged-verifier reason
 - Open findings / blockers:
-- Next action and exit condition:
-- Invalidated by:
+- Next action, exit condition, and invalidation:
 
-## Delivery priority
-P0 / P1 / P2
+## Plan and readiness
+- Baseline and design references:
+- Test Manifest revision and frozen-at: TEM-<id> / <ISO timestamp>
+- Implementer checks:
+- Independent task verification:
+- Batch regression: command and batch-exit timing / N/A — High-risk per-task full suite reason
+- Risk and contract checks:
+- Environment / data / reset:
+- Planning verifier and report: AGENT-<id> / `.ai-team/evidence/<file>.md`
+- Design/readiness verdict and conditions: task-design-ready / implementation-ready / conditional-pass with exact activation evidence / blocked with reason
 
-## Goal
-
-## Sources
-- PRD or initial user request:
-- Figma:
-- Demo:
-- Other evidence:
-
-## Traceability
-- Requirements:
-- Acceptance criteria:
-- Baseline and regression constraints:
-- Code-context pack:
-- Experience-design brief (UI scope only):
-
-## Decision dependencies
-- Confirmed: DEC-<NNN> / none
-- Awaiting: DEC-<NNN> / none
-
-## Delivery planning
-- Execution lane: fast / standard / high-risk
-- Complexity: S / M / L / XL
-- Complexity drivers:
-- Implementation batch:
-- Batch entry criteria:
-- Batch exit evidence:
-- Fingerprint policy: required / N/A — <reason; N/A only for pure Fast-path documentation/style/metadata work>
-
-## Task-design review
-- Report:
-- Reviewed scope:
-- Verdict: task-design-ready / needs-design-remediation / not reviewed
-- Design blockers:
-- Implementation blockers:
-
-## Implementation-readiness review
-- Report:
-- Reviewed scope:
-- Verdict: implementation-ready / conditional-pass / implementation-blocked / not reviewed
-- Conditional activation (Standard only): remaining mechanical conditions; required evidence; invalidation triggers; coordinator activation record / N/A
-
-## Role boundary
-- Current role:
-- Read-only inputs:
-- Allowed write paths:
-- Forbidden write paths:
-- Exit condition:
-
-## Allowed / forbidden code scope
-- Allowed:
-- Forbidden:
-
-## Acceptance criteria
-- [ ]
-
-## Interface/protocol disposition
-- Disposition: changed / reuses-frozen-contract / N/A
-- Frozen/inherited contract reference or N/A rationale:
-- Contract-test IDs and scope: N/A / TEST-<NNN>
-
-## Test plan and environment
-- Plan:
-- Status: draft / task-design-approved / needs-design-remediation
-- Test Execution Manifest:
-  - Revision and frozen-at:
-  - Fast-gate group and command:
-  - Owner test group and command:
-  - Affected/regression test group and command:
-  - Approved full suite and runner:
-  - Independent risk/mutation group and runner:
-  - Expected evidence and invalidation conditions:
-- Required implementation self-check commands:
-- Accounts:
-- Data/fixtures:
-- Local dependencies:
-- Reset method:
-- Verified commands:
+## Acceptance criteria checklist
+- [ ] AC-<id> / TEST-<id>
 
 ## Implementation self-check
+- Implementation engineer identity: AGENT-<id>
 - Build / generation / lint-typecheck results:
-- Approved test and contract-case results:
-- Omitted checks and rationale:
-- Residual risks:
+- Owner / affected / contract test results:
+- Omitted checks, residual risks, and evidence:
 
-## Evidence index
-- Current source/design/decision evidence:
-- Current test and review evidence:
-- Partial execution record (when stopped early): Manifest revision; executed groups/results; unexecuted groups and stop reason:
-- Raw logs or large outputs (on demand):
-- Superseded snapshot, manifest, or verdict:
+## Verification and findings
+- Independent verifier identity: AGENT-<id>
+- Separate code/security reviewer identity: AGENT-<id> / N/A — Fast or ordinary Standard merged-verifier reason
+- Independent verifier verdict:
+- Separate code/security reviewer verdict:
+- Independent verification evidence: `.ai-team/evidence/EVID-...md`
+- Separate code/security review evidence: `.ai-team/evidence/EVID-...md` / N/A — merged-verifier reason
+- Findings / severity / affected REQ-AC-TEST: none / N/A — no finding, or FIND-<id> / P0|P1|P2 / REQ-... AC-... TEST-...
+- Open P0/P1 / P2 follow-up: none / FIND-<id> / TASK-<id>
+- Verified Snapshot / Manifest / at: SNAP-<id> / TEM-<id> / <ISO timestamp>
+```
 
-## Test-case impact
-- Linked test IDs:
-- Impact: unchanged / add regression / update steps / update expectation / superseded
-- Reason and linked requirement/defect:
-- Prior evidence:
-- Affected-test and regression result:
+## Conditional task annexes
 
-## TestSprite MCP (Web UI only, authorized)
-- Eligibility: eligible Web UI / not a Web UI change / unavailable / awaiting authority
+Append only annexes named by `control triggers`. Do not copy N/A annexes into an ordinary card.
+
+```md
+## TestSprite MCP (authorized Web UI only)
+- Eligibility and provider-neutral test IDs:
 - Local service URL/port and project path:
-- Account, allowed actions, data cleanup:
+- Account, allowed read/write actions, test-data cleanup:
 - TestSprite plan/cases:
 - Implementation self-check evidence:
 - Independent verifier evidence:
-- Optional deployed test/pre-production URL:
 
-## Security impact (if triggered)
-- Triggered: yes / no
+## Security impact
+- Triggered:
 - Review:
 - Required mitigations and negative tests:
 
-## Runtime-chain matrix (when applicable)
-- Trigger: state machine / worker / asynchronous job / transaction / authorization boundary / external side effect / N/A
+## Runtime-chain matrix
+- Trigger:
 - Entry → authorization/precondition → scheduling or claim → state transition → side effect → recovery/compensation → observable result:
 - REQ / AC / module / test mapping for each critical stage:
 
-## Verification and review findings
-- Independent verifier verdict:
-- Code/security reviewer verdict:
-- Findings: none / <finding IDs>
-- Finding severity: P0 / P1 / P2
-- Reproducible evidence:
-- Affected requirement / acceptance criterion / test:
-- Disposition:
-- Open blocking findings (P0/P1): none / <finding IDs>
-- P2 follow-up task(s): none / <TASK IDs>
-
-## Risk and recovery
-
 ## Acceptance checkpoint
-- Requirement: none / checkpoint ID
+- Requirement: checkpoint ID
 - Scope: batch / milestone / complete user-facing flow / human-requested review
-- Blocking: yes / no
+- Mode: blocking / non-blocking
+- Status: pending / accepted / rejected / conditional
 - Technical outcome: pending / verified-complete
-
-## State
-analysis / awaiting-human-decision / task-design-ready / implementation-ready / implementing / awaiting-verification / complete / cancelled/superseded
-
-## Blocker (if any)
-- Reason:
-- Linked decision or prerequisite:
 
 ## Human feedback and change record
 - Date:
@@ -419,9 +345,9 @@ analysis / awaiting-human-decision / task-design-ready / implementation-ready / 
 
 ## Baseline and re-entry impact
 - Accepted unaffected REQ / AC / TEST:
-- Affected Baseline:
+- Affected baseline:
 - Impacted modules / interfaces / data / dependent tasks:
-- Return state: analysis / awaiting-human-decision / N/A
+- Return state: analysis / awaiting-human-decision
 - Updated artifacts (requirements / design / tests / security):
 - Affected-scope readiness review:
 - May re-enter implementation: yes / no
@@ -453,94 +379,38 @@ active / summarized / awaiting human decision / resolved
 - Update an artifact or link a decision card:
 ```
 
-## Readiness review
+## Role assignment envelope
 
 ```md
-# Readiness Review: <phase or tasks>
+# Role Assignment: <role> / <task or scope>
 
-## Independent reviewer
-
-## Review mode
-task design / combined Standard design-and-readiness / separate High-risk implementation-readiness
-
-## Inputs
-- Source register:
-- Traceability matrix:
-- Acceptance specification:
-- Experience-design brief (UI scope only):
-- Design:
-- Task split:
-- Test plan:
-
-## Checks
-- Every requirement source item classified: pass / fail
-- Observable acceptance for in-scope requirements: pass / fail
-- Acceptance mapped to design, task, and test: pass / fail
-- UI experience rules mapped to source/brief, acceptance, and test: pass / fail / N/A
-- Design changes trace to requirement: pass / fail
-- Baseline impact and regression constraints: pass / fail
-- Quality treatment or N/A rationale: pass / fail
-- Test environment readiness: pass / fail
-- Blocking decisions resolved: pass / fail
-
-## Blockers and decisions
-- 
-
-## Verdict
-task-design-ready / implementation-ready / conditional-pass / not ready
-
-## Conditional Standard activation (when used)
-- Remaining mechanical conditions:
-- Required evidence:
-- Invalidation triggers:
-- Coordinator activation record:
+- Agent identity: AGENT-<id>
+- Current snapshot: SNAP-<id> in `TASK-...md`
+- Required authority sections: `Shared assignment contract`; `<exact role H2>`; `<exact workflow H2/gate>`
+- Read-only inputs: exact project-relative paths and sections
+- Allowed writes: exact paths, or none
+- Forbidden writes/actions: exact paths plus business-code/Git/deployment restrictions
+- Expected artifact or verdict:
+- Receiving role: delivery coordinator / named next role
+- Exit condition:
+- Agent lifecycle: reuse within the same frozen task/batch scope after reading the refreshed Snapshot and diff; retire on role, scope, requirement, or contract change
 ```
 
-## Test plan
+## Review evidence record
 
 ```md
-# Test Plan: <phase or tasks>
+# EVID-<id>: <task and review scope>
 
-## Author
-Independent verifier
-
-## Review participants
-- Product analyst:
-- UX/UI designer when applicable:
-- Technical lead:
-- Code/security reviewer when applicable:
-
-| Test ID | Requirement / AC | Scenario | Preconditions / data | Environment | Method | Expected result | Baseline regression | Evidence |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| TEST-001 | AC-001 | normal |  |  | unit / API / contract / E2E / manual |  |  |  |
-
-## Interface/protocol contract cases (when applicable)
-- Contract/schema/version:
-- Generation or serialization/deserialization:
-- Valid and invalid inputs; success and error outputs:
-- Permission and authorization behavior:
-- Compatibility, defaults, and unknown fields:
-- Retry, idempotency, ordering, concurrency, or transaction cases:
-- N/A rationale:
-
-## Automation eligibility
-- Local automation:
-- TestSprite MCP (Web UI only) eligibility, local service/port, and external-service boundary:
-
-## Implementation self-check requirements
-- Required build / generation / lint-typecheck commands:
-- Required test IDs and contract cases:
-- Required self-check evidence:
-
-## Untestable items and risks
-- 
-
-## Environment readiness
-- Accounts:
-- Data/fixtures:
-- Dependencies:
-- Reset:
-- Verified commands:
+- Reviewer identity: AGENT-<id>
+- Role: independent verifier / code and security reviewer
+- Review phase: task-design / implementation-readiness / fast-design-readiness / verification / code-security
+- Snapshot and Manifest: SNAP-<id> / TEM-<id>
+- Reviewed scope and inputs:
+- Commands or inspection performed:
+- Evidence and findings:
+- Verdict: PASS / FAIL / conditional-pass
+- Invalidated by:
+- Recorded at: <ISO timestamp>
 ```
 
 ## Security-impact review
@@ -569,47 +439,93 @@ design-ready / awaiting decision / blocked
 
 ## Minimal Fast-path task card
 
-This complete Fast-only skeleton contains every section required by strict validation. Replace the example IDs, paths, commands, evidence, and rationale. Use the full task-card template when the task does not qualify for Fast path.
+This complete Fast-only skeleton contains every section required by strict validation. It keeps traceability and independent verification while omitting project-level repetition.
 
 ```md
 # TASK-EXAMPLE-001: Clarify local contributor documentation
 
 ## Handoff Snapshot
-- Workflow revision: ai-team-2026-08-11-r4
-- Snapshot ID and updated at: SNAP-EXAMPLE-001-01 / 2026-08-11T10:00+08:00
+- Workflow revision: ai-team-2026-08-12-r12
+- Snapshot ID and updated at: SNAP-EXAMPLE-001-01 / 2026-08-12T10:00+08:00
 - Current state and technical outcome: awaiting-verification / not-complete
-- Source and decision references: REQ-EXAMPLE-001; no decision required
-- Frozen inputs and contracts: existing contributor workflow; no behavior or interface change
-- Current change-set fingerprint: N/A — pure documentation-only change
-- Test Execution Manifest revision: TEM-EXAMPLE-001-01
-- Required reads: `.ai-team/specs/acceptance.md`; task card acceptance criteria
-- On-demand evidence / Evidence index: `.ai-team/evidence/EXAMPLE-001.md`
+- Scope, source, decision, and contract references: REQ-EXAMPLE-001 / AC-EXAMPLE-001 / TEST-EXAMPLE-001 / `.ai-team/sources.md`; no decision or contract change
+- Delivery lane / complexity / control triggers: fast / S / none — documentation-only wording change
+- Batch / dependencies / entry: batch-not-applicable / none / source and local file available
+- Change-set file inventory: N/A — Fast documentation-only change
+- Fingerprint policy: N/A — Fast documentation-only change
+- Current change-set fingerprint: N/A — Fast documentation-only change
+- Actor identities: product=AGENT-PA-EXAMPLE; technical=AGENT-TL-EXAMPLE; implementer=AGENT-IE-EXAMPLE; verifier=AGENT-IV-EXAMPLE; reviewer=N/A — Fast merged-verifier review
 - Open findings / blockers: none
-- Next action and exit condition: verifier runs TEST-EXAMPLE-001; exit on PASS
-- Invalidated by: source, documentation scope, or contributor workflow change
+- Next action, exit condition, and invalidation: verifier runs TEST-EXAMPLE-001; exit on PASS; invalidate on source or documentation-scope change
 
-## Delivery planning
-- Execution lane: fast
-- Complexity: S
-- Complexity drivers: one documentation-only wording change; no behavior change
-- Fingerprint policy: N/A — pure documentation-only Fast-path task
+## Fast merged design/readiness
+- Independent verifier identity: AGENT-IV-EXAMPLE
+- Report: `.ai-team/evidence/EXAMPLE-001-fast-gate.md`
+- Scope / acceptance / checks: REQ-EXAMPLE-001 → AC-EXAMPLE-001 → TEST-EXAMPLE-001; `markdownlint CONTRIBUTING.md`
+- Verdict: implementation-ready
+- Invalidated by: source, scope, command, or target-file change
 
-## Test plan and environment
-- Test Execution Manifest:
-  - Revision and frozen-at: TEM-EXAMPLE-001-01 / 2026-08-11
-  - Fast-gate group and command: N/A — Fast path; no contract/security/runtime trigger
-  - Owner test group and command: `markdownlint CONTRIBUTING.md`
-  - Affected/regression test group and command: N/A — no runtime or product behavior affected
-  - Approved full suite and runner: N/A — documentation-only Fast path
-  - Independent risk/mutation group and runner: N/A — no applicable risk surface
-  - Expected evidence and invalidation conditions: lint output and rendered Markdown inspection; documentation scope change invalidates
+## Fast execution and verification
+- Implementer / self-check / evidence: AGENT-IE-EXAMPLE / PASS — markdownlint and requested wording inspection / `.ai-team/evidence/EXAMPLE-001.md`
+- Independent verifier / verdict / evidence: AGENT-IV-EXAMPLE / pending fresh TEST-EXAMPLE-001 / `.ai-team/evidence/EXAMPLE-001.md`
+- Findings / severity / affected / follow-up: none / N/A — no finding / REQ-EXAMPLE-001 AC-EXAMPLE-001 TEST-EXAMPLE-001 / none
+- Verified Snapshot / at: SNAP-EXAMPLE-001-01 / 2026-08-12T10:30+08:00
+```
 
-## Evidence index
-- Current source/design/decision evidence: `CONTRIBUTING.md`; REQ-EXAMPLE-001
-- Current test and review evidence: `.ai-team/evidence/EXAMPLE-001.md`
-- Partial execution record (when stopped early): N/A — all planned checks executed
-- Raw logs or large outputs (on demand): `.ai-team/evidence/EXAMPLE-001-lint.txt`
-- Superseded snapshot, manifest, or verdict: N/A — first revision
+## Complete Standard task card example
+
+This compact example passes the `implementation-ready` gate. Shared requirements, design, baseline, and batch regression remain project-level references instead of being recopied into the card.
+
+```md
+# TASK-EXAMPLE-STD-001: Add validation for calculator expression input
+
+## Handoff Snapshot
+- Workflow revision: ai-team-2026-08-12-r12
+- Snapshot ID and updated at: SNAP-EXAMPLE-STD-001-01 / 2026-08-12T11:00+08:00
+- Current state and technical outcome: implementation-ready / not-complete
+- Scope, source, decision, and contract references: REQ-EXAMPLE-STD-001 / AC-EXAMPLE-STD-001 / TEST-EXAMPLE-STD-001 TEST-EXAMPLE-STD-002 / `.ai-team/sources.md`; no decision or contract change
+- Delivery lane / complexity / control triggers: standard / M / none — synchronous local validation using the existing module contract
+- Batch / dependencies / entry: BATCH-EXAMPLE-01 / none / frozen design and planning PASS
+- Change-set file inventory: `src/calculator/input.ts`; `tests/calculator/input.test.ts`
+- Fingerprint policy: required
+- Current change-set fingerprint:
+  - `src/calculator/input.ts` = 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+  - `tests/calculator/input.test.ts` = fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210
+- Actor identities: product=AGENT-PA-EXAMPLE; technical=AGENT-TL-EXAMPLE; implementer=AGENT-IE-EXAMPLE; verifier=AGENT-IV-EXAMPLE; reviewer=N/A — ordinary Standard merged-verifier review
+- Open findings / blockers: none
+- Next action, exit condition, and invalidation: serial implementer completes focused checks; exit awaiting-verification; invalidate on requirement, design, contract, manifest, code, test, or environment change
+
+## Plan and readiness
+- Baseline and design references: `.ai-team/design/calculator-input.md`; `.ai-team/specs/acceptance.md`; `.ai-team/specs/traceability.md`
+- Test Manifest revision and frozen-at: TEM-EXAMPLE-STD-001-01 / 2026-08-12T11:00+08:00
+- Implementer checks: `npm run lint`; `npm test -- tests/calculator/input.test.ts`; `npm test -- tests/calculator`
+- Independent task verification: TEST-EXAMPLE-STD-001 TEST-EXAMPLE-STD-002; `npm test -- tests/calculator`
+- Batch regression: `npm test` once at BATCH-EXAMPLE-01 exit
+- Risk and contract checks: invalid Unicode/control-character cases; no interface, security, or runtime-chain trigger
+- Environment / data / reset: installed local dependencies / table-driven fixtures / isolated deterministic reset not required
+- Planning verifier and report: AGENT-IV-EXAMPLE / `.ai-team/evidence/EXAMPLE-STD-001-readiness.md`
+- Design/readiness verdict and conditions: implementation-ready / direct PASS; no deferred condition
+
+## Acceptance criteria checklist
+- [ ] AC-EXAMPLE-STD-001 / TEST-EXAMPLE-STD-001 rejects unsupported characters
+- [ ] AC-EXAMPLE-STD-001 / TEST-EXAMPLE-STD-002 preserves valid arithmetic input
+
+## Implementation self-check
+- Implementation engineer identity: AGENT-IE-EXAMPLE
+- Build / generation / lint-typecheck results: pending implementation
+- Owner / affected / contract test results: pending implementation
+- Omitted checks, residual risks, and evidence: none planned; Unicode normalization remains in independent verification
+
+## Verification and findings
+- Independent verifier identity: AGENT-IV-EXAMPLE
+- Separate code/security reviewer identity: N/A — ordinary Standard merged-verifier review
+- Independent verifier verdict: readiness PASS; implementation verification pending
+- Separate code/security reviewer verdict: N/A — no separate-review trigger
+- Independent verification evidence: `.ai-team/evidence/EXAMPLE-STD-001-verify.md`
+- Separate code/security review evidence: N/A — no separate-review trigger
+- Findings / severity / affected REQ-AC-TEST: none / N/A — no finding / REQ-EXAMPLE-STD-001 AC-EXAMPLE-STD-001 TEST-EXAMPLE-STD-001 TEST-EXAMPLE-STD-002
+- Open P0/P1 / P2 follow-up: none
+- Verified Snapshot / Manifest / at: SNAP-EXAMPLE-STD-001-01 / TEM-EXAMPLE-STD-001-01 / 2026-08-12T11:30+08:00
 ```
 
 ## Required fingerprint example
@@ -618,39 +534,20 @@ This excerpt shows the exact ledger syntax for Standard, High-risk, and other ta
 
 ```md
 ## Handoff Snapshot
+- Change-set file inventory: `src/foo/bar.ts`; `tests/foo/bar.test.ts`
+- Fingerprint policy: required
 - Current change-set fingerprint:
   - `src/foo/bar.ts` = 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
   - `tests/foo/bar.test.ts` = fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210
-
-## Delivery planning
-- Execution lane: standard
-- Fingerprint policy: required
-```
-
-## Implementation report
-
-```md
-# Implementation Report: TASK-<id>
-
-## Summary
-
-## Changes
-- Files:
-- Reason:
-
-## Local verification evidence
-- Commands:
-- Results:
-
-## Limits and follow-up
-
-## Suggested independent verification focus
 ```
 
 ## Acceptance checkpoint package
 
 ```md
 # Acceptance Checkpoint: <checkpoint ID>
+
+- Mode: blocking / non-blocking
+- Status: pending / accepted / rejected / conditional
 
 ## Requested response
 accept / reject / conditional acceptance
