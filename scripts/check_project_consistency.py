@@ -39,6 +39,12 @@ SCHEMA_DRIVEN_AUTHORITY_FIELDS = {
 }
 
 
+def located_error(card: Path, project_root: Path, error: str) -> str:
+    if error.startswith(".ai-team/") or error.startswith(".ai-team\\"):
+        return error
+    return f"{card.relative_to(project_root)}: {error}"
+
+
 def revision_tokens(text: str) -> set[str]:
     return set(REVISION_PATTERN.findall(text))
 
@@ -506,11 +512,11 @@ def active_task_errors(project_root: Path, task_root: Path) -> list[str]:
             gate = "verified-complete"
         if gate:
             for error in validator.validate(text, gate=gate):
-                errors.append(f"{card.relative_to(project_root)}: {error}")
+                errors.append(located_error(card, project_root, error))
             for error in validator.gate_reference_errors(card, text, gate):
-                errors.append(f"{card.relative_to(project_root)}: {error}")
+                errors.append(located_error(card, project_root, error))
             for error in validator.project_stage_errors(card, gate):
-                errors.append(f"{card.relative_to(project_root)}: {error}")
+                errors.append(located_error(card, project_root, error))
         elif state in {"implementing", "awaiting-verification"}:
             promoted_errors = validator.active_promotion_errors(text, state)
             promoted_errors.extend(
@@ -526,20 +532,20 @@ def active_task_errors(project_root: Path, task_root: Path) -> list[str]:
                 )
             )
             for error in dict.fromkeys(promoted_errors):
-                errors.append(f"{card.relative_to(project_root)}: {error}")
+                errors.append(located_error(card, project_root, error))
         else:
             for error in validator.state_model_errors(snapshot):
                 errors.append(f"{card.relative_to(project_root)}: {error}")
             if state == "cancelled/superseded":
                 for error in validator.cancellation_errors(text):
-                    errors.append(f"{card.relative_to(project_root)}: {error}")
+                    errors.append(located_error(card, project_root, error))
         if (
             state in {"task-design-ready", "implementation-ready", "implementing", "awaiting-verification", "complete"}
             and validator.field_value(snapshot, validator.FINGERPRINT_POLICY_FIELD).strip().lower()
             == "required"
         ):
             for error in validator.fingerprint_errors(card, text):
-                errors.append(f"{card.relative_to(project_root)}: {error}")
+                errors.append(located_error(card, project_root, error))
     if len(implementing) > 1:
         errors.append(
             "more than one task is implementing; one serial implementation engineer may own only one active implementation: "
@@ -819,7 +825,7 @@ def selected_task_gate_errors(project_root: Path, task_id: str, gate: str) -> li
         validator.FINGERPRINT_POLICY_FIELD,
     ).strip().lower() == "required":
         errors.extend(validator.fingerprint_errors(card, text))
-    return [f"{card.relative_to(project_root)}: {error}" for error in dict.fromkeys(errors)]
+    return [located_error(card, project_root, error) for error in dict.fromkeys(errors)]
 
 
 def main() -> int:
@@ -843,10 +849,13 @@ def main() -> int:
             errors.append("--task and --gate must be provided together")
         else:
             errors.extend(selected_task_gate_errors(args.project_root, args.task, args.gate))
+    errors = list(dict.fromkeys(errors))
     if errors:
         print(f"FAIL {args.project_root.resolve()}")
         for error in errors:
             print(f"- {error}")
+        if args.next_action:
+            print(f"NEXT fix-consistency: {errors[0]}")
         return 1
     print(f"PASS {args.project_root.resolve()}")
     if args.next_action:

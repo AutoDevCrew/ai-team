@@ -1486,6 +1486,10 @@ def gate_reference_errors(task_card: Path, text: str, gate: str) -> list[str]:
     manifest_id = manifest_revision(text)
     errors: list[str] = []
 
+    def evidence_errors(path: Path, findings: list[str]) -> list[str]:
+        location = path.relative_to(project_root)
+        return [f"{location}: {finding}" for finding in findings]
+
     if lane == "fast":
         planning_section = section(text, lane_section_heading("fast", "readiness"))
         planning_path_value = field_value(planning_section, "Report:")
@@ -1501,17 +1505,20 @@ def gate_reference_errors(task_card: Path, text: str, gate: str) -> list[str]:
         errors.append("planning/readiness report has no existing evidence file")
     else:
         errors.extend(
-            review_evidence_errors(
+            evidence_errors(
                 planning_path,
-                snapshot_id,
-                manifest_id,
-                planning_reviewer,
-                require_pass=True,
-                expected_role="independent verifier",
-                expected_phase=planning_phase,
-                bind_current_snapshot=gate != "verified-complete",
-                bind_current_manifest=lane != "fast",
-                allow_conditional_pass=True,
+                review_evidence_errors(
+                    planning_path,
+                    snapshot_id,
+                    manifest_id,
+                    planning_reviewer,
+                    require_pass=True,
+                    expected_role="independent verifier",
+                    expected_phase=planning_phase,
+                    bind_current_snapshot=gate != "verified-complete",
+                    bind_current_manifest=lane != "fast",
+                    allow_conditional_pass=True,
+                ),
             )
         )
 
@@ -1546,15 +1553,18 @@ def gate_reference_errors(task_card: Path, text: str, gate: str) -> list[str]:
             errors.append("independent verification has no existing evidence file")
         else:
             errors.extend(
-                review_evidence_errors(
+                evidence_errors(
                     verify_path,
-                    snapshot_id,
-                    manifest_id,
-                    verifier,
-                    require_pass=True,
-                    expected_role="independent verifier",
-                    expected_phase="verification",
-                    bind_current_manifest=lane != "fast",
+                    review_evidence_errors(
+                        verify_path,
+                        snapshot_id,
+                        manifest_id,
+                        verifier,
+                        require_pass=True,
+                        expected_role="independent verifier",
+                        expected_phase="verification",
+                        bind_current_manifest=lane != "fast",
+                    ),
                 )
             )
         review_path: Path | None = None
@@ -1566,15 +1576,18 @@ def gate_reference_errors(task_card: Path, text: str, gate: str) -> list[str]:
                 errors.append("separate code/security review has no existing evidence file")
             else:
                 errors.extend(
-                    review_evidence_errors(
+                    evidence_errors(
                         review_path,
-                        snapshot_id,
-                        manifest_id,
-                        reviewer,
-                        require_pass=True,
-                        expected_role="code and security reviewer",
-                        expected_phase="code-security",
-                        bind_current_manifest=lane != "fast",
+                        review_evidence_errors(
+                            review_path,
+                            snapshot_id,
+                            manifest_id,
+                            reviewer,
+                            require_pass=True,
+                            expected_role="code and security reviewer",
+                            expected_phase="code-security",
+                            bind_current_manifest=lane != "fast",
+                        ),
                     )
                 )
         if verify_path and review_path:

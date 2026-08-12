@@ -7,7 +7,7 @@ description: Launch or refine a Codex-run local software delivery team from a PR
 
 Run a Codex-native software delivery workflow from requirement input through local verification and named human acceptance checkpoints. Use one serial implementation engineer and independent verification; do not build another orchestration framework.
 
-Workflow revision: `ai-team-2026-08-12-r14`. Projects use this current layout only; older workflow layouts are unsupported.
+Workflow revision: `ai-team-2026-08-12-r15`. Projects use this current layout only; older workflow layouts are unsupported.
 
 ## Authority model
 
@@ -42,7 +42,7 @@ The global Skill is the installation source, not a project runtime dependency. N
 ## Initialize or refine a project
 
 1. Inspect root `AGENTS.md` and `.ai-team/manifest.md`; read existing project instructions before creating files.
-2. If the namespaced layout is absent or incomplete, copy `assets/project-template/` without overwriting user material.
+2. If the namespaced layout is absent or incomplete, copy `assets/project-template/` without overwriting user material. Replace the `.ai-team/stage.md` updated-at placeholder with the current ISO timestamp while preserving its default `analysis-only` authority.
 3. Copy `references/delivery-policy.md` to `.ai-team/governance/workflow.md`, `references/role-protocol.md` to `.ai-team/governance/roles.md`, and `references/workflow-schema.json` to `.ai-team/governance/workflow-schema.json`. Treat them as project-canonical snapshots; record project differences only in `.ai-team/project-rules.md` or confirmed decisions.
 4. Keep `.ai-team/governance/workflow-schema.json` as the machine-readable field-group and enum authority, and `.ai-team/governance/templates.md` as the exact Markdown syntax authority. Do not reproduce their contracts elsewhere.
 5. Copy `scripts/validate_task_handoff.py`, `scripts/extract_markdown_section.py`, `scripts/check_project_consistency.py`, and `scripts/render_fingerprint_ledger.py` to `.ai-team/scripts/` when task cards or role handoffs exist.

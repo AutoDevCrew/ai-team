@@ -1,6 +1,6 @@
 # Delivery Policy
 
-Workflow revision: `ai-team-2026-08-12-r14`.
+Workflow revision: `ai-team-2026-08-12-r15`.
 
 This is the single global authority for AI-team delivery lanes, states, gates, handoffs, validation, severity, acceptance, and re-entry. Copy it to `.ai-team/governance/workflow.md` during project initialization. The project-local copy is the runtime authority for that project.
 
@@ -132,7 +132,7 @@ Pending upstream implementation or a closed project stage is an implementation b
 - Keep raw logs and superseded snapshots/manifests/verdicts in `.ai-team/evidence/`; link only current evidence from the compact card.
 - Refresh the snapshot or compact Test Manifest reference after material source, decision, contract, code, test, command, fixture, environment, finding, or next-action changes.
 - Record the review phase in every Review evidence record. Design/readiness records remain historical inputs at completion and retain their original Snapshot binding while still matching the current frozen Manifest; a Manifest or design-input change invalidates them. Verification and code-security records must bind the current completion Snapshot and Manifest. Never substitute one phase's PASS for another.
-- At a boundary, run `<script-root>/check_project_consistency.py <project-root> --task TASK-... --gate <task-design|implementation-ready|verified-complete> --next-action`. It combines task, project, fingerprint, backlog, and continuation checks. Use `validate_task_handoff.py --strict` only for focused card debugging.
+- At a boundary, run `<script-root>/check_project_consistency.py <project-root> --task TASK-... --gate <task-design|implementation-ready|verified-complete> --next-action`. It combines task, project, fingerprint, backlog, and continuation checks. On FAIL it emits `NEXT fix-consistency` for the first source-located error; repair it locally and rerun. Use `validate_task_handoff.py --strict` only for focused card debugging.
 - For code, protocol, generated-output, dependency, runtime, Standard, or High-risk work, use `Fingerprint policy: required`. A pure Fast-path documentation/style/metadata task may use a reasoned `N/A`.
 - Gate validation locates the nearest ancestor manifest, rejects duplicate authoritative sections or fenced/comment-only fields, cross-checks Snapshot/Manifest revisions, validates state/outcome, reviewer separation, dispositions, test environment, scoped gate semantics, and linked local evidence, confirms the project authority layout, and automatically verifies required project-relative SHA-256 ledger entries. Before implementation, the inventory may include planned new files while the ledger freezes existing inputs. At `verified-complete`, regenerate from the actual files: the declared inventory must equal the ledger path set. Validation does not run project commands or prove test-result truth.
 
@@ -184,7 +184,7 @@ Record severity, reproduction evidence, affected REQ/AC/TEST, disposition, and f
 - An initialized empty backlog continues through source intake, product analysis, and first-task creation. A completed batch continues through batch regression before any checkpoint. Clear a blocker once every referenced task is complete and every referenced decision is present in the confirmed decision log.
 - After every governance, design, readiness, remediation, or verified-completion handoff, start the next eligible action without waiting for a human prompt.
 - Treat deterministic consistency errors as local remediation: correct the affected artifact/state, preserve prior evidence, rerun the check, and continue. Escalate only when the correction needs a genuinely material human decision or unavailable authority/evidence.
-- After a clean project consistency check, run it with `--next-action`; when it prints an eligible local action, dispatch or execute that action instead of returning a next-step report.
+- Run the project consistency check with `--next-action`; repair its source-located `fix-consistency` action on FAIL, or dispatch/execute its eligible local action on PASS instead of returning a next-step report.
 - A closed implementation stage or pending upstream code does not stop allowed design, test, security, or review work when contracts are frozen.
 - Before returning, inspect the backlog. Stop only for a genuine human decision, missing required external evidence/authority, completion of all allowed work, a user pause/status request, or forced turn end.
 - Codex is not a background daemon. When a turn must end with work open, record the exact continuation point in the active task artifact.

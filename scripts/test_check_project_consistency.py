@@ -234,6 +234,75 @@ class ProjectConsistencyTests(unittest.TestCase):
             )
             self.assertIn("TASK-EXAMPLE-STD-001", checker.next_eligible_action(project) or "")
 
+    def test_review_evidence_errors_name_the_evidence_file(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            project = Path(temp_dir)
+            self.materialize_project(project)
+            self.prepare_standard_ready_project(project)
+            evidence = project / ".ai-team/evidence/EXAMPLE-STD-001-readiness.md"
+            evidence.write_text("# damaged readiness evidence\n", encoding="utf-8")
+            errors = checker.check_project(project)
+            review_errors = [
+                error for error in errors if "Review evidence record" in error
+            ]
+            self.assertTrue(review_errors, errors)
+            self.assertTrue(
+                all(
+                    error.startswith(
+                        ".ai-team/evidence/EXAMPLE-STD-001-readiness.md:"
+                    )
+                    for error in review_errors
+                ),
+                review_errors,
+            )
+            self.assertFalse(
+                any(
+                    error.startswith(
+                        ".ai-team/tasks/TASK-EXAMPLE-STD-001.md: Review evidence record"
+                    )
+                    for error in errors
+                ),
+                errors,
+            )
+
+    def test_combined_cli_deduplicates_errors_and_prints_repair_action(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            project = Path(temp_dir)
+            self.materialize_project(project)
+            self.prepare_standard_ready_project(project)
+            evidence = project / ".ai-team/evidence/EXAMPLE-STD-001-readiness.md"
+            evidence.write_text("# damaged readiness evidence\n", encoding="utf-8")
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    str(project / ".ai-team/scripts/check_project_consistency.py"),
+                    str(project),
+                    "--task",
+                    "TASK-EXAMPLE-STD-001",
+                    "--gate",
+                    "implementation-ready",
+                    "--next-action",
+                ],
+                check=False,
+                capture_output=True,
+                text=True,
+            )
+            self.assertEqual(1, result.returncode, result.stdout + result.stderr)
+            error_lines = [
+                line for line in result.stdout.splitlines() if line.startswith("- ")
+            ]
+            self.assertEqual(len(error_lines), len(set(error_lines)), result.stdout)
+            self.assertIn(
+                "NEXT fix-consistency: .ai-team/evidence/EXAMPLE-STD-001-readiness.md:",
+                result.stdout,
+            )
+
+    def test_stage_template_prompts_initialization_timestamp(self) -> None:
+        stage = (PROJECT_TEMPLATE / ".ai-team/stage.md").read_text(encoding="utf-8")
+        skill = (SKILL_ROOT / "SKILL.md").read_text(encoding="utf-8")
+        self.assertIn("current ISO timestamp during initialization", stage)
+        self.assertIn("stage.md` updated-at placeholder", skill)
+
     def test_standard_task_state_walk_reaches_batch_regression_and_completion(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             project = Path(temp_dir)
