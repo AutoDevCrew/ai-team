@@ -1231,8 +1231,11 @@ def recorded_findings(text: str) -> tuple[set[str], str]:
         findings = field_value(
             completion, "Findings / severity / affected REQ-AC-TEST:"
         )
+        followup = field_value(completion, "Open P0/P1 / P2 follow-up:")
         verdict = field_value(completion, "Independent verifier verdict:")
     severities = set(finding_severity_map(findings).values())
+    if lane != "fast":
+        severities.update(finding_severity_map(followup).values())
     return severities, verdict
 
 
@@ -1259,11 +1262,14 @@ def completion_result_errors(self_check: str, findings: str) -> list[str]:
     followup = field_value(findings, "Open P0/P1 / P2 follow-up:")
     errors: list[str] = []
     finding_ids = finding_identifiers(value)
+    followup_ids = finding_identifiers(followup)
     severity_by_id = finding_severity_map(value)
     severities = set(severity_by_id.values())
     if value.strip().lower().startswith("none"):
         if "n/a" not in value.lower() or len(value.strip()) < 16:
             errors.append("no findings require a reasoned N/A severity")
+        if followup_ids:
+            errors.append("follow-up names findings while the Findings field reports none")
     else:
         if not finding_ids or not severities:
             errors.append("findings require FIND/EVID ID and P0/P1/P2 severity")
@@ -1393,9 +1399,14 @@ def verification_errors(text: str) -> list[str]:
         findings, "Findings / severity / affected REQ-AC-TEST:"
     )
     open_followup = field_value(findings, "Open P0/P1 / P2 follow-up:")
-    severity_by_id = finding_severity_map(finding_value)
+    finding_severity_by_id = finding_severity_map(finding_value)
+    followup_severity_by_id = finding_severity_map(open_followup)
     open_ids = finding_identifiers(open_followup)
-    if any(severity_by_id.get(item) in {"P0", "P1"} for item in open_ids):
+    if any(
+        finding_severity_by_id.get(item) in {"P0", "P1"}
+        or followup_severity_by_id.get(item) in {"P0", "P1"}
+        for item in open_ids
+    ):
         errors.append("verified-complete gate has unresolved P0/P1 findings")
     errors.extend(completion_binding_errors(text, findings))
     errors.extend(completion_result_errors(self_check, findings))

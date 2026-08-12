@@ -412,6 +412,47 @@ class HandoffValidatorTests(unittest.TestCase):
                 severities, _ = validator.recorded_findings(card)
                 self.assertEqual(set(), severities)
 
+    def test_followup_p0_p1_blocks_when_findings_report_none(self) -> None:
+        base = completed_standard_card()
+        for finding, severity in (
+            ("FIND-001 P0 open / remediation pending", "P0"),
+            ("FIND-002 P1 open / fix pending", "P1"),
+        ):
+            with self.subTest(finding=finding):
+                card = base.replace(
+                    "- Open P0/P1 / P2 follow-up: none",
+                    f"- Open P0/P1 / P2 follow-up: {finding}",
+                )
+                errors = validator.validate(card, gate="verified-complete")
+                self.assertTrue(
+                    any("unresolved P0/P1" in error for error in errors), errors
+                )
+                self.assertTrue(
+                    any("Findings field reports none" in error for error in errors),
+                    errors,
+                )
+                self.assertEqual({severity}, validator.recorded_findings(card)[0])
+
+    def test_negated_followup_remains_valid_at_completion(self) -> None:
+        base = completed_standard_card()
+        for followup in (
+            "no P0/P1 open / TASK-010 recorded",
+            "P0: none / P1: none / P2: none",
+        ):
+            with self.subTest(followup=followup):
+                card = base.replace(
+                    "- Open P0/P1 / P2 follow-up: none",
+                    f"- Open P0/P1 / P2 follow-up: {followup}",
+                )
+                errors = validator.validate(card, gate="verified-complete")
+                self.assertFalse(
+                    any("unresolved P0/P1" in error for error in errors), errors
+                )
+                self.assertFalse(
+                    any("Findings field reports none" in error for error in errors),
+                    errors,
+                )
+
     def test_severity_requires_an_adjacent_finding_id(self) -> None:
         self.assertEqual(
             {"FIND-001": "P0"},

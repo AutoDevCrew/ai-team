@@ -1,6 +1,6 @@
 # Role Protocol
 
-Workflow revision: `ai-team-2026-08-12-r18`.
+Workflow revision: `ai-team-2026-08-12-r19`.
 
 This is the single global authority for AI-team role responsibilities and boundaries. Copy it to `.ai-team/governance/roles.md` during project initialization. The project-local copy is the runtime authority.
 
