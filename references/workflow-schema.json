@@ -1,6 +1,6 @@
 {
   "schema_version": "4",
-  "workflow_revision": "ai-team-2026-08-12-r24",
+  "workflow_revision": "ai-team-2026-08-12-r25",
   "enums": {
     "gates": ["task-design", "implementation-ready", "verified-complete"],
     "task_states": ["analysis", "awaiting-human-decision", "task-design-ready", "implementation-ready", "implementing", "awaiting-verification", "complete", "cancelled/superseded"],
@@ -54,7 +54,7 @@
     },
     "no_findings": {
       "expectation": "write none, optionally followed by a concrete verification reason; N/A is not required",
-      "example": "none — no findings after TEST-001..005"
+      "example": "none — no findings after TEST-001, TEST-002, and TEST-003"
     },
     "finding_record": {
       "expectation": "record each finding as a FIND/EVID ID immediately followed by P0, P1, or P2 and affected traceability",

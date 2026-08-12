@@ -223,6 +223,20 @@ def identifiers(value: str, prefix: str) -> set[str]:
     }
 
 
+def malformed_identifiers(value: str) -> set[str]:
+    return {
+        match.group(0).upper()
+        for match in re.finditer(
+            r"\b(?:REQ|AC|DEC|TASK|TEST|EVID|FIND|DISC|SNAP|TEM)-"
+            r"[A-Za-z0-9][A-Za-z0-9._-]*\.\.(?:"
+            r"(?:REQ|AC|DEC|TASK|TEST|EVID|FIND|DISC|SNAP|TEM)-)?"
+            r"[A-Za-z0-9][A-Za-z0-9._-]*\b",
+            value,
+            flags=re.IGNORECASE,
+        )
+    }
+
+
 def finding_identifiers(value: str) -> set[str]:
     return identifiers(value, "FIND") | identifiers(value, "EVID")
 
@@ -699,8 +713,13 @@ def traceability_matrix_errors(
     set[str],
     dict[str, tuple[set[str], set[str], set[str]]],
 ]:
-    lines = visible_markdown(path.read_text(encoding="utf-8")).splitlines()
-    errors: list[str] = []
+    visible = visible_markdown(path.read_text(encoding="utf-8"))
+    lines = visible.splitlines()
+    malformed = malformed_identifiers(visible)
+    errors = [
+        "identifier ranges using '..' are not allowed; list every ID explicitly: "
+        + ", ".join(sorted(malformed))
+    ] if malformed else []
     header_index: int | None = None
     columns: list[str] = []
     for index, line in enumerate(lines):
@@ -834,11 +853,20 @@ def project_spec_errors(task_card: Path, text: str) -> list[str]:
     matrix_errors, _, _, mappings = traceability_matrix_errors(
         paths["Requirement traceability:"], requirement_ids, acceptance_ids
     )
-    errors.extend(acceptance_errors)
-    errors.extend(matrix_errors)
+    acceptance_path = paths["Acceptance specification:"].relative_to(project_root).as_posix()
+    matrix_path = paths["Requirement traceability:"].relative_to(project_root).as_posix()
+    errors.extend(f"{acceptance_path}: {error}" for error in acceptance_errors)
+    errors.extend(f"{matrix_path}: {error}" for error in matrix_errors)
     mapping = field_value(
         snapshot, "Scope, source, decision, and contract references:"
     )
+    malformed = malformed_identifiers(mapping)
+    if malformed:
+        errors.append(
+            "task identifier ranges using '..' are not allowed; list every ID explicitly: "
+            + ", ".join(sorted(malformed))
+        )
+        return errors
     task_requirements = identifiers(mapping, "REQ")
     task_acceptance = identifiers(mapping, "AC")
     task_tests = identifiers(mapping, "TEST")

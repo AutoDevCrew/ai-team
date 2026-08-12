@@ -211,6 +211,39 @@ class HandoffValidatorTests(unittest.TestCase):
         self.assertNotIn("transitions", validator.WORKFLOW_SCHEMA)
         self.assertNotIn("reentry_targets", validator.WORKFLOW_SCHEMA)
 
+    def test_identifier_ranges_are_rejected_at_task_and_matrix_boundaries(self) -> None:
+        self.assertEqual(
+            {"TEST-005..TEST-008", "TEST-010..012"},
+            validator.malformed_identifiers(
+                "TEST-005..TEST-008; TEST-010..012; TEST-013, TEST-014"
+            ),
+        )
+        self.assertEqual(
+            set(), validator.malformed_identifiers("TEST-005, TEST-006, TEST-007")
+        )
+        with tempfile.TemporaryDirectory() as temp_dir:
+            project = Path(temp_dir)
+            card = self.materialize_project(
+                project, template_card("Implementation-ready Standard task card example")
+            )
+            text = card.read_text(encoding="utf-8").replace(
+                "TEST-EXAMPLE-STD-001 TEST-EXAMPLE-STD-002",
+                "TEST-EXAMPLE-STD-001..TEST-EXAMPLE-STD-002",
+            )
+            errors = validator.project_spec_errors(card, text)
+            self.assertTrue(any("task identifier ranges" in error for error in errors), errors)
+
+            matrix = project / ".ai-team/specs/traceability.md"
+            matrix.write_text(
+                matrix.read_text(encoding="utf-8").replace(
+                    "TEST-EXAMPLE-STD-001; TEST-EXAMPLE-STD-002",
+                    "TEST-EXAMPLE-STD-001..002",
+                ),
+                encoding="utf-8",
+            )
+            errors = validator.project_spec_errors(card, card.read_text(encoding="utf-8"))
+            self.assertTrue(any("identifier ranges" in error for error in errors), errors)
+
     def test_compact_card_efficiency_budgets(self) -> None:
         def field_count(card: str) -> int:
             return sum(

@@ -252,6 +252,41 @@ class ProjectConsistencyTests(unittest.TestCase):
             )
             self.assertIn("TASK-EXAMPLE-STD-001", checker.next_eligible_action(project) or "")
 
+    def test_shared_spec_error_is_located_once_across_multiple_cards(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            project = Path(temp_dir)
+            self.materialize_project(project)
+            card, _ = self.prepare_standard_ready_project(project)
+            second = card.with_name("TASK-EXAMPLE-STD-002.md")
+            second.write_text(
+                card.read_text(encoding="utf-8").replace(
+                    "TASK-EXAMPLE-STD-001", "TASK-EXAMPLE-STD-002"
+                ),
+                encoding="utf-8",
+            )
+            matrix = project / ".ai-team/specs/traceability.md"
+            matrix.write_text(
+                matrix.read_text(encoding="utf-8").replace(
+                    "initial request; evidence-backed", "initial request"
+                ),
+                encoding="utf-8",
+            )
+            errors = []
+            for candidate in (card, second):
+                errors.extend(
+                    checker.located_error(candidate, project, error)
+                    for error in checker.validator.project_spec_errors(
+                        candidate, candidate.read_text(encoding="utf-8")
+                    )
+                )
+            shared = [
+                error
+                for error in dict.fromkeys(errors)
+                if "traceability source classification is missing" in error
+            ]
+            self.assertEqual(1, len(shared), shared)
+            self.assertTrue(shared[0].startswith(".ai-team/specs/traceability.md:"), shared)
+
     def test_review_evidence_errors_name_the_evidence_file(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             project = Path(temp_dir)
