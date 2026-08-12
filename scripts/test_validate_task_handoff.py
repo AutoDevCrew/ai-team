@@ -385,6 +385,42 @@ class HandoffValidatorTests(unittest.TestCase):
         errors = validator.validate(card, gate="implementation-ready")
         self.assertTrue(any("may not be N/A" in error for error in errors), errors)
 
+    def test_security_or_interface_trigger_requires_differentiator_or_manual_review(self) -> None:
+        card = template_card("Implementation-ready Standard task card example").replace(
+            "standard / M / none — synchronous local validation using the existing module contract",
+            "standard / M / security",
+        ) + """
+
+## Security impact
+- Triggered: untrusted expression input crosses a validation boundary
+- Review: authorization is unchanged; reject invalid control characters
+- Required mitigations and negative tests: TEST-SEC-001 rejects control characters
+"""
+        errors = validator.validate(card, gate="implementation-ready")
+        self.assertTrue(any("differentiator" in error for error in errors), errors)
+
+        differentiator = card.replace(
+            "- Risk and contract checks: invalid Unicode/control-character cases; no interface, security, or runtime-chain trigger",
+            "- Risk and contract checks: differentiator: TEST-SEC-001 checks the parser rejects control characters",
+        )
+        errors = validator.validate(differentiator, gate="implementation-ready")
+        self.assertFalse(any("differentiator" in error for error in errors), errors)
+
+        manual_review = card.replace(
+            "- Risk and contract checks: invalid Unicode/control-character cases; no interface, security, or runtime-chain trigger",
+            "- Risk and contract checks: manual-review-only: external scanner behavior is unavailable locally",
+        )
+        errors = validator.validate(manual_review, gate="implementation-ready")
+        self.assertFalse(any("differentiator" in error for error in errors), errors)
+
+    def test_schema_has_one_no_findings_format(self) -> None:
+        self.assertIn("no_findings", validator.WORKFLOW_SCHEMA["formats"])
+        self.assertNotIn("no_value", validator.WORKFLOW_SCHEMA["formats"])
+
+    def test_review_evidence_template_explains_code_security_timing(self) -> None:
+        templates = TEMPLATES.read_text(encoding="utf-8")
+        self.assertIn("complete and timestamp the `code-security` review first", templates)
+
     def test_interface_trigger_requires_contract_reference_and_tests(self) -> None:
         card = template_card("Implementation-ready Standard task card example").replace(
             "standard / M / none — synchronous local validation using the existing module contract",
@@ -399,6 +435,7 @@ class HandoffValidatorTests(unittest.TestCase):
         errors = validator.validate(card, gate="implementation-ready")
         self.assertTrue(any("frozen contract reference" in error for error in errors), errors)
         self.assertTrue(any("contract TEST IDs" in error for error in errors), errors)
+        self.assertTrue(any("differentiator" in error for error in errors), errors)
 
     def test_testsprite_trigger_requires_web_ui_and_annex(self) -> None:
         card = template_card("Implementation-ready Standard task card example").replace(

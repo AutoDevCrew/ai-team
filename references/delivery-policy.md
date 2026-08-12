@@ -1,6 +1,6 @@
 # Delivery Policy
 
-Workflow revision: `ai-team-2026-08-12-r21`.
+Workflow revision: `ai-team-2026-08-12-r22`.
 
 This is the single global authority for AI-team delivery lanes, states, gates, handoffs, validation, severity, acceptance, and re-entry. Copy it to `.ai-team/governance/workflow.md` during project initialization. The project-local copy is the runtime authority for that project.
 
@@ -151,7 +151,7 @@ Pending upstream implementation or a closed project stage is an implementation b
 
 - For a changed interface/protocol, freeze surface, fields/defaults, errors, compatibility/versioning, authorization, and applicable idempotency/retry/ordering/concurrency/transaction behavior. The verifier authors stable contract-test IDs before implementation.
 - For a state machine, worker, async job, transaction, authorization boundary, or external side effect, map `entry → authorization/precondition → scheduling/claim → state transition → side effect → recovery/compensation → observable result` to requirements, acceptance criteria, modules, and entry-path tests. Mock-only coverage of a critical stage fails design.
-- Shift security left for authentication, authorization, sensitive data, payment, upload, user-controlled input/URLs, secrets, dependencies, third-party APIs, or webhooks. Map trust boundaries, abuse cases, mitigations, and negative tests before design finalization; repeat diff-directed review after implementation. For a frozen security/interface constraint that rejects an otherwise behaviorally equivalent implementation, add an executable differentiator assertion (structural, contract, or observable) to the required tests; otherwise label it manual-review-only and do not interpret a gate PASS as mechanical proof of that constraint.
+- Shift security left for authentication, authorization, sensitive data, payment, upload, user-controlled input/URLs, secrets, dependencies, third-party APIs, or webhooks. Map trust boundaries, abuse cases, mitigations, and negative tests before design finalization; repeat diff-directed review after implementation. For every security or interface trigger, record in `Risk and contract checks` either `differentiator: TEST-...` for each frozen implementation-form constraint that rejects an otherwise behaviorally equivalent implementation, or `manual-review-only: <concrete rationale>`. A differentiator is structural, contract, or observable. A `manual-review-only` constraint is not mechanically proven by a gate PASS.
 
 ## Finding severity
 

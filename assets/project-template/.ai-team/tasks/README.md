@@ -2,7 +2,7 @@
 
 This directory is the sole source of task state. Use one backlog and one task card per work item; do not use an external task system.
 
-Task cards use workflow revision `ai-team-2026-08-12-r21`.
+Task cards use workflow revision `ai-team-2026-08-12-r22`.
 
 ## Files and identifiers
 

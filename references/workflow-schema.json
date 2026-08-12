@@ -1,6 +1,6 @@
 {
   "schema_version": "4",
-  "workflow_revision": "ai-team-2026-08-12-r21",
+  "workflow_revision": "ai-team-2026-08-12-r22",
   "enums": {
     "gates": ["task-design", "implementation-ready", "verified-complete"],
     "task_states": ["analysis", "awaiting-human-decision", "task-design-ready", "implementation-ready", "implementing", "awaiting-verification", "complete", "cancelled/superseded"],
@@ -51,10 +51,6 @@
     "reasoned_na": {
       "expectation": "start with N/A and include a concrete rationale",
       "example": "N/A — this project has no separate build step"
-    },
-    "no_value": {
-      "expectation": "write none, optionally followed by a concrete reason; N/A is not required",
-      "example": "none — no findings after TEST-001..005"
     },
     "no_findings": {
       "expectation": "write none, optionally followed by a concrete verification reason; N/A is not required",

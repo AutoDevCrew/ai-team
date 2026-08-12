@@ -1083,6 +1083,22 @@ def trigger_errors(text: str) -> list[str]:
             errors.append("interface trigger requires a frozen contract reference")
         if not identifiers(checks, "TEST"):
             errors.append("interface trigger requires contract TEST IDs")
+    if triggers.intersection({"interface", "security"}):
+        checks = field_value(planning, "Risk and contract checks:")
+        differentiator = re.search(r"\bdifferentiator\s*:\s*([^;\n]+)", checks, re.IGNORECASE)
+        manual_review = re.search(
+            r"\bmanual-review-only\s*:\s*([^;\n]+)", checks, re.IGNORECASE
+        )
+        if differentiator:
+            if not identifiers(differentiator.group(1), "TEST"):
+                errors.append(
+                    "security/interface differentiator must name a TEST-... ID in Risk and contract checks"
+                )
+        elif not manual_review or len(manual_review.group(1).strip()) < 5:
+            errors.append(
+                'security/interface trigger requires "differentiator: TEST-..." or '
+                '"manual-review-only: <concrete rationale>" in Risk and contract checks'
+            )
     for trigger, heading, fields in (
         ("security", "## Security impact", SECURITY_FIELDS),
         ("runtime-chain", "## Runtime-chain matrix", RUNTIME_FIELDS),

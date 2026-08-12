@@ -1,6 +1,6 @@
 # Canonical Artifact Templates
 
-Workflow revision: `ai-team-2026-08-12-r21`.
+Workflow revision: `ai-team-2026-08-12-r22`.
 
 ## Catalog navigation
 
@@ -278,7 +278,7 @@ Use this compact delta card for Standard/High-risk work. Project-wide requiremen
 - Implementer checks:
 - Independent task verification:
 - Batch regression: command and batch-exit timing / N/A — High-risk per-task full suite reason
-- Risk and contract checks:
+- Risk and contract checks: for security/interface use `differentiator: TEST-<id>` or `manual-review-only: <concrete rationale>`
 - Environment / data / reset:
 - Planning verifier and report: AGENT-<id> / `.ai-team/evidence/<file>.md`
 - Design/readiness verdict and conditions: task-design-ready / implementation-ready / conditional-pass with exact activation evidence / blocked with reason
@@ -413,6 +413,8 @@ active / summarized / awaiting human decision / resolved
 - Recorded at: <ISO timestamp>
 ```
 
+When one task needs both `code-security` and `verification` evidence, complete and timestamp the `code-security` review first; its `Recorded at` must be earlier than the verification record.
+
 ## Security-impact review
 
 ```md
@@ -445,7 +447,7 @@ This complete Fast-only skeleton contains every section required by strict valid
 # TASK-EXAMPLE-001: Clarify local contributor documentation
 
 ## Handoff Snapshot
-- Workflow revision: ai-team-2026-08-12-r21
+- Workflow revision: ai-team-2026-08-12-r22
 - Snapshot ID and updated at: SNAP-EXAMPLE-001-01 / 2026-08-12T10:00+08:00
 - Current state and technical outcome: awaiting-verification / not-complete
 - Scope, source, decision, and contract references: REQ-EXAMPLE-001 / AC-EXAMPLE-001 / TEST-EXAMPLE-001 / `.ai-team/sources.md`; no decision or contract change
@@ -480,7 +482,7 @@ This compact example passes the `implementation-ready` gate. Shared requirements
 # TASK-EXAMPLE-STD-001: Add validation for calculator expression input
 
 ## Handoff Snapshot
-- Workflow revision: ai-team-2026-08-12-r21
+- Workflow revision: ai-team-2026-08-12-r22
 - Snapshot ID and updated at: SNAP-EXAMPLE-STD-001-01 / 2026-08-12T11:00+08:00
 - Current state and technical outcome: implementation-ready / not-complete
 - Scope, source, decision, and contract references: REQ-EXAMPLE-STD-001 / AC-EXAMPLE-STD-001 / TEST-EXAMPLE-STD-001 TEST-EXAMPLE-STD-002 / `.ai-team/sources.md`; no decision or contract change
