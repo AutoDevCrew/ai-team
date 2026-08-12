@@ -1,6 +1,6 @@
 # Delivery Policy
 
-Workflow revision: `ai-team-2026-08-12-r17`.
+Workflow revision: `ai-team-2026-08-12-r18`.
 
 This is the single global authority for AI-team delivery lanes, states, gates, handoffs, validation, severity, acceptance, and re-entry. Copy it to `.ai-team/governance/workflow.md` during project initialization. The project-local copy is the runtime authority for that project.
 
@@ -161,7 +161,7 @@ Finding severity is distinct from backlog priority.
 - `P1`: acceptance criterion, required regression, or security control not met. Return to implementation; do not request human acceptance.
 - `P2`: non-blocking improvement. Create an evidence-linked follow-up task; do not silently discard it or block completion.
 
-Record each finding as `FIND-...` with severity, reproduction evidence, affected REQ/AC/TEST, disposition, and follow-up link. Put an unresolved P0/P1 FIND ID in the task's backlog blocker until remediation or disposition removes it; do not invent a DEC ID unless a separate material human decision is genuinely required. Unresolved P0/P1 blocks completion.
+Record each finding in the task's main Findings field as a `FIND-...` or `EVID-...` ID immediately followed by its P0/P1/P2 severity, reproduction evidence, affected REQ/AC/TEST, disposition, and follow-up link. Only this ID-adjacent record declares severity; follow-up prose references finding IDs but does not declare severity. Put an unresolved P0/P1 FIND ID in the task's backlog blocker until remediation or disposition removes it; do not invent a DEC ID unless a separate material human decision is genuinely required. Unresolved P0/P1 blocks completion.
 
 ## Human decisions and acceptance
 

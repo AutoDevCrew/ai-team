@@ -800,6 +800,41 @@ class ProjectConsistencyTests(unittest.TestCase):
             self.assertIn("serial implementation remediation", action)
             self.assertNotIn("start independent verification", action)
 
+    def test_negated_severity_followup_does_not_stop_verification(self) -> None:
+        for followup in (
+            "no P0/P1 open / TASK-010 recorded",
+            "P0: none / P1: none / P2: none",
+        ):
+            with self.subTest(followup=followup), tempfile.TemporaryDirectory() as temp_dir:
+                project = Path(temp_dir)
+                self.materialize_project(project)
+                card = project / ".ai-team/tasks/TASK-001.md"
+                card.write_text(
+                    f"""# TASK-001: Healthy candidate
+
+## Handoff Snapshot
+- Delivery lane / complexity / control triggers: standard / M / none — ordinary task
+
+## Verification and findings
+- Independent verifier verdict: pending fresh verification
+- Findings / severity / affected REQ-AC-TEST: none / N/A — no finding / REQ-001 AC-001 TEST-001
+- Open P0/P1 / P2 follow-up: {followup}
+""",
+                    encoding="utf-8",
+                )
+                backlog = project / ".ai-team/tasks/backlog.md"
+                backlog.write_text(
+                    backlog.read_text(encoding="utf-8").replace(
+                        "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |",
+                        "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n"
+                        "| TASK-001 | Healthy | awaiting-verification | standard | M | B1 | independent verifier | none | none | verified-complete | [card](TASK-001.md) |",
+                    ),
+                    encoding="utf-8",
+                )
+                action = checker.next_eligible_action(project) or ""
+                self.assertIn("start independent verification", action)
+                self.assertNotIn("P0 finding", action)
+
     def test_resolved_task_or_decision_blocker_is_cleared(self) -> None:
         for blocker, prefix_rows in (
             ("DEC-001", ""),

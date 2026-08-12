@@ -196,6 +196,18 @@ def finding_identifiers(value: str) -> set[str]:
     return identifiers(value, "FIND") | identifiers(value, "EVID")
 
 
+def finding_severity_map(value: str) -> dict[str, str]:
+    """Parse only explicit ID-adjacent severities from canonical finding records."""
+    return {
+        match.group(1).upper(): match.group(2).upper()
+        for match in re.finditer(
+            r"\b((?:FIND|EVID)-[A-Za-z0-9._-]+)\b\s*(?:[/|,:-]\s*)?(P[012])\b",
+            value,
+            flags=re.IGNORECASE,
+        )
+    }
+
+
 def identity_errors(authors: str, reviewer: str, section_name: str) -> list[str]:
     errors: list[str] = []
     author_ids = {
@@ -1216,16 +1228,11 @@ def recorded_findings(text: str) -> tuple[set[str], str]:
         verdict = field_value(completion, "Independent verifier / verdict / evidence:")
     else:
         completion = section(text, "## Verification and findings")
-        findings = " ".join(
-            (
-                field_value(completion, "Findings / severity / affected REQ-AC-TEST:"),
-                field_value(completion, "Open P0/P1 / P2 follow-up:"),
-            )
+        findings = field_value(
+            completion, "Findings / severity / affected REQ-AC-TEST:"
         )
         verdict = field_value(completion, "Independent verifier verdict:")
-    severities = {
-        severity for severity in FINDING_SEVERITIES if re.search(rf"\b{severity}\b", findings, re.IGNORECASE)
-    }
+    severities = set(finding_severity_map(findings).values())
     return severities, verdict
 
 
@@ -1252,13 +1259,16 @@ def completion_result_errors(self_check: str, findings: str) -> list[str]:
     followup = field_value(findings, "Open P0/P1 / P2 follow-up:")
     errors: list[str] = []
     finding_ids = finding_identifiers(value)
-    severities = {severity for severity in FINDING_SEVERITIES if severity in value.upper()}
+    severity_by_id = finding_severity_map(value)
+    severities = set(severity_by_id.values())
     if value.strip().lower().startswith("none"):
         if "n/a" not in value.lower() or len(value.strip()) < 16:
             errors.append("no findings require a reasoned N/A severity")
     else:
         if not finding_ids or not severities:
             errors.append("findings require FIND/EVID ID and P0/P1/P2 severity")
+        elif finding_ids - severity_by_id.keys():
+            errors.append("each FIND/EVID record requires an adjacent P0/P1/P2 severity")
         if severities.intersection({"P0", "P1"}) and is_none(followup):
             errors.append("P0/P1 findings must remain open and block completion")
         if "P2" in severities and not identifiers(followup, "TASK"):
@@ -1313,9 +1323,10 @@ def fast_completion_errors(text: str) -> list[str]:
     if implementer and verifier == implementer:
         errors.append("Fast implementer and verifier identities must differ")
     findings = field_value(completion, "Findings / severity / affected / follow-up:")
-    if re.search(r"\b(?:P0|P1|FIND-P[01])\b", findings, re.IGNORECASE):
+    severities = set(finding_severity_map(findings).values())
+    if severities.intersection({"P0", "P1"}):
         errors.append("verified-complete Fast gate has unresolved P0/P1 findings")
-    if "P2" in findings.upper() and not identifiers(findings, "TASK"):
+    if "P2" in severities and not identifiers(findings, "TASK"):
         errors.append("Fast P2 finding requires a TASK follow-up")
     binding = field_value(completion, "Verified Snapshot / at:")
     snapshot_id = first_identifier(
@@ -1378,9 +1389,14 @@ def verification_errors(text: str) -> list[str]:
         ):
             if not has_reasoned_na(field_value(findings, field)):
                 errors.append(f"merged-verifier mode requires a reasoned N/A: {field}")
-    if not is_none(field_value(findings, "Open P0/P1 / P2 follow-up:")):
-        if re.search(r"\b(?:P0|P1|FIND-P[01])\b", field_value(findings, "Open P0/P1 / P2 follow-up:"), re.IGNORECASE):
-            errors.append("verified-complete gate has unresolved P0/P1 findings")
+    finding_value = field_value(
+        findings, "Findings / severity / affected REQ-AC-TEST:"
+    )
+    open_followup = field_value(findings, "Open P0/P1 / P2 follow-up:")
+    severity_by_id = finding_severity_map(finding_value)
+    open_ids = finding_identifiers(open_followup)
+    if any(severity_by_id.get(item) in {"P0", "P1"} for item in open_ids):
+        errors.append("verified-complete gate has unresolved P0/P1 findings")
     errors.extend(completion_binding_errors(text, findings))
     errors.extend(completion_result_errors(self_check, findings))
     errors.extend(completion_identity_errors(text, self_check, findings))

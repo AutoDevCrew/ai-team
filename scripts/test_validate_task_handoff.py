@@ -398,6 +398,30 @@ class HandoffValidatorTests(unittest.TestCase):
         errors = validator.validate(p2, gate="verified-complete")
         self.assertTrue(any("P2 findings require" in error for error in errors), errors)
 
+    def test_negated_severity_words_do_not_create_findings(self) -> None:
+        base = template_card("Complete Standard task card example")
+        for followup in (
+            "no P0/P1 open / TASK-010 recorded",
+            "P0: none / P1: none / P2: none",
+        ):
+            with self.subTest(followup=followup):
+                card = base.replace(
+                    "- Open P0/P1 / P2 follow-up: none",
+                    f"- Open P0/P1 / P2 follow-up: {followup}",
+                )
+                severities, _ = validator.recorded_findings(card)
+                self.assertEqual(set(), severities)
+
+    def test_severity_requires_an_adjacent_finding_id(self) -> None:
+        self.assertEqual(
+            {"FIND-001": "P0"},
+            validator.finding_severity_map("FIND-001 P0 open / remediation pending"),
+        )
+        self.assertEqual(
+            {},
+            validator.finding_severity_map("no P0/P1 open; P0: none; P1: none"),
+        )
+
     def test_conditional_readiness_activation_is_state_bound(self) -> None:
         card = template_card("Complete Standard task card example").replace(
             "- Design/readiness verdict and conditions: implementation-ready / direct PASS; no deferred condition",
