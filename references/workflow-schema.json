@@ -1,6 +1,6 @@
 {
-  "schema_version": "3",
-  "workflow_revision": "ai-team-2026-08-12-r20",
+  "schema_version": "4",
+  "workflow_revision": "ai-team-2026-08-12-r21",
   "enums": {
     "gates": ["task-design", "implementation-ready", "verified-complete"],
     "task_states": ["analysis", "awaiting-human-decision", "task-design-ready", "implementation-ready", "implementing", "awaiting-verification", "complete", "cancelled/superseded"],
@@ -13,7 +13,8 @@
     "next_gates": ["task-design", "implementation-ready", "verified-complete", "human-acceptance", "none"],
     "checkpoint_modes": ["none", "blocking", "non-blocking"],
     "checkpoint_statuses": ["not-required", "pending", "accepted", "rejected", "conditional"],
-    "finding_severities": ["P0", "P1", "P2"]
+    "finding_severities": ["P0", "P1", "P2"],
+    "review_phases": ["intake", "baseline", "task-design", "implementation-readiness", "fast-design-readiness", "verification", "code-security"]
   },
   "stage_authority": {
     "task-design": ["analysis-only", "implementation-authorized", "verification-only"],
@@ -51,8 +52,12 @@
       "expectation": "start with N/A and include a concrete rationale",
       "example": "N/A — this project has no separate build step"
     },
+    "no_value": {
+      "expectation": "write none, optionally followed by a concrete reason; N/A is not required",
+      "example": "none — no findings after TEST-001..005"
+    },
     "no_findings": {
-      "expectation": "start with none and include a concrete reason; N/A is not required",
+      "expectation": "write none, optionally followed by a concrete verification reason; N/A is not required",
       "example": "none — no findings after TEST-001..005"
     },
     "finding_record": {

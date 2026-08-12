@@ -90,6 +90,7 @@ LANES = _enum("lanes")
 COMPLEXITIES = _enum("complexities")
 CONTROL_TRIGGERS = _enum("control_triggers")
 FINDING_SEVERITIES = _enum("finding_severities")
+REVIEW_PHASES = _enum("review_phases")
 
 LANE_FIELD = "Delivery lane / complexity / control triggers:"
 LANE_CONTRACTS = WORKFLOW_SCHEMA["lane_contracts"]
@@ -185,12 +186,14 @@ def has_reasoned_na(value: str) -> bool:
 
 def has_reasoned_none(value: str) -> bool:
     normalized = value.strip()
+    if normalized.lower() == "none":
+        return True
     match = re.match(r"^none(?:\s*[-—:/]\s*|\s+)(.+)$", normalized, re.IGNORECASE)
     return bool(match and match.group(1).strip())
 
 
 def is_none(value: str) -> bool:
-    return value.strip().lower() in {"none", "no", "无"}
+    return value.strip().lower() in {"none", "no", "无"} or has_reasoned_none(value)
 
 
 def is_pass(value: str) -> bool:
@@ -736,11 +739,15 @@ def traceability_matrix_errors(
         if state not in {"covered", "out of scope", "awaiting decision"}:
             errors.append(f"invalid traceability state for {requirement}: {state or 'missing'}")
         classification = row.get("Requirement source and classification", "").lower()
-        if not any(
+        if state != "out of scope" and not any(
             marker in classification
             for marker in ("evidence-backed", "low-risk assumption", "awaiting decision")
         ):
             errors.append(f"traceability source classification is missing for {requirement}")
+        if state == "out of scope" and not (
+            classification and (has_reference(classification) or "out of scope" in classification)
+        ):
+            errors.append(f"out-of-scope requirement needs source or decision rationale: {requirement}")
         row_acceptance = identifiers(row.get("Acceptance criteria", ""), "AC")
         row_tasks = identifiers(row.get("Design and task", ""), "TASK")
         row_tests = identifiers(row.get("Test case/method", ""), "TEST")
@@ -1001,6 +1008,11 @@ def review_evidence_errors(
     if expected_role and role != expected_role:
         errors.append(f"Review evidence record Role must be {expected_role}")
     phase = field_value(text, "Review phase:").strip().lower()
+    if phase not in REVIEW_PHASES:
+        errors.append(
+            "Review evidence record has an invalid Review phase; expected one of: "
+            + ", ".join(sorted(REVIEW_PHASES))
+        )
     if expected_phase and phase != expected_phase:
         errors.append(f"Review evidence record phase must be {expected_phase}")
     for field in (
@@ -1210,8 +1222,6 @@ def fast_gate_common_errors(text: str, gate: str) -> list[str]:
 
 def implementation_self_check_errors(self_check: str) -> list[str]:
     errors = concrete_value_errors(self_check, SELF_CHECK_FIELDS, "Implementation self-check")
-    if re.search(r"\bpending\b|待执行|未执行", visible_markdown(self_check), re.IGNORECASE):
-        errors.append("implementation self-check has pending evidence")
     if not first_identifier(field_value(self_check, "Implementation engineer identity:"), "AGENT"):
         errors.append("implementation self-check requires an AGENT-... implementation engineer identity")
     build = field_value(self_check, "Build / generation / lint-typecheck results:")
@@ -1223,6 +1233,8 @@ def implementation_self_check_errors(self_check: str) -> list[str]:
                 "pass_result" if not build.strip().lower().startswith("n/a") else "reasoned_na",
             )
         )
+    if re.search(r"\bpending\b|待执行|未执行", build, re.IGNORECASE):
+        errors.append("implementation self-check build/lint result has pending evidence")
     owner_tests = field_value(self_check, "Owner / affected / contract test results:")
     if not is_pass(owner_tests):
         errors.append(
@@ -1232,6 +1244,8 @@ def implementation_self_check_errors(self_check: str) -> list[str]:
                 "pass_result",
             )
         )
+    if re.search(r"\bpending\b|待执行|未执行", owner_tests, re.IGNORECASE):
+        errors.append("implementation self-check owner/affected/contract result has pending evidence")
     return errors
 
 
@@ -1496,6 +1510,7 @@ def strict_errors(text: str) -> list[str]:
     if errors:
         return errors
     snapshot = section(text, "## Handoff Snapshot")
+    state, _ = state_and_outcome(snapshot)
     snapshot_errors = concrete_value_errors(
         snapshot,
         SNAPSHOT_FIELDS,
@@ -1519,12 +1534,23 @@ def strict_errors(text: str) -> list[str]:
         errors.extend(planning_errors(text))
     policy = field_value(snapshot, FINGERPRINT_POLICY_FIELD).strip().lower()
     if policy == "required":
-        if not fingerprint_entries(text):
+        if state in {"awaiting-verification", "complete"} and not fingerprint_entries(text):
             errors.append(
                 format_error(
                     "required fingerprint policy needs a SHA-256 ledger",
                     field_value(snapshot, "Current change-set fingerprint:"),
                     "fingerprint_ledger",
+                )
+            )
+        elif state not in {"awaiting-verification", "complete"} and not (
+            fingerprint_entries(text)
+            or has_reasoned_na(field_value(snapshot, "Current change-set fingerprint:"))
+        ):
+            errors.append(
+                format_error(
+                    "pre-candidate required fingerprint policy needs an existing-input ledger or reasoned N/A",
+                    field_value(snapshot, "Current change-set fingerprint:"),
+                    "reasoned_na",
                 )
             )
     elif policy.startswith("n/a"):
@@ -1540,10 +1566,18 @@ def strict_errors(text: str) -> list[str]:
     ):
         if section_count(text, heading) > 1:
             errors.append(f"duplicate authoritative section: {heading}")
-    state, _ = state_and_outcome(snapshot)
     if state == "cancelled/superseded":
         errors.extend(cancellation_errors(text))
     return errors
+
+
+def candidate_fingerprint_required(text: str) -> bool:
+    snapshot = section(text, "## Handoff Snapshot")
+    state, _ = state_and_outcome(snapshot)
+    return (
+        field_value(snapshot, FINGERPRINT_POLICY_FIELD).strip().lower() == "required"
+        and state in {"awaiting-verification", "complete"}
+    )
 
 
 def gate_errors(text: str, gate: str) -> list[str]:
@@ -1768,10 +1802,7 @@ def main() -> int:
     if args.gate:
         errors.extend(gate_reference_errors(args.task_card, text, args.gate))
         errors.extend(project_stage_errors(args.task_card, args.gate))
-    fingerprint_policy = field_value(
-        section(text, "## Handoff Snapshot"), FINGERPRINT_POLICY_FIELD
-    ).strip().lower()
-    if args.verify_fingerprint or (strict and fingerprint_policy == "required"):
+    if args.verify_fingerprint or (strict and candidate_fingerprint_required(text)):
         errors.extend(fingerprint_errors(args.task_card, text))
     errors = list(dict.fromkeys(errors))
     if errors:

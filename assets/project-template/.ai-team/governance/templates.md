@@ -1,6 +1,6 @@
 # Canonical Artifact Templates
 
-Workflow revision: `ai-team-2026-08-12-r20`.
+Workflow revision: `ai-team-2026-08-12-r21`.
 
 ## Catalog navigation
 
@@ -76,7 +76,7 @@ python3 .ai-team/scripts/extract_markdown_section.py .ai-team/governance/templat
 - Independent review: AGENT-<id> / PASS or FAIL / EVID-<id> / `.ai-team/evidence/<file>.md` / <ISO timestamp>
 - Evidence-backed rules:
 - Conventional low-risk MVP assumptions and rationale:
-- Awaiting material human decision:
+- Awaiting material human decision: none / none — <concrete reason>
 
 ## Scope
 - In scope:
@@ -267,9 +267,9 @@ Use this compact delta card for Standard/High-risk work. Project-wide requiremen
 - Batch / dependencies / entry: batch ID or batch-not-applicable / dependency IDs or none / concrete entry evidence
 - Change-set file inventory: `path`; `path`
 - Fingerprint policy: required / N/A — Fast-only reason
-- Current change-set fingerprint: <N/A — Fast-only reason, or leave empty and add actual ledger lines below>
+- Current change-set fingerprint: N/A — candidate files do not exist yet before implementation, or add actual ledger lines below
 - Actor identities: product=AGENT-<id>; technical=AGENT-<id>; implementer=AGENT-<id>; verifier=AGENT-<id>; reviewer=AGENT-<id> / N/A — merged-verifier reason
-- Open findings / blockers:
+- Open findings / blockers: none / none — <concrete reason>
 - Next action, exit condition, and invalidation:
 
 ## Plan and readiness
@@ -290,7 +290,7 @@ Use this compact delta card for Standard/High-risk work. Project-wide requiremen
 - Implementation engineer identity: AGENT-<id>
 - Build / generation / lint-typecheck results: PASS — <commands and results> / N/A — <concrete reason>
 - Owner / affected / contract test results: PASS — <commands and results>
-- Omitted checks, residual risks, and evidence:
+- Omitted checks, residual risks, and evidence: none / full regression deferred to named batch exit / <residual risk and evidence>
 
 ## Verification and findings
 - Independent verifier identity: AGENT-<id>
@@ -299,8 +299,8 @@ Use this compact delta card for Standard/High-risk work. Project-wide requiremen
 - Separate code/security reviewer verdict: PASS — <current review summary> / N/A — <merged-verifier reason> / FAIL — <finding IDs>
 - Independent verification evidence: `.ai-team/evidence/EVID-...md`
 - Separate code/security review evidence: `.ai-team/evidence/EVID-...md` / N/A — merged-verifier reason
-- Findings / severity / affected REQ-AC-TEST: none — <reason>, or FIND-<id> / P0|P1|P2 / REQ-... AC-... TEST-... / <reproduction and disposition>
-- Open P0/P1 / P2 follow-up: none / FIND-<id> / TASK-<id>
+- Findings / severity / affected REQ-AC-TEST: none / none — <reason>, or FIND-<id> / P0|P1|P2 / REQ-... AC-... TEST-... / <reproduction and disposition>
+- Open P0/P1 / P2 follow-up: none / none — <reason> / FIND-<id> / TASK-<id>
 - Verified Snapshot / Manifest / at: SNAP-<id> / TEM-<id> / <ISO timestamp>
 ```
 
@@ -403,7 +403,7 @@ active / summarized / awaiting human decision / resolved
 
 - Reviewer identity: AGENT-<id>
 - Role: independent verifier / code and security reviewer
-- Review phase: task-design / implementation-readiness / fast-design-readiness / verification / code-security
+- Review phase: intake / baseline / task-design / implementation-readiness / fast-design-readiness / verification / code-security
 - Snapshot and Manifest: SNAP-<id> / TEM-<id>
 - Reviewed scope and inputs:
 - Commands or inspection performed:
@@ -445,7 +445,7 @@ This complete Fast-only skeleton contains every section required by strict valid
 # TASK-EXAMPLE-001: Clarify local contributor documentation
 
 ## Handoff Snapshot
-- Workflow revision: ai-team-2026-08-12-r20
+- Workflow revision: ai-team-2026-08-12-r21
 - Snapshot ID and updated at: SNAP-EXAMPLE-001-01 / 2026-08-12T10:00+08:00
 - Current state and technical outcome: awaiting-verification / not-complete
 - Scope, source, decision, and contract references: REQ-EXAMPLE-001 / AC-EXAMPLE-001 / TEST-EXAMPLE-001 / `.ai-team/sources.md`; no decision or contract change
@@ -480,7 +480,7 @@ This compact example passes the `implementation-ready` gate. Shared requirements
 # TASK-EXAMPLE-STD-001: Add validation for calculator expression input
 
 ## Handoff Snapshot
-- Workflow revision: ai-team-2026-08-12-r20
+- Workflow revision: ai-team-2026-08-12-r21
 - Snapshot ID and updated at: SNAP-EXAMPLE-STD-001-01 / 2026-08-12T11:00+08:00
 - Current state and technical outcome: implementation-ready / not-complete
 - Scope, source, decision, and contract references: REQ-EXAMPLE-STD-001 / AC-EXAMPLE-STD-001 / TEST-EXAMPLE-STD-001 TEST-EXAMPLE-STD-002 / `.ai-team/sources.md`; no decision or contract change
@@ -488,9 +488,7 @@ This compact example passes the `implementation-ready` gate. Shared requirements
 - Batch / dependencies / entry: BATCH-EXAMPLE-01 / none / frozen design and planning PASS
 - Change-set file inventory: `src/calculator/input.ts`; `tests/calculator/input.test.ts`
 - Fingerprint policy: required
-- Current change-set fingerprint:
-  - `src/calculator/input.ts` = 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
-  - `tests/calculator/input.test.ts` = fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210
+- Current change-set fingerprint: N/A — candidate files do not exist yet before implementation
 - Actor identities: product=AGENT-PA-EXAMPLE; technical=AGENT-TL-EXAMPLE; implementer=AGENT-IE-EXAMPLE; verifier=AGENT-IV-EXAMPLE; reviewer=N/A — ordinary Standard merged-verifier review
 - Open findings / blockers: none
 - Next action, exit condition, and invalidation: serial implementer completes focused checks; exit awaiting-verification; invalidate on requirement, design, contract, manifest, code, test, or environment change
@@ -514,7 +512,7 @@ This compact example passes the `implementation-ready` gate. Shared requirements
 - Implementation engineer identity: AGENT-IE-EXAMPLE
 - Build / generation / lint-typecheck results: pending implementation
 - Owner / affected / contract test results: pending implementation
-- Omitted checks, residual risks, and evidence: none planned; Unicode normalization remains in independent verification
+- Omitted checks, residual risks, and evidence: full regression deferred to BATCH-EXAMPLE-01 exit; Unicode normalization remains in independent verification
 
 ## Verification and findings
 - Independent verifier identity: AGENT-IV-EXAMPLE

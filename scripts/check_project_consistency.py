@@ -592,11 +592,7 @@ def active_task_errors(project_root: Path, task_root: Path) -> list[str]:
             if state == "cancelled/superseded":
                 for error in validator.cancellation_errors(text):
                     errors.append(located_error(card, project_root, error))
-        if (
-            state in {"task-design-ready", "implementation-ready", "implementing", "awaiting-verification", "complete"}
-            and validator.field_value(snapshot, validator.FINGERPRINT_POLICY_FIELD).strip().lower()
-            == "required"
-        ):
+        if validator.candidate_fingerprint_required(text):
             for error in validator.fingerprint_errors(card, text):
                 errors.append(located_error(card, project_root, error))
     if len(implementing) > 1:
@@ -891,10 +887,7 @@ def selected_task_gate_errors(project_root: Path, task_id: str, gate: str) -> li
     errors = validator.validate(text, gate=gate)
     errors.extend(validator.gate_reference_errors(card, text, gate))
     errors.extend(validator.project_stage_errors(card, gate))
-    if validator.field_value(
-        validator.section(text, "## Handoff Snapshot"),
-        validator.FINGERPRINT_POLICY_FIELD,
-    ).strip().lower() == "required":
+    if validator.candidate_fingerprint_required(text):
         errors.extend(validator.fingerprint_errors(card, text))
     return [located_error(card, project_root, error) for error in dict.fromkeys(errors)]
 

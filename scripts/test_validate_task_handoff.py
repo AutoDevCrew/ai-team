@@ -60,7 +60,8 @@ def completed_standard_card() -> str:
         "- [ ] AC-EXAMPLE-STD-001 / TEST-EXAMPLE-STD-002": "- [x] AC-EXAMPLE-STD-001 / TEST-EXAMPLE-STD-002",
         "- Build / generation / lint-typecheck results: pending implementation": "- Build / generation / lint-typecheck results: PASS — lint completed",
         "- Owner / affected / contract test results: pending implementation": "- Owner / affected / contract test results: PASS — owner and calculator regression groups passed",
-        "- Omitted checks, residual risks, and evidence: none planned; Unicode normalization remains in independent verification": "- Omitted checks, residual risks, and evidence: none; `.ai-team/evidence/EXAMPLE-STD-001-verify.md`",
+        "- Current change-set fingerprint: N/A — candidate files do not exist yet before implementation": "- Current change-set fingerprint:\n  - `src/calculator/input.ts` = 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef\n  - `tests/calculator/input.test.ts` = fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210",
+        "- Omitted checks, residual risks, and evidence: full regression deferred to BATCH-EXAMPLE-01 exit; Unicode normalization remains in independent verification": "- Omitted checks, residual risks, and evidence: full regression deferred to BATCH-EXAMPLE-01 exit; `.ai-team/evidence/EXAMPLE-STD-001-verify.md`",
         "- Independent verifier verdict: readiness PASS; implementation verification pending": "- Independent verifier verdict: PASS — fresh scoped verification passed",
     }
     for old, new in replacements.items():
@@ -286,11 +287,71 @@ class HandoffValidatorTests(unittest.TestCase):
         )
         errors = validator.validate(card, gate="verified-complete")
         self.assertTrue(any("absent from inventory" in error for error in errors), errors)
-        card = template_card("Implementation-ready Standard task card example").replace(
+        card = completed_standard_card().replace(
             "  - `tests/calculator/input.test.ts` = fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210\n",
             "",
         )
         self.assertTrue(any("missing inventory" in error for error in validator.inventory_ledger_errors(card)))
+
+    def test_pre_candidate_required_fingerprint_allows_reasoned_na_but_candidate_requires_ledger(self) -> None:
+        ready = template_card("Implementation-ready Standard task card example")
+        self.assertFalse(
+            any("fingerprint" in error.lower() for error in validator.validate(ready, strict=True)),
+            validator.validate(ready, strict=True),
+        )
+        candidate = ready.replace(
+            "implementation-ready / not-complete", "awaiting-verification / not-complete"
+        )
+        self.assertTrue(
+            any("SHA-256 ledger" in error for error in validator.validate(candidate, strict=True)),
+            validator.validate(candidate, strict=True),
+        )
+
+    def test_none_values_and_omitted_batch_checks_do_not_fail(self) -> None:
+        self.assertTrue(validator.is_none("none — no blocker after independent review"))
+        self.assertTrue(validator.has_reasoned_none("none"))
+        card = completed_standard_card().replace(
+            "- Open findings / blockers: none",
+            "- Open findings / blockers: none — no blocker after independent review",
+        ).replace(
+            "- Omitted checks, residual risks, and evidence: full regression deferred to BATCH-EXAMPLE-01 exit; `.ai-team/evidence/EXAMPLE-STD-001-verify.md`",
+            "- Omitted checks, residual risks, and evidence: full regression 未执行; it runs once at BATCH-EXAMPLE-01 exit",
+        )
+        self.assertEqual([], validator.validate(card, gate="verified-complete"))
+
+    def test_out_of_scope_requirement_keeps_rationale_without_delivery_classification(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            traceability = Path(temp_dir) / "traceability.md"
+            traceability.write_text(
+                """# Requirement Traceability Matrix
+
+| Requirement | Requirement source and classification | State | Acceptance criteria | Source/Demo evidence | Baseline impact | Quality treatment | Design and task | Test case/method | Decision |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| REQ-OUT-001 | out of scope by `docs/prd.md` | out of scope | none | PRD exclusion | none | none | none | none | none |
+""",
+                encoding="utf-8",
+            )
+            errors, _, _, _ = validator.traceability_matrix_errors(
+                traceability, {"REQ-OUT-001"}, set()
+            )
+            self.assertEqual([], errors)
+
+    def test_review_evidence_accepts_intake_and_baseline_phases(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            evidence = Path(temp_dir) / "baseline.md"
+            evidence.write_text(review_record("baseline"), encoding="utf-8")
+            self.assertEqual(
+                [],
+                validator.review_evidence_errors(
+                    evidence,
+                    "SNAP-EXAMPLE-STD-001-01",
+                    "TEM-EXAMPLE-STD-001-01",
+                    "AGENT-IV-EXAMPLE",
+                    require_pass=True,
+                    expected_role="independent verifier",
+                    expected_phase="baseline",
+                ),
+            )
 
     def test_merged_standard_reviewer_is_allowed_but_triggered_review_is_required(self) -> None:
         self.assertEqual([], validator.validate(completed_standard_card(), gate="verified-complete"))
@@ -398,7 +459,7 @@ class HandoffValidatorTests(unittest.TestCase):
         errors = validator.validate(p2, gate="verified-complete")
         self.assertTrue(any("P2 findings require" in error for error in errors), errors)
 
-    def test_no_findings_uses_one_reasoned_none_semantic(self) -> None:
+    def test_no_findings_uses_one_consistent_none_semantic(self) -> None:
         valid = completed_standard_card()
         self.assertFalse(
             any(
@@ -410,9 +471,7 @@ class HandoffValidatorTests(unittest.TestCase):
             "none — no design finding after TEST-EXAMPLE-STD-001 and TEST-EXAMPLE-STD-002 planning review",
             "none",
         )
-        errors = validator.validate(bare, gate="verified-complete")
-        self.assertTrue(any("no findings require a concrete reason" in error for error in errors), errors)
-        self.assertTrue(any("example: none — no findings" in error for error in errors), errors)
+        self.assertEqual([], validator.validate(bare, gate="verified-complete"))
 
     def test_actionable_pass_error_includes_value_expectation_and_example(self) -> None:
         card = completed_standard_card().replace(

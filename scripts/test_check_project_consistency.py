@@ -203,6 +203,16 @@ class ProjectConsistencyTests(unittest.TestCase):
         )
         return card, backlog
 
+    def with_candidate_ledger(self, project: Path, card_text: str) -> str:
+        source = project / "src/calculator/input.ts"
+        test = project / "tests/calculator/input.test.ts"
+        return card_text.replace(
+            "- Current change-set fingerprint: N/A — candidate files do not exist yet before implementation",
+            "- Current change-set fingerprint:\n"
+            f"  - `src/calculator/input.ts` = {hashlib.sha256(source.read_bytes()).hexdigest()}\n"
+            f"  - `tests/calculator/input.test.ts` = {hashlib.sha256(test.read_bytes()).hexdigest()}",
+        )
+
     def test_current_project_template_passes(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             project = Path(temp_dir)
@@ -344,6 +354,7 @@ class ProjectConsistencyTests(unittest.TestCase):
                 "- Owner / affected / contract test results: pending implementation",
                 "- Owner / affected / contract test results: PASS — focused tests completed",
             )
+            card_text = self.with_candidate_ledger(project, card_text)
             card.write_text(card_text, encoding="utf-8")
             backlog.write_text(
                 backlog.read_text(encoding="utf-8").replace(
@@ -960,7 +971,7 @@ class ProjectConsistencyTests(unittest.TestCase):
             project = Path(temp_dir)
             self.materialize_project(project)
             card, backlog = self.prepare_standard_ready_project(project)
-            card.write_text(
+            card_text = (
                 card.read_text(encoding="utf-8")
                 .replace(
                     "implementation-ready / not-complete",
@@ -985,9 +996,9 @@ class ProjectConsistencyTests(unittest.TestCase):
                 .replace(
                     "- Open P0/P1 / P2 follow-up: none",
                     "- Open P0/P1 / P2 follow-up: FIND-P1-001",
-                ),
-                encoding="utf-8",
+                )
             )
+            card.write_text(self.with_candidate_ledger(project, card_text), encoding="utf-8")
             backlog.write_text(
                 backlog.read_text(encoding="utf-8")
                 .replace(
