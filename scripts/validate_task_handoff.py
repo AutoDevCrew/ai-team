@@ -1487,7 +1487,7 @@ def gate_reference_errors(task_card: Path, text: str, gate: str) -> list[str]:
     errors: list[str] = []
 
     def evidence_errors(path: Path, findings: list[str]) -> list[str]:
-        location = path.relative_to(project_root)
+        location = path.relative_to(project_root).as_posix()
         return [f"{location}: {finding}" for finding in findings]
 
     if lane == "fast":

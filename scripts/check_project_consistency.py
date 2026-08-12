@@ -39,10 +39,14 @@ SCHEMA_DRIVEN_AUTHORITY_FIELDS = {
 }
 
 
+def relative_display(path: Path, root: Path) -> str:
+    return path.relative_to(root).as_posix()
+
+
 def located_error(card: Path, project_root: Path, error: str) -> str:
     if error.startswith(".ai-team/") or error.startswith(".ai-team\\"):
         return error
-    return f"{card.relative_to(project_root)}: {error}"
+    return f"{relative_display(card, project_root)}: {error}"
 
 
 def revision_tokens(text: str) -> set[str]:
@@ -88,7 +92,7 @@ def revision_errors(project_root: Path, manifest_text: str) -> list[str]:
         if revisions != {WORKFLOW_REVISION}:
             actual = ", ".join(sorted(revisions)) or "missing"
             errors.append(
-                f"workflow revision drift in {artifact.relative_to(project_root)}: expected {WORKFLOW_REVISION}, got {actual}"
+                f"workflow revision drift in {relative_display(artifact, project_root)}: expected {WORKFLOW_REVISION}, got {actual}"
             )
     return errors
 
@@ -109,12 +113,12 @@ def link_errors(project_root: Path, ai_team_root: Path) -> list[str]:
                     resolved.relative_to(project_root)
                 except ValueError:
                     errors.append(
-                        f"local Markdown link escapes project root: {markdown_file.relative_to(project_root)}:{line_number} -> {target}"
+                        f"local Markdown link escapes project root: {relative_display(markdown_file, project_root)}:{line_number} -> {target}"
                     )
                     continue
                 if not resolved.exists():
                     errors.append(
-                        f"local Markdown link target not found: {markdown_file.relative_to(project_root)}:{line_number} -> {target}"
+                        f"local Markdown link target not found: {relative_display(markdown_file, project_root)}:{line_number} -> {target}"
                     )
     return errors
 
@@ -272,7 +276,7 @@ def task_inventory_errors(project_root: Path, task_root: Path, board: Path) -> l
         text = card.read_text(encoding="utf-8")
         task_id, state, lane, complexity, batch = card_identity(card, text)
         if not task_id:
-            errors.append(f"task card lacks a TASK-... H1: {card.relative_to(project_root)}")
+            errors.append(f"task card lacks a TASK-... H1: {relative_display(card, project_root)}")
             continue
         if task_id in cards:
             errors.append(f"duplicate task ID across cards: {task_id}")
@@ -312,10 +316,10 @@ def task_inventory_errors(project_root: Path, task_root: Path, board: Path) -> l
             errors.append(f"backlog task has no local task-card link: {task_id}")
             continue
         if linked in row_paths:
-            errors.append(f"duplicate backlog task-card link: {linked.relative_to(project_root)}")
+            errors.append(f"duplicate backlog task-card link: {relative_display(linked, project_root)}")
         row_paths.add(linked)
         if linked not in card_paths:
-            errors.append(f"backlog task card not found or not unique: {task_id} -> {linked.relative_to(project_root)}")
+            errors.append(f"backlog task card not found or not unique: {task_id} -> {relative_display(linked, project_root)}")
             continue
         card_id = next((known for known, values in cards.items() if values[0] == linked), "")
         if card_id != task_id:
@@ -335,7 +339,7 @@ def task_inventory_errors(project_root: Path, task_root: Path, board: Path) -> l
             )
     for task_id, (card, _, _, _, _) in cards.items():
         if task_id not in row_ids:
-            errors.append(f"task card is missing from backlog: {card.relative_to(project_root)}")
+            errors.append(f"task card is missing from backlog: {relative_display(card, project_root)}")
         text = card.read_text(encoding="utf-8")
         state = card_identity(card, text)[1]
         if state == "complete":
@@ -493,7 +497,7 @@ def active_task_errors(project_root: Path, task_root: Path) -> list[str]:
         text = card.read_text(encoding="utf-8")
         snapshot = validator.section(text, "## Handoff Snapshot")
         if not snapshot:
-            errors.append(f"task card has no Handoff Snapshot: {card.relative_to(project_root)}")
+            errors.append(f"task card has no Handoff Snapshot: {relative_display(card, project_root)}")
             continue
         state, _ = validator.state_and_outcome(snapshot)
         if state == "implementing":
@@ -501,7 +505,7 @@ def active_task_errors(project_root: Path, task_root: Path) -> list[str]:
         revision = validator.field_value(snapshot, "Workflow revision:").strip(" `")
         if revision != WORKFLOW_REVISION:
             errors.append(
-                f"active task workflow revision mismatch: {card.relative_to(project_root)} expected {WORKFLOW_REVISION}, got {revision or 'missing'}"
+                f"active task workflow revision mismatch: {relative_display(card, project_root)} expected {WORKFLOW_REVISION}, got {revision or 'missing'}"
             )
         gate: str | None = None
         if state == "task-design-ready":
@@ -535,7 +539,7 @@ def active_task_errors(project_root: Path, task_root: Path) -> list[str]:
                 errors.append(located_error(card, project_root, error))
         else:
             for error in validator.state_model_errors(snapshot):
-                errors.append(f"{card.relative_to(project_root)}: {error}")
+                errors.append(f"{relative_display(card, project_root)}: {error}")
             if state == "cancelled/superseded":
                 for error in validator.cancellation_errors(text):
                     errors.append(located_error(card, project_root, error))

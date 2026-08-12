@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Regression tests for the read-only AI-team project consistency checker."""
 
-from pathlib import Path
+from pathlib import Path, PureWindowsPath
 import hashlib
 import re
 import shutil
@@ -219,6 +219,14 @@ class ProjectConsistencyTests(unittest.TestCase):
                 text=True,
             )
             self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+
+    def test_rendered_relative_paths_are_posix_on_windows(self) -> None:
+        root = PureWindowsPath(r"C:\work\project")
+        card = root / ".ai-team" / "tasks" / "TASK-001.md"
+        self.assertEqual(
+            ".ai-team/tasks/TASK-001.md",
+            checker.relative_display(card, root),
+        )
 
     def test_realistic_implementation_ready_project_passes_end_to_end(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
