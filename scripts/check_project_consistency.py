@@ -23,6 +23,7 @@ LINK_PATTERN = re.compile(r"!?\[[^\]]*\]\(([^)]+)\)")
 BACKTICK_PATH_PATTERN = re.compile(r"`([^`]+)`")
 TASK_ID_PATTERN = re.compile(r"\bTASK-[A-Za-z0-9._-]+\b", re.IGNORECASE)
 DECISION_ID_PATTERN = re.compile(r"\bDEC-[A-Za-z0-9._-]+\b", re.IGNORECASE)
+FINDING_ID_PATTERN = re.compile(r"\bFIND-[A-Za-z0-9._-]+\b", re.IGNORECASE)
 TERMINAL_STATES = {"complete", "cancelled", "cancelled/superseded", "superseded"}
 OWNER_ROLES = set(WORKFLOW_SCHEMA["enums"]["owner_roles"])
 NEXT_GATES = set(WORKFLOW_SCHEMA["enums"]["next_gates"])
@@ -205,12 +206,26 @@ def confirmed_decision_ids(project_root: Path) -> set[str]:
     decisions = project_root / ".ai-team/governance/decisions.md"
     if not decisions.is_file():
         return set()
-    return {
-        match.group(0).upper()
-        for match in DECISION_ID_PATTERN.finditer(
-            visible_markdown(decisions.read_text(encoding="utf-8"))
+    text = visible_markdown(decisions.read_text(encoding="utf-8"))
+    headings = list(
+        re.finditer(
+            r"^##\s+(DEC-[A-Za-z0-9._-]+)(?::|\s|$)",
+            text,
+            flags=re.IGNORECASE | re.MULTILINE,
         )
-    }
+    )
+    confirmed: set[str] = set()
+    for index, heading in enumerate(headings):
+        end = headings[index + 1].start() if index + 1 < len(headings) else len(text)
+        record = text[heading.end() : end]
+        status = re.search(
+            r"^\s*-\s*(?:\*\*)?Status:(?:\*\*)?\s*([^\n]+)$",
+            record,
+            flags=re.IGNORECASE | re.MULTILINE,
+        )
+        if status and status.group(1).strip().casefold() == "confirmed":
+            confirmed.add(heading.group(1).upper())
+    return confirmed
 
 
 def blocker_is_resolved(
@@ -220,6 +235,11 @@ def blocker_is_resolved(
     decision_refs = {
         match.group(0).upper() for match in DECISION_ID_PATTERN.finditer(blocker)
     }
+    finding_refs = {
+        match.group(0).upper() for match in FINDING_ID_PATTERN.finditer(blocker)
+    }
+    if finding_refs:
+        return False
     return bool(task_refs or decision_refs) and task_refs.issubset(
         terminal_ids
     ) and decision_refs.issubset(confirmed_decisions)
@@ -285,7 +305,7 @@ def task_inventory_errors(project_root: Path, task_root: Path, board: Path) -> l
     row_ids: set[str] = set()
     row_paths: set[Path] = set()
     graph: dict[str, set[str]] = {}
-    blocker_references: list[tuple[str, set[str], set[str]]] = []
+    blocker_references: list[tuple[str, set[str], set[str], set[str]]] = []
     for row in rows:
         task_id = row.get("ID", "")
         if task_id in row_ids:
@@ -306,11 +326,17 @@ def task_inventory_errors(project_root: Path, task_root: Path, board: Path) -> l
                 match.group(0).upper()
                 for match in DECISION_ID_PATTERN.finditer(blocker)
             }
-            if not task_refs and not decision_refs:
+            finding_refs = {
+                match.group(0).upper()
+                for match in FINDING_ID_PATTERN.finditer(blocker)
+            }
+            if not task_refs and not decision_refs and not finding_refs:
                 errors.append(
-                    f"backlog blocker must reference a TASK-... or DEC-... ID: {task_id}"
+                    f"backlog blocker must reference a TASK-..., DEC-..., or FIND-... ID: {task_id}"
                 )
-            blocker_references.append((task_id, task_refs, decision_refs))
+            blocker_references.append(
+                (task_id, task_refs, decision_refs, finding_refs)
+            )
         linked = resolve_card_link(board, row.get("Card", ""))
         if linked is None:
             errors.append(f"backlog task has no local task-card link: {task_id}")
@@ -337,6 +363,25 @@ def task_inventory_errors(project_root: Path, task_root: Path, board: Path) -> l
             errors.append(
                 f"backlog/card Dependencies mismatch for {task_id}: backlog={sorted(dependencies)} card={sorted(card_dependencies)}"
             )
+        finding_refs = {
+            match.group(0).upper()
+            for match in FINDING_ID_PATTERN.finditer(
+                row.get("Blocker / decision", "")
+            )
+        }
+        if finding_refs:
+            card_text = linked.read_text(encoding="utf-8")
+            card_findings = validator.identifiers(card_text, "FIND")
+            missing_findings = sorted(finding_refs - card_findings)
+            if missing_findings:
+                errors.append(
+                    f"backlog blocker finding is absent from its task card: {task_id} -> {', '.join(missing_findings)}"
+                )
+            severities, _ = validator.recorded_findings(card_text)
+            if not severities.intersection({"P0", "P1"}):
+                errors.append(
+                    f"backlog FIND blocker requires recorded P0/P1 severity in its task card: {task_id}"
+                )
     for task_id, (card, _, _, _, _) in cards.items():
         if task_id not in row_ids:
             errors.append(f"task card is missing from backlog: {relative_display(card, project_root)}")
@@ -388,7 +433,7 @@ def task_inventory_errors(project_root: Path, task_root: Path, board: Path) -> l
         if decisions_path.is_file()
         else set()
     )
-    for task_id, task_refs, decision_refs in blocker_references:
+    for task_id, task_refs, decision_refs, _ in blocker_references:
         for reference in task_refs:
             if reference not in row_ids:
                 errors.append(f"backlog blocker task not found: {task_id} -> {reference}")
@@ -708,8 +753,8 @@ def next_eligible_action(project_root: Path) -> str | None:
             action = actions.get(state)
             if action is None:
                 continue
+            card = resolve_card_link(board, row.get("Card", ""))
             if state == "awaiting-verification":
-                card = resolve_card_link(board, row.get("Card", ""))
                 if card and card.is_file():
                     card_text = card.read_text(encoding="utf-8")
                     severities, verifier_verdict = validator.recorded_findings(card_text)
@@ -728,6 +773,24 @@ def next_eligible_action(project_root: Path) -> str | None:
                         action += " and triggered code/security review"
             blocker = row.get("Blocker / decision", "").strip()
             if blocker and not validator.is_none(blocker):
+                finding_refs = {
+                    match.group(0).upper()
+                    for match in FINDING_ID_PATTERN.finditer(blocker)
+                }
+                if finding_refs and card and card.is_file():
+                    severities, _ = validator.recorded_findings(
+                        card.read_text(encoding="utf-8")
+                    )
+                    if "P0" in severities:
+                        return (
+                            f"{row.get('ID', '').strip()}: block implementation and escalate "
+                            f"the recorded P0 finding {sorted(finding_refs)[0]}"
+                        )
+                    if "P1" in severities:
+                        return (
+                            f"{row.get('ID', '').strip()}: return {sorted(finding_refs)[0]} "
+                            "to serial implementation remediation"
+                        )
                 if blocker_is_resolved(blocker, terminal_ids, confirmed_decisions):
                     return (
                         f"{row.get('ID', '').strip()}: clear the resolved blocker and resume {action}"

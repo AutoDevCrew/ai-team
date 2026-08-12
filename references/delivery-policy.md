@@ -1,6 +1,6 @@
 # Delivery Policy
 
-Workflow revision: `ai-team-2026-08-12-r16`.
+Workflow revision: `ai-team-2026-08-12-r17`.
 
 This is the single global authority for AI-team delivery lanes, states, gates, handoffs, validation, severity, acceptance, and re-entry. Copy it to `.ai-team/governance/workflow.md` during project initialization. The project-local copy is the runtime authority for that project.
 
@@ -161,12 +161,13 @@ Finding severity is distinct from backlog priority.
 - `P1`: acceptance criterion, required regression, or security control not met. Return to implementation; do not request human acceptance.
 - `P2`: non-blocking improvement. Create an evidence-linked follow-up task; do not silently discard it or block completion.
 
-Record severity, reproduction evidence, affected REQ/AC/TEST, disposition, and follow-up link. Unresolved P0/P1 blocks completion.
+Record each finding as `FIND-...` with severity, reproduction evidence, affected REQ/AC/TEST, disposition, and follow-up link. Put an unresolved P0/P1 FIND ID in the task's backlog blocker until remediation or disposition removes it; do not invent a DEC ID unless a separate material human decision is genuinely required. Unresolved P0/P1 blocks completion.
 
 ## Human decisions and acceptance
 
 - Decide autonomously from sufficient sources, confirmed decisions, scoped Demo/Figma evidence, code, tests, and reversible local conventions.
 - Create one decision card only for unresolved evidence conflict, missing scope/acceptance, unavailable authority, or material irreversible, security, privacy, permission, external-cost, or production impact. Present and record one dependency-ordered decision at a time.
+- A DEC blocker clears only when the matching decision-log entry explicitly records `Status: confirmed`; an ID mention or open, pending, rejected, or obsolete status never grants authority.
 - Do not escalate normal internal structure, naming, task split/order/batching, test strategy, local pattern reuse, traceability completion, regression tests, or document consistency when evidence determines the answer.
 - Verification PASS is a quality verdict, not a human decision. Human acceptance is required only at a named batch, milestone, end-to-end flow, or user-requested checkpoint.
 - A checkpoint package states scope, product outcome, in/out-of-scope changes, evidence, limitations/risks, artifact links, and one accept/reject/conditional choice. Never request acceptance with only a task ID.

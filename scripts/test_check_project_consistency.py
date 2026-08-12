@@ -886,6 +886,116 @@ class ProjectConsistencyTests(unittest.TestCase):
             self.assertIn("DEC-999", action)
             self.assertIn("human decision required", action)
 
+    def test_only_confirmed_decisions_clear_human_blockers(self) -> None:
+        for status, clears in (
+            ("open", False),
+            ("pending", False),
+            ("rejected", False),
+            ("confirmed", True),
+        ):
+            with self.subTest(status=status), tempfile.TemporaryDirectory() as temp_dir:
+                project = Path(temp_dir)
+                self.materialize_project(project)
+                decisions = project / ".ai-team/governance/decisions.md"
+                decisions.write_text(
+                    f"""# Decision Log
+
+## DEC-900: Material choice
+
+- Status: {status}
+- Decision: selected by the human only when confirmed
+""",
+                    encoding="utf-8",
+                )
+                backlog = project / ".ai-team/tasks/backlog.md"
+                backlog.write_text(
+                    backlog.read_text(encoding="utf-8").replace(
+                        "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |",
+                        "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n"
+                        "| TASK-001 | Decision | awaiting-human-decision | standard | M | B1 | delivery coordinator | none | DEC-900 | task-design | [card](TASK-001.md) |",
+                    ),
+                    encoding="utf-8",
+                )
+                action = checker.next_eligible_action(project) or ""
+                self.assertEqual(clears, "clear the resolved blocker" in action, action)
+                self.assertEqual(not clears, "human decision required" in action, action)
+
+    def test_find_blocker_is_valid_and_routes_p1_to_remediation(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            project = Path(temp_dir)
+            self.materialize_project(project)
+            card, backlog = self.prepare_standard_ready_project(project)
+            card.write_text(
+                card.read_text(encoding="utf-8")
+                .replace(
+                    "implementation-ready / not-complete",
+                    "awaiting-verification / not-complete",
+                )
+                .replace(
+                    "- Build / generation / lint-typecheck results: pending implementation",
+                    "- Build / generation / lint-typecheck results: PASS — lint completed",
+                )
+                .replace(
+                    "- Owner / affected / contract test results: pending implementation",
+                    "- Owner / affected / contract test results: PASS — focused tests completed",
+                )
+                .replace(
+                    "- Independent verifier verdict: readiness PASS; implementation verification pending",
+                    "- Independent verifier verdict: FAIL — TEST-EXAMPLE-STD-001",
+                )
+                .replace(
+                    "- Findings / severity / affected REQ-AC-TEST: none / N/A — no finding / REQ-EXAMPLE-STD-001 AC-EXAMPLE-STD-001 TEST-EXAMPLE-STD-001 TEST-EXAMPLE-STD-002",
+                    "- Findings / severity / affected REQ-AC-TEST: FIND-P1-001 / P1 / REQ-EXAMPLE-STD-001 AC-EXAMPLE-STD-001 TEST-EXAMPLE-STD-001",
+                )
+                .replace(
+                    "- Open P0/P1 / P2 follow-up: none",
+                    "- Open P0/P1 / P2 follow-up: FIND-P1-001",
+                ),
+                encoding="utf-8",
+            )
+            backlog.write_text(
+                backlog.read_text(encoding="utf-8")
+                .replace(
+                    "| implementation-ready |", "| awaiting-verification |"
+                )
+                .replace(
+                    "| none | verified-complete | [card](TASK-EXAMPLE-STD-001.md) |",
+                    "| FIND-P1-001 | verified-complete | [card](TASK-EXAMPLE-STD-001.md) |",
+                ),
+                encoding="utf-8",
+            )
+            self.assertEqual([], checker.check_project(project))
+            action = checker.next_eligible_action(project) or ""
+            self.assertIn("serial implementation remediation", action)
+            self.assertNotIn("clear the resolved blocker", action)
+
+    def test_find_blocker_cannot_be_cleared_by_a_confirmed_decision(self) -> None:
+        self.assertFalse(
+            checker.blocker_is_resolved(
+                "DEC-001 / FIND-P0-001",
+                set(),
+                {"DEC-001"},
+            )
+        )
+
+    def test_dangling_find_blocker_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            project = Path(temp_dir)
+            self.materialize_project(project)
+            card, backlog = self.prepare_standard_ready_project(project)
+            backlog.write_text(
+                backlog.read_text(encoding="utf-8").replace(
+                    "| none | verified-complete | [card](TASK-EXAMPLE-STD-001.md) |",
+                    "| FIND-MISSING-001 | verified-complete | [card](TASK-EXAMPLE-STD-001.md) |",
+                ),
+                encoding="utf-8",
+            )
+            errors = checker.check_project(project)
+            self.assertTrue(
+                any("absent from its task card" in error for error in errors),
+                errors,
+            )
+
     def test_conditional_acceptance_reenters_only_affected_scope(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             project = Path(temp_dir)
