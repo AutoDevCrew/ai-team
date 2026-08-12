@@ -7,7 +7,7 @@ description: Launch or refine a Codex-run local software delivery team from a PR
 
 Run a Codex-native software delivery workflow from requirement input through local verification and named human acceptance checkpoints. Use one serial implementation engineer and independent verification; do not build another orchestration framework.
 
-Workflow revision: `ai-team-2026-08-12-r22`. Projects use this current layout only; older workflow layouts are unsupported.
+Workflow revision: `ai-team-2026-08-12-r23`. Projects use this current layout only; older workflow layouts are unsupported.
 
 ## Authority model
 
@@ -33,7 +33,7 @@ After initialization, the project-local copies are the runtime authority:
 - `.ai-team/governance/workflow.md` — project delivery policy snapshot.
 - `.ai-team/governance/roles.md` — project role protocol snapshot.
 - `.ai-team/governance/templates.md` — exact project artifact schemas.
-- `.ai-team/governance/decisions.md` — confirmed human decisions.
+- `.ai-team/governance/decisions.md` — human decision log; only confirmed entries grant authority.
 - `.ai-team/sources.md` plus the manifest-declared acceptance specification and requirement traceability matrix — current product evidence and frozen coverage.
 - `.ai-team/tasks/` — task state and evidence-linked cards.
 

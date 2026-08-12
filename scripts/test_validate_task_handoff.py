@@ -496,6 +496,17 @@ class HandoffValidatorTests(unittest.TestCase):
         errors = validator.validate(p2, gate="verified-complete")
         self.assertTrue(any("P2 findings require" in error for error in errors), errors)
 
+    def test_resolved_p0_p1_card_finding_explains_the_current_inventory_rule(self) -> None:
+        card = completed_standard_card().replace(
+            "- Findings / severity / affected REQ-AC-TEST: none — no design finding after TEST-EXAMPLE-STD-001 and TEST-EXAMPLE-STD-002 planning review",
+            "- Findings / severity / affected REQ-AC-TEST: FIND-P1-001 / P1 / resolved at SNAP-EXAMPLE-STD-001-02",
+        )
+        errors = validator.validate(card, gate="verified-complete")
+        self.assertTrue(
+            any("remove the resolved finding from the card" in error for error in errors),
+            errors,
+        )
+
     def test_no_findings_uses_one_consistent_none_semantic(self) -> None:
         valid = completed_standard_card()
         self.assertFalse(

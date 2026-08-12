@@ -1,22 +1,22 @@
 # Decision Log
 
-This file is the only source of confirmed human decisions. Every entry must contain `- Status: confirmed`; any open, pending, rejected, or obsolete decision remains outside this log and cannot clear a blocker. Use monotonically increasing `DEC-<NNN>` identifiers. A decision card and its confirmed log entry use the same ID; do not create a parallel `D-<NNN>` namespace. Do not overwrite prior decisions; add a new decision when policy changes.
+This file records project decision entries with `- Status: open`, `pending`, `confirmed`, `rejected`, or `obsolete`. Only `confirmed` `DEC-<NNN>` entries clear a blocker; every other status keeps it blocked. Use monotonically increasing project `DEC-<NNN>` identifiers. Do not overwrite prior decisions; update status or add a new decision when policy changes. `POL-<NNN>` entries below are template governance policies, not project decisions.
 
-## DEC-001: Markdown task management
+## POL-001: Markdown task management
 
 - Status: confirmed
 - **Decision:** Use repository Markdown for task tracking.
 - **Location:** `../tasks/backlog.md` is the only backlog; every work item has one `TASK-<id>-<slug>.md` card somewhere under the manifest-declared Task root.
 - **Not used:** External task systems.
 
-## DEC-002: Local-only AI authority
+## POL-002: Local-only AI authority
 
 - Status: confirmed
 - **Allowed:** Modify local files, run local builds/tests, and create local evidence.
 - **Forbidden:** Create branches, commit, push, create pull requests, deploy, or access/modify production.
 - **Human responsibility:** Version-control, deployment, and production actions.
 
-## DEC-003: Agent roles and implementation model
+## POL-003: Agent roles and implementation model
 
 - Status: confirmed
 - **Decision:** Use Codex as the coordinator and temporary specialist roles; do not build a separate orchestration framework.
@@ -24,7 +24,7 @@ This file is the only source of confirmed human decisions. Every entry must cont
 - **Handoffs:** Use project artifacts; use `DISC-xxx` only for unresolved questions.
 - **Runtime topology:** Keep Codex as root coordinator, one writable serial implementer, and at most two concurrent temporary read-only specialists/reviewers; retire children after handoff.
 
-## DEC-004: Autonomous decisions and human escalation
+## POL-004: Autonomous decisions and human escalation
 
 - Status: confirmed
 - **Decision:** AI decides from the PRD or recorded initial user request, confirmed decisions, source evidence, code, tests, and project rules, using the smallest reversible solution that meets acceptance criteria.

@@ -1365,7 +1365,10 @@ def completion_result_errors(self_check: str, findings: str) -> list[str]:
         elif finding_ids - severity_by_id.keys():
             errors.append("each FIND/EVID record requires an adjacent P0/P1/P2 severity")
         if severities.intersection({"P0", "P1"}) and is_none(followup):
-            errors.append("P0/P1 findings must remain open and block completion")
+            errors.append(
+                "P0/P1 finding requires an open follow-up; otherwise remove the resolved "
+                "finding from the card and retain its remediation record in review evidence"
+            )
         if "P2" in severities and not identifiers(followup, "TASK"):
             errors.append("P2 findings require a TASK follow-up")
     return errors

@@ -848,7 +848,7 @@ class ProjectConsistencyTests(unittest.TestCase):
 
     def test_resolved_task_or_decision_blocker_is_cleared(self) -> None:
         for blocker, prefix_rows in (
-            ("DEC-001", ""),
+            ("DEC-900", ""),
             (
                 "TASK-001",
                 "| TASK-001 | Done | complete | standard | M | B1 | delivery coordinator | none | none | none | [done](TASK-001.md) |\n",
@@ -857,6 +857,13 @@ class ProjectConsistencyTests(unittest.TestCase):
             with self.subTest(blocker=blocker), tempfile.TemporaryDirectory() as temp_dir:
                 project = Path(temp_dir)
                 self.materialize_project(project)
+                if blocker == "DEC-900":
+                    decisions = project / ".ai-team/governance/decisions.md"
+                    decisions.write_text(
+                        decisions.read_text(encoding="utf-8")
+                        + "\n## DEC-900: Confirmed choice\n\n- Status: confirmed\n",
+                        encoding="utf-8",
+                    )
                 backlog = project / ".ai-team/tasks/backlog.md"
                 task_id = "TASK-002" if prefix_rows else "TASK-001"
                 rows = prefix_rows + (
@@ -965,6 +972,41 @@ class ProjectConsistencyTests(unittest.TestCase):
                 action = checker.next_eligible_action(project) or ""
                 self.assertEqual(clears, "clear the resolved blocker" in action, action)
                 self.assertEqual(not clears, "human decision required" in action, action)
+
+    def test_pending_decision_is_a_valid_blocker_and_template_policies_use_pol_ids(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            project = Path(temp_dir)
+            self.materialize_project(project)
+            card, backlog = self.prepare_standard_ready_project(project)
+            card.write_text(
+                card.read_text(encoding="utf-8").replace(
+                    "implementation-ready / not-complete",
+                    "awaiting-human-decision / not-complete",
+                ),
+                encoding="utf-8",
+            )
+            backlog.write_text(
+                backlog.read_text(encoding="utf-8").replace(
+                    "| TASK-EXAMPLE-STD-001 | Input validation | implementation-ready | standard | M | BATCH-EXAMPLE-01 | serial implementation engineer | none | none | verified-complete | [card](TASK-EXAMPLE-STD-001.md) |",
+                    "| TASK-EXAMPLE-STD-001 | Input validation | awaiting-human-decision | standard | M | BATCH-EXAMPLE-01 | delivery coordinator | none | DEC-001 | task-design | [card](TASK-EXAMPLE-STD-001.md) |",
+                ),
+                encoding="utf-8",
+            )
+            decisions = project / ".ai-team/governance/decisions.md"
+            decisions.write_text(
+                decisions.read_text(encoding="utf-8")
+                + "\n## DEC-001: Material choice\n\n- Status: pending\n- Decision: awaiting human confirmation\n",
+                encoding="utf-8",
+            )
+            self.assertEqual([], checker.check_project(project))
+            action = checker.next_eligible_action(project) or ""
+            self.assertIn("DEC-001", action)
+            self.assertIn("human decision required", action)
+            template_log = (PROJECT_TEMPLATE / ".ai-team/governance/decisions.md").read_text(
+                encoding="utf-8"
+            )
+            self.assertIn("## POL-001", template_log)
+            self.assertNotIn("## DEC-001: Markdown task management", template_log)
 
     def test_find_blocker_is_valid_and_routes_p1_to_remediation(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:

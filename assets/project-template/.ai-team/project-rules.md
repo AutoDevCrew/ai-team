@@ -1,6 +1,6 @@
 # AI Team Project Rules
 
-Workflow revision: `ai-team-2026-08-12-r22`.
+Workflow revision: `ai-team-2026-08-12-r23`.
 
 This file is the project authority index and override surface. It does not redefine delivery rules, role responsibilities, or artifact fields.
 
@@ -9,7 +9,7 @@ This file is the project authority index and override surface. It does not redef
 1. `.ai-team/manifest.md` — canonical paths.
 2. `.ai-team/governance/workflow-schema.json` — workflow revision, active enums, compact field groups, stage authorization, and table contracts.
 3. `.ai-team/stage.md` — current project-stage authorization.
-4. `.ai-team/governance/decisions.md` — confirmed human decisions.
+4. `.ai-team/governance/decisions.md` — human decision log; only confirmed entries grant authority.
 5. `.ai-team/sources.md` and the manifest-declared acceptance specification/requirement traceability matrix — current product evidence, frozen REQ/AC scope, and delivery coverage.
 6. `.ai-team/governance/workflow.md` — gate semantics, handoffs, validation, acceptance, and re-entry.
 7. `.ai-team/governance/roles.md` — role responsibilities, boundaries, outputs, and exits.
