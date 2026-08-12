@@ -1,6 +1,6 @@
 # Role Protocol
 
-Workflow revision: `ai-team-2026-08-12-r13`.
+Workflow revision: `ai-team-2026-08-12-r14`.
 
 This is the single global authority for AI-team role responsibilities and boundaries. Copy it to `.ai-team/governance/roles.md` during project initialization. The project-local copy is the runtime authority.
 
@@ -50,7 +50,7 @@ The coordinator starts the next eligible child or performs the next eligible loc
 5. Distinguish design blockers, implementation blockers, quality findings, human decisions, and acceptance checkpoints.
 6. Package only genuine human decisions and present them one at a time in dependency order.
 7. Activate a verifier's conditional Standard readiness only when every enumerated mechanical condition is evidenced and no recorded invalidation trigger occurred; otherwise return it to the verifier.
-8. After each handoff, launch or execute the next eligible action in serial order; never allow two tasks to remain `implementing`. Record an exact continuation point when a turn must end.
+8. After each handoff, launch or execute the next eligible action in serial order, including batch regression and evidence-backed P0/P1 re-entry; never allow two tasks to remain `implementing`. Clear blockers whose referenced task or confirmed decision is resolved. Record an exact continuation point when a turn must end.
 9. After rejection or scope change, coordinate impact analysis and re-entry while preserving unaffected baselines and historical evidence.
 
 ### Outputs and writes

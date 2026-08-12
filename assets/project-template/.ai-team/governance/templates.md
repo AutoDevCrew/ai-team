@@ -1,6 +1,6 @@
 # Canonical Artifact Templates
 
-Workflow revision: `ai-team-2026-08-12-r13`.
+Workflow revision: `ai-team-2026-08-12-r14`.
 
 ## Catalog navigation
 
@@ -265,7 +265,7 @@ Use this compact delta card for Standard/High-risk work. Project-wide requiremen
 - Scope, source, decision, and contract references:
 - Delivery lane / complexity / control triggers: fast|standard|high-risk / S|M|L|XL / none — reason or comma-separated trigger names
 - Batch / dependencies / entry: batch ID or batch-not-applicable / dependency IDs or none / concrete entry evidence
-- Change-set file inventory: `path`; `path` / N/A — Fast-only reason
+- Change-set file inventory: `path`; `path`
 - Fingerprint policy: required / N/A — Fast-only reason
 - Current change-set fingerprint: <N/A — Fast-only reason, or leave empty and add actual ledger lines below>
 - Actor identities: product=AGENT-<id>; technical=AGENT-<id>; implementer=AGENT-<id>; verifier=AGENT-<id>; reviewer=AGENT-<id> / N/A — merged-verifier reason
@@ -445,13 +445,13 @@ This complete Fast-only skeleton contains every section required by strict valid
 # TASK-EXAMPLE-001: Clarify local contributor documentation
 
 ## Handoff Snapshot
-- Workflow revision: ai-team-2026-08-12-r13
+- Workflow revision: ai-team-2026-08-12-r14
 - Snapshot ID and updated at: SNAP-EXAMPLE-001-01 / 2026-08-12T10:00+08:00
 - Current state and technical outcome: awaiting-verification / not-complete
 - Scope, source, decision, and contract references: REQ-EXAMPLE-001 / AC-EXAMPLE-001 / TEST-EXAMPLE-001 / `.ai-team/sources.md`; no decision or contract change
 - Delivery lane / complexity / control triggers: fast / S / none — documentation-only wording change
 - Batch / dependencies / entry: batch-not-applicable / none / source and local file available
-- Change-set file inventory: N/A — Fast documentation-only change
+- Change-set file inventory: `CONTRIBUTING.md`
 - Fingerprint policy: N/A — Fast documentation-only change
 - Current change-set fingerprint: N/A — Fast documentation-only change
 - Actor identities: product=AGENT-PA-EXAMPLE; technical=AGENT-TL-EXAMPLE; implementer=AGENT-IE-EXAMPLE; verifier=AGENT-IV-EXAMPLE; reviewer=N/A — Fast merged-verifier review
@@ -480,7 +480,7 @@ This compact example passes the `implementation-ready` gate. Shared requirements
 # TASK-EXAMPLE-STD-001: Add validation for calculator expression input
 
 ## Handoff Snapshot
-- Workflow revision: ai-team-2026-08-12-r13
+- Workflow revision: ai-team-2026-08-12-r14
 - Snapshot ID and updated at: SNAP-EXAMPLE-STD-001-01 / 2026-08-12T11:00+08:00
 - Current state and technical outcome: implementation-ready / not-complete
 - Scope, source, decision, and contract references: REQ-EXAMPLE-STD-001 / AC-EXAMPLE-STD-001 / TEST-EXAMPLE-STD-001 TEST-EXAMPLE-STD-002 / `.ai-team/sources.md`; no decision or contract change

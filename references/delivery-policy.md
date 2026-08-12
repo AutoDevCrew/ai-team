@@ -1,6 +1,6 @@
 # Delivery Policy
 
-Workflow revision: `ai-team-2026-08-12-r13`.
+Workflow revision: `ai-team-2026-08-12-r14`.
 
 This is the single global authority for AI-team delivery lanes, states, gates, handoffs, validation, severity, acceptance, and re-entry. Copy it to `.ai-team/governance/workflow.md` during project initialization. The project-local copy is the runtime authority for that project.
 
@@ -32,11 +32,11 @@ The product analyst owns intended behavior. The UX/UI designer owns unspecified 
 
 Record one lane before task design.
 
-- `fast`: first require a positive whitelist match—pure documentation, comments, copy/text, style/token constants, or local test additions with no business-behavior change. Then confirm no contract/schema/generated-code, authentication/authorization, sensitive-data, dependency, external-service, transaction, worker/async, runtime-chain, material UX, or baseline trigger. If the task is not clearly whitelisted, use `standard`.
+- `fast`: require every declared change path to match the Schema's positive path whitelist for documentation, tests, copy, style, token, or localization assets, with no business-behavior change. Production-code paths use `standard` even for a small comment or copy edit. Confirm no contract/schema/generated-code, authentication/authorization, sensitive-data, dependency, external-service, transaction, worker/async, runtime-chain, material UX, or baseline trigger. If the task is not clearly whitelisted, use `standard`.
 - `standard`: ordinary M/L work or shared UI, data, module, compatibility, or regression impact.
 - `high-risk`: XL work or any security, permission, sensitive-data, protocol, migration, transaction, worker/async, external side effect, or production-capability boundary.
 
-Fast path uses the compact `Fast merged design/readiness` plus `Fast execution and verification` sections and may claim `implementation-ready` directly when its verifier verdict and project stage pass. It omits Standard planning and all untriggered annexes but never removes traceability, acceptance evidence, independent verification, or scope checks. Reclassify whenever the change surface grows.
+Fast path uses the lane-contract sections declared in the Schema and may claim `implementation-ready` directly when its verifier verdict and project stage pass. It lists every changed path but may use a reasoned fingerprint N/A. It omits Standard planning and all untriggered annexes but never removes traceability, acceptance evidence, independent verification, or scope checks. Reclassify whenever the change surface grows.
 
 ## State and outcome model
 
@@ -115,9 +115,9 @@ Pending upstream implementation or a closed project stage is an implementation b
 
 - Maintain one Markdown backlog and one unique card per task. Task IDs are monotonic and never reused.
 - Record complexity S/M/L/XL with concrete drivers. Complexity is a risk/planning signal, not a time promise. Split XL work when independently testable slices exist.
-- A batch records objective, members, duplicate-free serial order, entry criteria, exit evidence, and any named acceptance checkpoint with mode and status. It never bulk-promotes tasks; each card needs its own readiness and verification.
+- A batch records objective, members, duplicate-free serial order, entry criteria, exit evidence, and any named acceptance checkpoint with mode and status. Before completion, `Exit evidence` records the planned regression command; after all members complete it records `PASS` plus current evidence/time or `FAIL` plus affected-scope evidence. It never bulk-promotes tasks; each card needs its own readiness and verification.
 - Do not start a later member before every earlier member in that batch's serial order is complete. More than one task may not be `implementing` at once.
-- Run focused owner/affected verification for each ordinary task and one approved full regression at batch exit. High-risk work may retain a per-task full suite. A batch regression failure re-enters only affected completed tasks.
+- Run focused owner/affected verification for each ordinary task and one approved full regression at batch exit. The batch is not finished and no checkpoint is presented until `Exit evidence` records a current regression PASS. High-risk work may retain a per-task full suite. A batch regression failure re-enters only affected completed tasks.
 - A completed batch with a pending blocking checkpoint stops later batches and produces a human-readable checkpoint package. A non-blocking checkpoint does not pause otherwise eligible work.
 - Rejected or conditional acceptance preserves accepted scope and autonomously re-enters only affected requirements/tasks; conditional status remains blocking until its recorded conditions become verified or the human changes the checkpoint outcome.
 - Separate design dependencies from implementation dependencies. Continue downstream design from frozen upstream contracts.
@@ -181,7 +181,9 @@ Record severity, reproduction evidence, affected REQ/AC/TEST, disposition, and f
 
 ## Autonomous progression and turn boundary
 
+- An initialized empty backlog continues through source intake, product analysis, and first-task creation. A completed batch continues through batch regression before any checkpoint. Clear a blocker once every referenced task is complete and every referenced decision is present in the confirmed decision log.
 - After every governance, design, readiness, remediation, or verified-completion handoff, start the next eligible action without waiting for a human prompt.
+- Treat deterministic consistency errors as local remediation: correct the affected artifact/state, preserve prior evidence, rerun the check, and continue. Escalate only when the correction needs a genuinely material human decision or unavailable authority/evidence.
 - After a clean project consistency check, run it with `--next-action`; when it prints an eligible local action, dispatch or execute that action instead of returning a next-step report.
 - A closed implementation stage or pending upstream code does not stop allowed design, test, security, or review work when contracts are frozen.
 - Before returning, inspect the backlog. Stop only for a genuine human decision, missing required external evidence/authority, completion of all allowed work, a user pause/status request, or forced turn end.

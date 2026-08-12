@@ -1,6 +1,6 @@
 {
   "schema_version": "2",
-  "workflow_revision": "ai-team-2026-08-12-r13",
+  "workflow_revision": "ai-team-2026-08-12-r14",
   "enums": {
     "gates": ["task-design", "implementation-ready", "verified-complete"],
     "task_states": ["analysis", "awaiting-human-decision", "task-design-ready", "implementation-ready", "implementing", "awaiting-verification", "complete", "cancelled/superseded"],
@@ -19,6 +19,28 @@
     "task-design": ["analysis-only", "implementation-authorized", "verification-only"],
     "implementation-ready": ["implementation-authorized"],
     "verified-complete": ["implementation-authorized", "verification-only"]
+  },
+  "lane_contracts": {
+    "fast": {
+      "readiness_section": "Fast merged design/readiness",
+      "execution_section": "Fast execution and verification",
+      "allowed_inventory_patterns": [
+        "(^|/)(docs?|documentation)/",
+        "(^|/)(tests?|__tests__)/",
+        "(^|/)(styles?|themes?|tokens?|locales?|i18n|copy)/",
+        "(^|/)(README|CONTRIBUTING|CHANGELOG|LICENSE)(\\.[^/]+)?$",
+        "\\.(md|mdx|rst|adoc|txt|css|scss|sass|less)$",
+        "\\.(test|spec)\\.[^/]+$"
+      ]
+    },
+    "standard": {
+      "readiness_section": "Plan and readiness",
+      "execution_section": "Implementation self-check"
+    },
+    "high-risk": {
+      "readiness_section": "Plan and readiness",
+      "execution_section": "Implementation self-check"
+    }
   },
   "fields": {
     "snapshot": ["Workflow revision:", "Snapshot ID and updated at:", "Current state and technical outcome:", "Scope, source, decision, and contract references:", "Delivery lane / complexity / control triggers:", "Batch / dependencies / entry:", "Change-set file inventory:", "Fingerprint policy:", "Current change-set fingerprint:", "Actor identities:", "Open findings / blockers:", "Next action, exit condition, and invalidation:"],

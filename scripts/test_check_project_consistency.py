@@ -32,6 +32,17 @@ def standard_example() -> str:
     return match.group(1)
 
 
+def fast_example() -> str:
+    match = re.search(
+        r"## Minimal Fast-path task card.*?```md\n(.*?)\n```",
+        TEMPLATES.read_text(encoding="utf-8"),
+        re.DOTALL,
+    )
+    if match is None:
+        raise AssertionError("Fast task example not found")
+    return match.group(1)
+
+
 def review_record(phase: str) -> str:
     return f"""# EVID-EXAMPLE: Review evidence
 
@@ -143,6 +154,55 @@ class ProjectConsistencyTests(unittest.TestCase):
             encoding="utf-8",
         )
 
+    def prepare_standard_ready_project(self, project: Path) -> tuple[Path, Path]:
+        self.fill_source_register(project)
+        self.fill_specs(project)
+        source = project / "src/calculator/input.ts"
+        test = project / "tests/calculator/input.test.ts"
+        source.parent.mkdir(parents=True)
+        test.parent.mkdir(parents=True)
+        source.write_text("export const allowed = /[0-9+\\-*/]/;\n", encoding="utf-8")
+        test.write_text("// calculator input regression fixture\n", encoding="utf-8")
+        for path in (
+            project / ".ai-team/design/calculator-input.md",
+            project / ".ai-team/evidence/EXAMPLE-STD-001.md",
+            project / ".ai-team/evidence/EXAMPLE-STD-001-design-review.md",
+            project / ".ai-team/evidence/EXAMPLE-STD-001-readiness.md",
+        ):
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(
+                review_record(
+                    "task-design"
+                    if path.name.endswith("design-review.md")
+                    else "implementation-readiness"
+                )
+                if path.name.endswith(("design-review.md", "readiness.md"))
+                else f"evidence: {path.name}\n",
+                encoding="utf-8",
+            )
+        card_text = standard_example().replace(
+            "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+            hashlib.sha256(source.read_bytes()).hexdigest(),
+        ).replace(
+            "fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210",
+            hashlib.sha256(test.read_bytes()).hexdigest(),
+        )
+        card = project / ".ai-team/tasks/TASK-EXAMPLE-STD-001.md"
+        card.write_text(card_text, encoding="utf-8")
+        backlog = project / ".ai-team/tasks/backlog.md"
+        backlog.write_text(
+            backlog.read_text(encoding="utf-8").replace(
+                "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |",
+                "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n"
+                "| TASK-EXAMPLE-STD-001 | Input validation | implementation-ready | standard | M | BATCH-EXAMPLE-01 | serial implementation engineer | none | none | verified-complete | [card](TASK-EXAMPLE-STD-001.md) |",
+            ).replace(
+                "| B1 |  |  |  |  |  | none / checkpoint ID | none / blocking / non-blocking | not-required / pending / accepted / rejected / conditional |",
+                "| BATCH-EXAMPLE-01 | Validate calculator input | TASK-EXAMPLE-STD-001 | TASK-EXAMPLE-STD-001 | task implementation-ready | `npm test` | none | none | not-required |",
+            ),
+            encoding="utf-8",
+        )
+        return card, backlog
+
     def test_current_project_template_passes(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             project = Path(temp_dir)
@@ -164,52 +224,7 @@ class ProjectConsistencyTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp_dir:
             project = Path(temp_dir)
             self.materialize_project(project)
-            self.fill_source_register(project)
-            self.fill_specs(project)
-            source = project / "src/calculator/input.ts"
-            test = project / "tests/calculator/input.test.ts"
-            source.parent.mkdir(parents=True)
-            test.parent.mkdir(parents=True)
-            source.write_text("export const allowed = /[0-9+\\-*/]/;\n", encoding="utf-8")
-            test.write_text("// calculator input regression fixture\n", encoding="utf-8")
-            for path in (
-                project / ".ai-team/design/calculator-input.md",
-                project / ".ai-team/evidence/EXAMPLE-STD-001.md",
-                project / ".ai-team/evidence/EXAMPLE-STD-001-design-review.md",
-                project / ".ai-team/evidence/EXAMPLE-STD-001-readiness.md",
-            ):
-                path.parent.mkdir(parents=True, exist_ok=True)
-                path.write_text(
-                    review_record(
-                        "task-design"
-                        if path.name.endswith("design-review.md")
-                        else "implementation-readiness"
-                    )
-                    if path.name.endswith(("design-review.md", "readiness.md"))
-                    else f"evidence: {path.name}\n",
-                    encoding="utf-8",
-                )
-            card_text = standard_example().replace(
-                "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
-                hashlib.sha256(source.read_bytes()).hexdigest(),
-            ).replace(
-                "fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210",
-                hashlib.sha256(test.read_bytes()).hexdigest(),
-            )
-            card = project / ".ai-team/tasks/TASK-EXAMPLE-STD-001.md"
-            card.write_text(card_text, encoding="utf-8")
-            backlog = project / ".ai-team/tasks/backlog.md"
-            backlog.write_text(
-                backlog.read_text(encoding="utf-8").replace(
-                    "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |",
-                    "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n"
-                    "| TASK-EXAMPLE-STD-001 | Input validation | implementation-ready | standard | M | BATCH-EXAMPLE-01 | serial implementation engineer | none | none | verified-complete | [card](TASK-EXAMPLE-STD-001.md) |",
-                ).replace(
-                    "| B1 |  |  |  |  |  | none / checkpoint ID | none / blocking / non-blocking | not-required / pending / accepted / rejected / conditional |",
-                    "| BATCH-EXAMPLE-01 | Validate calculator input | TASK-EXAMPLE-STD-001 | TASK-EXAMPLE-STD-001 | task implementation-ready | verified-complete evidence | none | none | not-required |",
-                ),
-                encoding="utf-8",
-            )
+            self.prepare_standard_ready_project(project)
             self.assertEqual([], checker.check_project(project))
             self.assertEqual(
                 [],
@@ -218,6 +233,142 @@ class ProjectConsistencyTests(unittest.TestCase):
                 ),
             )
             self.assertIn("TASK-EXAMPLE-STD-001", checker.next_eligible_action(project) or "")
+
+    def test_standard_task_state_walk_reaches_batch_regression_and_completion(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            project = Path(temp_dir)
+            self.materialize_project(project)
+            card, backlog = self.prepare_standard_ready_project(project)
+
+            self.assertEqual([], checker.check_project(project))
+            self.assertIn("start the one serial", checker.next_eligible_action(project) or "")
+
+            card.write_text(
+                card.read_text(encoding="utf-8").replace(
+                    "implementation-ready / not-complete", "implementing / not-complete"
+                ),
+                encoding="utf-8",
+            )
+            backlog.write_text(
+                backlog.read_text(encoding="utf-8").replace(
+                    "| implementation-ready |", "| implementing |"
+                ),
+                encoding="utf-8",
+            )
+            self.assertEqual([], checker.check_project(project))
+            self.assertIn("continue the one serial", checker.next_eligible_action(project) or "")
+
+            card_text = card.read_text(encoding="utf-8").replace(
+                "implementing / not-complete", "awaiting-verification / not-complete"
+            ).replace(
+                "- Build / generation / lint-typecheck results: pending implementation",
+                "- Build / generation / lint-typecheck results: PASS — lint completed",
+            ).replace(
+                "- Owner / affected / contract test results: pending implementation",
+                "- Owner / affected / contract test results: PASS — focused tests completed",
+            )
+            card.write_text(card_text, encoding="utf-8")
+            backlog.write_text(
+                backlog.read_text(encoding="utf-8").replace(
+                    "| implementing |", "| awaiting-verification |"
+                ),
+                encoding="utf-8",
+            )
+            self.assertEqual([], checker.check_project(project))
+            self.assertIn("start independent verification", checker.next_eligible_action(project) or "")
+
+            verify = project / ".ai-team/evidence/EXAMPLE-STD-001-verify.md"
+            verify.write_text(review_record("verification"), encoding="utf-8")
+            card.write_text(
+                card.read_text(encoding="utf-8").replace(
+                    "awaiting-verification / not-complete", "complete / verified-complete"
+                ).replace(
+                    "- [ ] AC-EXAMPLE-STD-001", "- [x] AC-EXAMPLE-STD-001"
+                ).replace(
+                    "- Independent verifier verdict: readiness PASS; implementation verification pending",
+                    "- Independent verifier verdict: PASS — fresh scoped verification passed",
+                ),
+                encoding="utf-8",
+            )
+            backlog.write_text(
+                backlog.read_text(encoding="utf-8").replace(
+                    "| awaiting-verification |", "| complete |"
+                ),
+                encoding="utf-8",
+            )
+            self.assertEqual([], checker.check_project(project))
+            self.assertIn("run the planned batch regression", checker.next_eligible_action(project) or "")
+
+            backlog.write_text(
+                backlog.read_text(encoding="utf-8").replace(
+                    "`npm test`",
+                    "PASS — EVID-BATCH-EXAMPLE-01 / 2026-08-12T12:00+08:00",
+                ),
+                encoding="utf-8",
+            )
+            self.assertEqual([], checker.check_project(project))
+            self.assertIsNone(checker.next_eligible_action(project))
+
+    def test_official_fast_card_passes_full_consistency_check(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            project = Path(temp_dir)
+            self.materialize_project(project)
+            self.fill_source_register(project)
+            (project / "CONTRIBUTING.md").write_text("Local contribution notes.\n", encoding="utf-8")
+            evidence = project / ".ai-team/evidence"
+            evidence.mkdir(exist_ok=True)
+            (evidence / "EXAMPLE-001-fast-gate.md").write_text(
+                review_record("fast-design-readiness")
+                .replace("SNAP-EXAMPLE-STD-001-01", "SNAP-EXAMPLE-001-01"),
+                encoding="utf-8",
+            )
+            (evidence / "EXAMPLE-001.md").write_text("EVID-EXAMPLE-001 owner PASS\n", encoding="utf-8")
+            (project / ".ai-team/stage.md").write_text(
+                "# Project Stage\n\n- Stage: implementation-authorized\n"
+                "- Authority: explicit local documentation update request\n"
+                "- Scope: TASK-EXAMPLE-001\n- Updated at: 2026-08-12T09:00+08:00\n",
+                encoding="utf-8",
+            )
+            card = project / ".ai-team/tasks/TASK-EXAMPLE-001.md"
+            card.write_text(fast_example(), encoding="utf-8")
+            backlog = project / ".ai-team/tasks/backlog.md"
+            backlog.write_text(
+                backlog.read_text(encoding="utf-8").replace(
+                    "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |",
+                    "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n"
+                    "| TASK-EXAMPLE-001 | Contributor docs | awaiting-verification | fast | S | batch-not-applicable | independent verifier | none | none | verified-complete | [card](TASK-EXAMPLE-001.md) |",
+                ),
+                encoding="utf-8",
+            )
+            self.assertEqual([], checker.check_project(project))
+
+    def test_backlog_and_card_dependencies_must_match(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            project = Path(temp_dir)
+            self.materialize_project(project)
+            card = project / ".ai-team/tasks/TASK-001.md"
+            card.write_text(
+                f"""# TASK-001: Dependency drift
+
+## Handoff Snapshot
+- Workflow revision: {checker.WORKFLOW_REVISION}
+- Current state and technical outcome: analysis / not-complete
+- Delivery lane / complexity / control triggers: standard / M / none — analysis only
+- Batch / dependencies / entry: B1 / TASK-002 / analysis may proceed
+""",
+                encoding="utf-8",
+            )
+            backlog = project / ".ai-team/tasks/backlog.md"
+            backlog.write_text(
+                backlog.read_text(encoding="utf-8").replace(
+                    "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |",
+                    "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n"
+                    "| TASK-001 | Drift | analysis | standard | M | B1 | delivery coordinator | none | none | task-design | [card](TASK-001.md) |",
+                ),
+                encoding="utf-8",
+            )
+            errors = checker.check_project(project)
+            self.assertTrue(any("Dependencies mismatch" in error for error in errors), errors)
 
     def test_revision_drift_is_reported(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -495,7 +646,107 @@ class ProjectConsistencyTests(unittest.TestCase):
                 "| B1 | Delivery | TASK-001, TASK-002 | TASK-001, TASK-002 | ready | verified | none | none | not-required |",
             )
             backlog.write_text(text, encoding="utf-8")
-            self.assertIn("TASK-002", checker.next_eligible_action(project) or "")
+            action = checker.next_eligible_action(project) or ""
+            self.assertIn("stop out-of-order", action)
+            self.assertIn("TASK-001", action)
+
+    def test_empty_project_bootstraps_intake_then_product_analysis(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            project = Path(temp_dir)
+            self.materialize_project(project)
+            self.assertIn("source register", checker.next_eligible_action(project) or "")
+            self.fill_source_register(project)
+            self.assertIn("product analysis", checker.next_eligible_action(project) or "")
+
+    def test_completed_batch_runs_regression_before_checkpoint(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            project = Path(temp_dir)
+            self.materialize_project(project)
+            backlog = project / ".ai-team/tasks/backlog.md"
+            text = backlog.read_text(encoding="utf-8").replace(
+                "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |",
+                "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n"
+                "| TASK-001 | Done | complete | standard | M | B1 | delivery coordinator | none | none | none | [done](TASK-001.md) |",
+            ).replace(
+                "| B1 |  |  |  |  |  | none / checkpoint ID | none / blocking / non-blocking | not-required / pending / accepted / rejected / conditional |",
+                "| B1 | Delivery | TASK-001 | TASK-001 | ready | `pytest -q` | ACP-001 | blocking | pending |",
+            )
+            backlog.write_text(text, encoding="utf-8")
+            action = checker.next_eligible_action(project) or ""
+            self.assertIn("run the planned batch regression", action)
+            self.assertNotIn("human acceptance required", action)
+
+    def test_failed_batch_regression_reenters_affected_scope(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            project = Path(temp_dir)
+            self.materialize_project(project)
+            backlog = project / ".ai-team/tasks/backlog.md"
+            text = backlog.read_text(encoding="utf-8").replace(
+                "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |",
+                "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n"
+                "| TASK-001 | Done | complete | standard | M | B1 | delivery coordinator | none | none | none | [done](TASK-001.md) |",
+            ).replace(
+                "| B1 |  |  |  |  |  | none / checkpoint ID | none / blocking / non-blocking | not-required / pending / accepted / rejected / conditional |",
+                "| B1 | Delivery | TASK-001 | TASK-001 | ready | FAIL — EVID-BATCH-001 / TEST-001 | none | none | not-required |",
+            )
+            backlog.write_text(text, encoding="utf-8")
+            self.assertIn("re-enter affected", checker.next_eligible_action(project) or "")
+
+    def test_p1_routes_back_to_remediation_instead_of_reverification(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            project = Path(temp_dir)
+            self.materialize_project(project)
+            card = project / ".ai-team/tasks/TASK-001.md"
+            card.write_text(
+                """# TASK-001: Candidate
+
+## Handoff Snapshot
+- Delivery lane / complexity / control triggers: standard / M / none — ordinary task
+
+## Verification and findings
+- Independent verifier verdict: FAIL — TEST-001
+- Findings / severity / affected REQ-AC-TEST: FIND-001 / P1 / REQ-001 AC-001 TEST-001
+- Open P0/P1 / P2 follow-up: FIND-001 P1
+""",
+                encoding="utf-8",
+            )
+            backlog = project / ".ai-team/tasks/backlog.md"
+            backlog.write_text(
+                backlog.read_text(encoding="utf-8").replace(
+                    "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |",
+                    "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n"
+                    "| TASK-001 | Candidate | awaiting-verification | standard | M | B1 | independent verifier | none | none | verified-complete | [card](TASK-001.md) |",
+                ),
+                encoding="utf-8",
+            )
+            action = checker.next_eligible_action(project) or ""
+            self.assertIn("serial implementation remediation", action)
+            self.assertNotIn("start independent verification", action)
+
+    def test_resolved_task_or_decision_blocker_is_cleared(self) -> None:
+        for blocker, prefix_rows in (
+            ("DEC-001", ""),
+            (
+                "TASK-001",
+                "| TASK-001 | Done | complete | standard | M | B1 | delivery coordinator | none | none | none | [done](TASK-001.md) |\n",
+            ),
+        ):
+            with self.subTest(blocker=blocker), tempfile.TemporaryDirectory() as temp_dir:
+                project = Path(temp_dir)
+                self.materialize_project(project)
+                backlog = project / ".ai-team/tasks/backlog.md"
+                task_id = "TASK-002" if prefix_rows else "TASK-001"
+                rows = prefix_rows + (
+                    f"| {task_id} | Resume | analysis | standard | M | B1 | delivery coordinator | none | {blocker} | task-design | [card]({task_id}.md) |"
+                )
+                backlog.write_text(
+                    backlog.read_text(encoding="utf-8").replace(
+                        "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |",
+                        "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n" + rows,
+                    ),
+                    encoding="utf-8",
+                )
+                self.assertIn("clear the resolved blocker", checker.next_eligible_action(project) or "")
 
     def test_next_action_starts_security_review_only_when_triggered(self) -> None:
         for trigger, expected in (("none — ordinary task", False), ("security", True)):
@@ -536,7 +787,7 @@ class ProjectConsistencyTests(unittest.TestCase):
                 "| TASK-001 | Done | complete | standard | M | B1 | delivery coordinator | none | none | none | [done](TASK-001-done.md) |",
             ).replace(
                 "| B1 |  |  |  |  |  | none / checkpoint ID | none / blocking / non-blocking | not-required / pending / accepted / rejected / conditional |",
-                "| B1 | Delivery | TASK-001 | TASK-001 | ready | verified | ACP-001 | blocking | pending |",
+                "| B1 | Delivery | TASK-001 | TASK-001 | ready | PASS — EVID-BATCH-001 / 2026-08-12T12:00+08:00 | ACP-001 | blocking | pending |",
             )
             backlog.write_text(text, encoding="utf-8")
             action = checker.next_eligible_action(project) or ""
@@ -551,11 +802,11 @@ class ProjectConsistencyTests(unittest.TestCase):
             text = backlog.read_text(encoding="utf-8").replace(
                 "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |",
                 "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n"
-                "| TASK-001 | Decision | awaiting-human-decision | standard | M | B1 | delivery coordinator | none | DEC-001 | task-design | [card](TASK-001.md) |",
+                "| TASK-001 | Decision | awaiting-human-decision | standard | M | B1 | delivery coordinator | none | DEC-999 | task-design | [card](TASK-001.md) |",
             )
             backlog.write_text(text, encoding="utf-8")
             action = checker.next_eligible_action(project) or ""
-            self.assertIn("DEC-001", action)
+            self.assertIn("DEC-999", action)
             self.assertIn("human decision required", action)
 
     def test_conditional_acceptance_reenters_only_affected_scope(self) -> None:
@@ -570,7 +821,7 @@ class ProjectConsistencyTests(unittest.TestCase):
                 "| TASK-001 | Done | complete | standard | M | B1 | delivery coordinator | none | none | none | [done](TASK-001-done.md) |",
             ).replace(
                 "| B1 |  |  |  |  |  | none / checkpoint ID | none / blocking / non-blocking | not-required / pending / accepted / rejected / conditional |",
-                "| B1 | Delivery | TASK-001 | TASK-001 | ready | verified | ACP-001 | blocking | conditional |",
+                "| B1 | Delivery | TASK-001 | TASK-001 | ready | PASS — EVID-BATCH-001 / 2026-08-12T12:00+08:00 | ACP-001 | blocking | conditional |",
             )
             backlog.write_text(text, encoding="utf-8")
             action = checker.next_eligible_action(project) or ""
@@ -589,7 +840,7 @@ class ProjectConsistencyTests(unittest.TestCase):
                 "| TASK-001 | Done | complete | standard | M | B1 | delivery coordinator | none | none | none | [done](TASK-001-done.md) |",
             ).replace(
                 "| B1 |  |  |  |  |  | none / checkpoint ID | none / blocking / non-blocking | not-required / pending / accepted / rejected / conditional |",
-                "| B1 | Delivery | TASK-001 | TASK-001 | ready | verified | ACP-001 | non-blocking | pending |",
+                "| B1 | Delivery | TASK-001 | TASK-001 | ready | PASS — EVID-BATCH-001 / 2026-08-12T12:00+08:00 | ACP-001 | non-blocking | pending |",
             )
             backlog.write_text(text, encoding="utf-8")
             action = checker.next_eligible_action(project) or ""

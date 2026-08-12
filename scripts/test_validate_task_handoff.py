@@ -231,6 +231,23 @@ class HandoffValidatorTests(unittest.TestCase):
         self.assertEqual([], validator.validate(standard, gate="implementation-ready"))
         self.assertEqual([], validator.validate(completed_standard_card(), gate="verified-complete"))
 
+    def test_fast_lane_accepts_only_declared_non_behavior_surfaces(self) -> None:
+        fast = template_card("Minimal Fast-path task card")
+        self.assertEqual([], validator.validate(fast, strict=True))
+        source_change = fast.replace("`CONTRIBUTING.md`", "`src/app.ts`")
+        errors = validator.validate(source_change, strict=True)
+        self.assertTrue(any("use Standard" in error for error in errors), errors)
+        test_change = fast.replace("`CONTRIBUTING.md`", "`tests/app.test.ts`")
+        self.assertEqual([], validator.validate(test_change, strict=True))
+
+    def test_fast_lane_requires_a_concrete_inventory(self) -> None:
+        fast = template_card("Minimal Fast-path task card").replace(
+            "- Change-set file inventory: `CONTRIBUTING.md`",
+            "- Change-set file inventory: N/A — documentation-only change",
+        )
+        errors = validator.validate(fast, strict=True)
+        self.assertTrue(any("inventory" in error.lower() for error in errors), errors)
+
     def test_stage_scope_is_bound_to_current_task(self) -> None:
         with tempfile.TemporaryDirectory() as temp:
             card = self.materialize_project(Path(temp), template_card("Complete Standard task card example"))

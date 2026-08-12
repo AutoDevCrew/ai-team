@@ -191,6 +191,37 @@ def card_identity(card: Path, text: str) -> tuple[str, str, str, str, str]:
     return task_id, state, lane, complexity, batch
 
 
+def confirmed_decision_ids(project_root: Path) -> set[str]:
+    decisions = project_root / ".ai-team/governance/decisions.md"
+    if not decisions.is_file():
+        return set()
+    return {
+        match.group(0).upper()
+        for match in DECISION_ID_PATTERN.finditer(
+            visible_markdown(decisions.read_text(encoding="utf-8"))
+        )
+    }
+
+
+def blocker_is_resolved(
+    blocker: str, terminal_ids: set[str], confirmed_decisions: set[str]
+) -> bool:
+    task_refs = {match.group(0).upper() for match in TASK_ID_PATTERN.finditer(blocker)}
+    decision_refs = {
+        match.group(0).upper() for match in DECISION_ID_PATTERN.finditer(blocker)
+    }
+    return bool(task_refs or decision_refs) and task_refs.issubset(
+        terminal_ids
+    ) and decision_refs.issubset(confirmed_decisions)
+
+
+def has_batch_evidence(value: str) -> bool:
+    return bool(
+        validator.identifiers(value, "EVID")
+        or re.search(r"`?\.ai-team/evidence/[^`\s]+", value, re.IGNORECASE)
+    )
+
+
 def resolve_card_link(board: Path, value: str) -> Path | None:
     match = LINK_PATTERN.search(value)
     if not match:
@@ -291,6 +322,11 @@ def task_inventory_errors(project_root: Path, task_root: Path, board: Path) -> l
                 errors.append(f"backlog/card {column} mismatch for {task_id}: {actual or 'missing'} != {expected}")
         dependencies = {match.group(0).upper() for match in TASK_ID_PATTERN.finditer(row.get("Dependencies", ""))}
         graph[task_id] = dependencies
+        card_dependencies = validator.task_dependencies(linked.read_text(encoding="utf-8"))
+        if dependencies != card_dependencies:
+            errors.append(
+                f"backlog/card Dependencies mismatch for {task_id}: backlog={sorted(dependencies)} card={sorted(card_dependencies)}"
+            )
     for task_id, (card, _, _, _, _) in cards.items():
         if task_id not in row_ids:
             errors.append(f"task card is missing from backlog: {card.relative_to(project_root)}")
@@ -307,6 +343,17 @@ def task_inventory_errors(project_root: Path, task_root: Path, board: Path) -> l
         for dependency in dependencies:
             if dependency not in row_ids:
                 errors.append(f"backlog dependency not found: {task_id} -> {dependency}")
+        state = cards.get(task_id, (None, "", "", "", ""))[1]
+        if state in {"implementation-ready", "implementing", "awaiting-verification", "complete"}:
+            incomplete = sorted(dependencies - {
+                known_id
+                for known_id, values in cards.items()
+                if values[1] == "complete"
+            })
+            if incomplete:
+                errors.append(
+                    f"promoted task has incomplete dependencies: {task_id} -> {', '.join(incomplete)}"
+                )
     manifest = project_root / ".ai-team/manifest.md"
     if manifest.is_file():
         traceability = manifest_path(
@@ -410,6 +457,26 @@ def task_inventory_errors(project_root: Path, task_root: Path, board: Path) -> l
             errors.append(
                 f"implementation batch {batch_id} named checkpoint requires pending, accepted, or rejected status"
             )
+        if task_ids and all(cards[task_id][1] == "complete" for task_id in task_ids):
+            exit_evidence = batch_row.get("Exit evidence", "")
+            if validator.is_pass(exit_evidence) and (
+                not has_batch_evidence(exit_evidence)
+                or not validator.iso_datetime(exit_evidence)
+            ):
+                errors.append(
+                    f"completed batch {batch_id} regression PASS requires evidence reference and ISO time"
+                )
+            if re.match(r"^\s*FAIL(?:\s|[-—:]|$)", exit_evidence, re.IGNORECASE) and not (
+                has_batch_evidence(exit_evidence)
+                and (
+                    validator.identifiers(exit_evidence, "TASK")
+                    or validator.identifiers(exit_evidence, "TEST")
+                    or validator.identifiers(exit_evidence, "FIND")
+                )
+            ):
+                errors.append(
+                    f"completed batch {batch_id} regression FAIL requires evidence and affected TASK/TEST/FIND scope"
+                )
     return errors
 
 
@@ -445,18 +512,10 @@ def active_task_errors(project_root: Path, task_root: Path) -> list[str]:
             for error in validator.project_stage_errors(card, gate):
                 errors.append(f"{card.relative_to(project_root)}: {error}")
         elif state in {"implementing", "awaiting-verification"}:
-            promoted_errors = validator.strict_errors(text)
-            promoted_errors.extend(validator.task_design_common_errors(text))
-            promoted_errors.extend(validator.readiness_common_errors(text))
+            promoted_errors = validator.active_promotion_errors(text, state)
             promoted_errors.extend(
                 validator.gate_reference_errors(card, text, "implementation-ready")
             )
-            if state == "awaiting-verification":
-                promoted_errors.extend(
-                    validator.implementation_self_check_errors(
-                        validator.section(text, "## Implementation self-check")
-                    )
-                )
             promoted_errors.extend(validator.project_spec_errors(card, text))
             promoted_errors.extend(
                 validator.project_stage_errors(
@@ -542,6 +601,13 @@ def next_eligible_action(project_root: Path) -> str | None:
     rows, errors = parse_backlog(board)
     if errors:
         return None
+    if not rows:
+        source = manifest_path(project_root, manifest_text, "Source register:")
+        if source is None or not source.is_file():
+            return "PROJECT: initialize the source register and intake boundary"
+        if validator.source_register_errors(source):
+            return "PROJECT: complete the source register and intake boundary"
+        return "PROJECT: start product analysis and create the first traceable task"
     terminal_ids = {
         row.get("ID", "").upper()
         for row in rows
@@ -551,6 +617,7 @@ def next_eligible_action(project_root: Path) -> str | None:
     if batch_errors:
         return None
     row_by_id = {row.get("ID", "").upper(): row for row in rows}
+    confirmed_decisions = confirmed_decision_ids(project_root)
     batch_index = {
         batch.get("Batch", "").strip(): index for index, batch in enumerate(batch_rows)
     }
@@ -565,6 +632,12 @@ def next_eligible_action(project_root: Path) -> str | None:
             for member in members
         ):
             continue
+        exit_evidence = batch.get("Exit evidence", "").strip()
+        batch_id = batch.get("Batch", "").strip()
+        if re.match(r"^\s*FAIL(?:\s|[-—:]|$)", exit_evidence, re.IGNORECASE):
+            return f"{batch_id}: re-enter affected completed tasks from failed batch regression; evidence={exit_evidence}"
+        if not validator.is_pass(exit_evidence):
+            return f"{batch_id}: run the planned batch regression and record PASS or FAIL; plan={exit_evidence or 'missing'}"
         checkpoint_status = batch.get("Checkpoint status", "").strip().casefold()
         checkpoint = batch.get("Acceptance checkpoint", "").strip()
         if checkpoint_status == "rejected":
@@ -575,6 +648,33 @@ def next_eligible_action(project_root: Path) -> str | None:
             if batch.get("Checkpoint mode", "").strip().casefold() == "blocking":
                 return f"{checkpoint}: human acceptance required for completed batch {batch.get('Batch', '').strip()}"
             deferred_checkpoints.append((checkpoint, batch.get("Batch", "").strip()))
+
+    for row in rows:
+        state = row.get("State", "").strip().casefold()
+        if state not in {"implementing", "awaiting-verification"}:
+            continue
+        batch_id = row.get("Batch", "").strip()
+        batch = next(
+            (item for item in batch_rows if item.get("Batch", "").strip() == batch_id),
+            None,
+        )
+        if batch is None:
+            continue
+        order = [
+            match.group(0).upper()
+            for match in TASK_ID_PATTERN.finditer(
+                batch.get("Serial implementation order", "")
+            )
+        ]
+        task_id = row.get("ID", "").upper()
+        if task_id in order:
+            earlier = order[: order.index(task_id)]
+            incomplete = [item for item in earlier if item not in terminal_ids]
+            if incomplete:
+                return (
+                    f"{task_id}: stop out-of-order active work and resume {incomplete[0]} "
+                    "before continuing this task"
+                )
 
     actions = {
         "analysis": "continue product/technical task design",
@@ -600,12 +700,28 @@ def next_eligible_action(project_root: Path) -> str | None:
                 continue
             if state == "awaiting-verification":
                 card = resolve_card_link(board, row.get("Card", ""))
-                if card and card.is_file() and validator.separate_review_required(
-                    card.read_text(encoding="utf-8")
-                ):
-                    action += " and triggered code/security review"
+                if card and card.is_file():
+                    card_text = card.read_text(encoding="utf-8")
+                    severities, verifier_verdict = validator.recorded_findings(card_text)
+                    if "P0" in severities:
+                        return (
+                            f"{row.get('ID', '').strip()}: block implementation and escalate the recorded P0 finding"
+                        )
+                    if "P1" in severities or re.search(
+                        r"\bFAIL\b", verifier_verdict, re.IGNORECASE
+                    ):
+                        return (
+                            f"{row.get('ID', '').strip()}: return to serial implementation remediation "
+                            "with task-scoped design re-entry when required"
+                        )
+                    if validator.separate_review_required(card_text):
+                        action += " and triggered code/security review"
             blocker = row.get("Blocker / decision", "").strip()
             if blocker and not validator.is_none(blocker):
+                if blocker_is_resolved(blocker, terminal_ids, confirmed_decisions):
+                    return (
+                        f"{row.get('ID', '').strip()}: clear the resolved blocker and resume {action}"
+                    )
                 continue
             dependencies = {
                 match.group(0).upper()
@@ -655,6 +771,8 @@ def next_eligible_action(project_root: Path) -> str | None:
             continue
         blocker = row.get("Blocker / decision", "").strip()
         decision = DECISION_ID_PATTERN.search(blocker)
+        if blocker_is_resolved(blocker, terminal_ids, confirmed_decisions):
+            return f"{row.get('ID', '').strip()}: clear the resolved blocker and resume local delivery"
         if state == "awaiting-human-decision" or decision:
             decision_id = decision.group(0).upper() if decision else "unrecorded-decision"
             return (

@@ -70,6 +70,7 @@ CONTROL_TRIGGERS = _enum("control_triggers")
 FINDING_SEVERITIES = _enum("finding_severities")
 
 LANE_FIELD = "Delivery lane / complexity / control triggers:"
+LANE_CONTRACTS = WORKFLOW_SCHEMA["lane_contracts"]
 FINGERPRINT_POLICY_FIELD = "Fingerprint policy:"
 TASK_ROOT_FIELD = "Task root:"
 CHANGE_INVENTORY_FIELD = "Change-set file inventory:"
@@ -319,6 +320,12 @@ def delivery_descriptor(snapshot: str) -> tuple[str, str, set[str]]:
     return lane, complexity, triggers
 
 
+def lane_section_heading(lane: str, kind: str) -> str:
+    contract = LANE_CONTRACTS.get(lane, {})
+    section_name = contract.get(f"{kind}_section", "")
+    return f"## {section_name}" if section_name else ""
+
+
 def manifest_revision(text: str) -> str:
     planning = section(text, "## Plan and readiness")
     return first_identifier(
@@ -422,6 +429,34 @@ def fingerprint_entries(text: str) -> list[tuple[str, str]]:
 def inventory_paths(text: str) -> list[str]:
     snapshot = section(text, "## Handoff Snapshot")
     return re.findall(r"`([^`\n]+)`", field_value(snapshot, CHANGE_INVENTORY_FIELD))
+
+
+def task_dependencies(text: str) -> set[str]:
+    snapshot = section(text, "## Handoff Snapshot")
+    value = field_value(snapshot, "Batch / dependencies / entry:")
+    parts = value.split("/", 2)
+    return identifiers(parts[1], "TASK") if len(parts) > 1 else set()
+
+
+def fast_change_surface_errors(text: str) -> list[str]:
+    """Keep Fast work on explicitly declared non-production-code surfaces."""
+    inventory = inventory_paths(text)
+    if not inventory:
+        return ["Fast task requires concrete change-set inventory paths"]
+    patterns = [
+        re.compile(pattern, re.IGNORECASE)
+        for pattern in LANE_CONTRACTS["fast"]["allowed_inventory_patterns"]
+    ]
+    errors: list[str] = []
+    for raw in inventory:
+        path = Path(raw)
+        if path.is_absolute() or ".." in path.parts:
+            errors.append(f"Fast inventory path must be project-relative: {raw}")
+        elif not any(pattern.search(raw) for pattern in patterns):
+            errors.append(
+                f"Fast inventory path is outside the allowed non-behavior surfaces; use Standard: {raw}"
+            )
+    return errors
 
 
 def inventory_ledger_errors(text: str) -> list[str]:
@@ -1107,10 +1142,11 @@ def conditional_readiness_errors(text: str) -> list[str]:
 
 
 def fast_gate_common_errors(text: str, gate: str) -> list[str]:
-    errors = exact_section_errors(text, ("## Fast merged design/readiness",))
+    heading = lane_section_heading("fast", "readiness")
+    errors = exact_section_errors(text, (heading,))
     if errors:
         return errors
-    fast = section(text, "## Fast merged design/readiness")
+    fast = section(text, heading)
     errors.extend(concrete_value_errors(fast, FAST_GATE_FIELDS, "Fast merged design/readiness"))
     snapshot = section(text, "## Handoff Snapshot")
     refs = field_value(snapshot, "Scope, source, decision, and contract references:")
@@ -1138,6 +1174,59 @@ def implementation_self_check_errors(self_check: str) -> list[str]:
     if not is_pass(field_value(self_check, "Owner / affected / contract test results:")):
         errors.append("implementation self-check requires owner/affected/contract test PASS")
     return errors
+
+
+def fast_implementation_self_check_errors(text: str) -> list[str]:
+    heading = lane_section_heading("fast", "execution")
+    errors = exact_section_errors(text, (heading,))
+    if errors:
+        return errors
+    completion = section(text, heading)
+    value = field_value(completion, "Implementer / self-check / evidence:")
+    implementer = first_identifier(value, "AGENT")
+    result = re.sub(r"^.*?AGENT-[A-Za-z0-9._-]+\s*/\s*", "", value)
+    if not implementer or not is_pass(result):
+        errors.append("Fast implementation requires an implementation AGENT and PASS self-check")
+    return errors
+
+
+def active_promotion_errors(text: str, state: str) -> list[str]:
+    """Validate an already-promoted task without applying the wrong lane contract."""
+    errors = strict_errors(text)
+    snapshot = section(text, "## Handoff Snapshot")
+    lane, _, _ = delivery_descriptor(snapshot)
+    if lane != "fast":
+        errors.extend(readiness_common_errors(text))
+    if state == "awaiting-verification":
+        if lane == "fast":
+            errors.extend(fast_implementation_self_check_errors(text))
+        else:
+            heading = lane_section_heading(lane, "execution")
+            errors.extend(implementation_self_check_errors(section(text, heading)))
+    return list(dict.fromkeys(errors))
+
+
+def recorded_findings(text: str) -> tuple[set[str], str]:
+    """Return P0/P1/P2 markers and the recorded verifier verdict for routing."""
+    snapshot = section(text, "## Handoff Snapshot")
+    lane, _, _ = delivery_descriptor(snapshot)
+    if lane == "fast":
+        completion = section(text, lane_section_heading("fast", "execution"))
+        findings = field_value(completion, "Findings / severity / affected / follow-up:")
+        verdict = field_value(completion, "Independent verifier / verdict / evidence:")
+    else:
+        completion = section(text, "## Verification and findings")
+        findings = " ".join(
+            (
+                field_value(completion, "Findings / severity / affected REQ-AC-TEST:"),
+                field_value(completion, "Open P0/P1 / P2 follow-up:"),
+            )
+        )
+        verdict = field_value(completion, "Independent verifier verdict:")
+    severities = {
+        severity for severity in FINDING_SEVERITIES if re.search(rf"\b{severity}\b", findings, re.IGNORECASE)
+    }
+    return severities, verdict
 
 
 def completion_binding_errors(text: str, findings: str) -> list[str]:
@@ -1200,10 +1289,11 @@ def completion_identity_errors(text: str, self_check: str, findings: str) -> lis
 
 
 def fast_completion_errors(text: str) -> list[str]:
-    errors = exact_section_errors(text, ("## Fast execution and verification",))
+    heading = lane_section_heading("fast", "execution")
+    errors = exact_section_errors(text, (heading,))
     if errors:
         return errors
-    completion = section(text, "## Fast execution and verification")
+    completion = section(text, heading)
     errors.extend(
         concrete_value_errors(completion, FAST_COMPLETION_FIELDS, "Fast execution and verification")
     )
@@ -1235,7 +1325,7 @@ def fast_completion_errors(text: str) -> list[str]:
     if not snapshot_id or snapshot_id not in binding or not iso_datetime(binding):
         errors.append("Fast completion must bind current Snapshot and verification time")
     acceptance = field_value(
-        section(text, "## Fast merged design/readiness"), "Scope / acceptance / checks:"
+        section(text, lane_section_heading("fast", "readiness")), "Scope / acceptance / checks:"
     )
     if not is_pass(acceptance):
         errors.append("verified-complete Fast gate requires PASS acceptance/check evidence")
@@ -1325,7 +1415,6 @@ def strict_errors(text: str) -> list[str]:
         SNAPSHOT_FIELDS,
         "Handoff Snapshot",
         allow_reasoned_na={
-            "Change-set file inventory:",
             "Fingerprint policy:",
             "Current change-set fingerprint:",
         },
@@ -1339,6 +1428,7 @@ def strict_errors(text: str) -> list[str]:
     lane, _, _ = delivery_descriptor(snapshot)
     if lane == "fast":
         errors.extend(fast_gate_common_errors(text, "strict"))
+        errors.extend(fast_change_surface_errors(text))
     else:
         errors.extend(planning_errors(text))
     policy = field_value(snapshot, FINGERPRINT_POLICY_FIELD).strip().lower()
@@ -1397,7 +1487,7 @@ def gate_reference_errors(task_card: Path, text: str, gate: str) -> list[str]:
     errors: list[str] = []
 
     if lane == "fast":
-        planning_section = section(text, "## Fast merged design/readiness")
+        planning_section = section(text, lane_section_heading("fast", "readiness"))
         planning_path_value = field_value(planning_section, "Report:")
         planning_reviewer = field_value(planning_section, "Independent verifier identity:")
         planning_phase = "fast-design-readiness"
@@ -1442,7 +1532,7 @@ def gate_reference_errors(task_card: Path, text: str, gate: str) -> list[str]:
 
     if gate == "verified-complete":
         if lane == "fast":
-            findings = section(text, "## Fast execution and verification")
+            findings = section(text, lane_section_heading("fast", "execution"))
             verify_value = field_value(
                 findings, "Independent verifier / verdict / evidence:"
             )
