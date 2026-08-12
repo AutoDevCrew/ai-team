@@ -7,7 +7,7 @@ description: Launch or refine a Codex-run local software delivery team from a PR
 
 Run a Codex-native software delivery workflow from requirement input through local verification and named human acceptance checkpoints. Use one serial implementation engineer and independent verification; do not build another orchestration framework.
 
-Workflow revision: `ai-team-2026-08-12-r19`. Projects use this current layout only; older workflow layouts are unsupported.
+Workflow revision: `ai-team-2026-08-12-r20`. Projects use this current layout only; older workflow layouts are unsupported.
 
 ## Authority model
 
@@ -61,7 +61,7 @@ Follow the project-local workflow and roles. At a minimum:
 6. Maintain one backlog and one compact delta card per work item. Keep project-wide requirements, baseline, design, default commands, and traceability in their existing project artifacts; never copy them into every card.
 7. When the host supports child agents, keep the root agent as coordinator. Reuse a bounded specialist within the same task or batch while role, scope, and frozen requirement/contract inputs remain unchanged; invalidate evidence rather than the Agent merely because code changes. Start exactly one serial implementation engineer only after implementation readiness and scoped `.ai-team/stage.md` authorization pass.
 8. For Fast and ordinary Standard work, one independent verifier may combine diff review and test verification while remaining independent from the implementer. Launch a separate code/security reviewer only for High-risk or interface, security, runtime-chain, or material baseline triggers.
-9. Run focused verification per task and one approved full regression at batch exit; High-risk work may retain a per-task full suite. A task becomes `complete / verified-complete` only from current evidence; human acceptance occurs only at a named checkpoint.
+9. After the actual candidate path set settles, use the manifest-declared fingerprint helper to generate the inventory and SHA-256 ledger for required-fingerprint work. Run focused verification per task and one approved full regression at batch exit; High-risk work may retain a per-task full suite. A task becomes `complete / verified-complete` only from current evidence; human acceptance occurs only at a named checkpoint.
 
 Within the authorized stage, continue to the next eligible planning, remediation, implementation, or verification action. At a task boundary, use one project-check command with `--task TASK-... --gate <gate> --next-action`; execute or dispatch an eligible local action instead of merely reporting it. Stop only for a genuine human decision, missing required external authority/evidence, completion of all allowed work, a user pause/status request, or a forced turn end.
 

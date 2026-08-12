@@ -50,6 +50,28 @@ def _enum(group: str) -> set[str]:
     return set(WORKFLOW_SCHEMA["enums"][group])
 
 
+def format_hint(name: str) -> dict[str, str]:
+    return WORKFLOW_SCHEMA["formats"][name]
+
+
+def visible_value(value: str, limit: int = 120) -> str:
+    """Render a short single-line diagnostic value without echoing likely secrets."""
+    normalized = " ".join(value.split())
+    if re.search(r"\b(?:secret|token|password|credential|api[_ -]?key)\b", normalized, re.I):
+        return "<redacted>"
+    if len(normalized) > limit:
+        normalized = normalized[: limit - 1] + "…"
+    return repr(normalized)
+
+
+def format_error(subject: str, value: str, format_name: str) -> str:
+    hint = format_hint(format_name)
+    return (
+        f"{subject}; value={visible_value(value)}; expected {hint['expectation']}; "
+        f"example: {hint['example']}"
+    )
+
+
 GATES = tuple(WORKFLOW_SCHEMA["enums"]["gates"])
 SNAPSHOT_FIELDS = _values("snapshot")
 PLANNING_FIELDS = _values("planning")
@@ -161,6 +183,12 @@ def has_reasoned_na(value: str) -> bool:
     ) >= 5
 
 
+def has_reasoned_none(value: str) -> bool:
+    normalized = value.strip()
+    match = re.match(r"^none(?:\s*[-—:/]\s*|\s+)(.+)$", normalized, re.IGNORECASE)
+    return bool(match and match.group(1).strip())
+
+
 def is_none(value: str) -> bool:
     return value.strip().lower() in {"none", "no", "无"}
 
@@ -255,7 +283,13 @@ def concrete_value_errors(
             if field not in allowed:
                 errors.append(f"{section_name} field may not be N/A: {field}")
             elif not has_reasoned_na(value):
-                errors.append(f"{section_name} N/A lacks a concrete rationale: {field}")
+                errors.append(
+                    format_error(
+                        f"{section_name} N/A lacks a concrete rationale: {field}",
+                        value,
+                        "reasoned_na",
+                    )
+                )
     return errors
 
 
@@ -1182,9 +1216,22 @@ def implementation_self_check_errors(self_check: str) -> list[str]:
         errors.append("implementation self-check requires an AGENT-... implementation engineer identity")
     build = field_value(self_check, "Build / generation / lint-typecheck results:")
     if not is_pass(build) and not has_reasoned_na(build):
-        errors.append("implementation self-check requires build/lint PASS or reasoned N/A")
-    if not is_pass(field_value(self_check, "Owner / affected / contract test results:")):
-        errors.append("implementation self-check requires owner/affected/contract test PASS")
+        errors.append(
+            format_error(
+                "implementation self-check requires build/lint PASS or reasoned N/A",
+                build,
+                "pass_result" if not build.strip().lower().startswith("n/a") else "reasoned_na",
+            )
+        )
+    owner_tests = field_value(self_check, "Owner / affected / contract test results:")
+    if not is_pass(owner_tests):
+        errors.append(
+            format_error(
+                "implementation self-check requires owner/affected/contract test PASS",
+                owner_tests,
+                "pass_result",
+            )
+        )
     return errors
 
 
@@ -1266,13 +1313,25 @@ def completion_result_errors(self_check: str, findings: str) -> list[str]:
     severity_by_id = finding_severity_map(value)
     severities = set(severity_by_id.values())
     if value.strip().lower().startswith("none"):
-        if "n/a" not in value.lower() or len(value.strip()) < 16:
-            errors.append("no findings require a reasoned N/A severity")
+        if not has_reasoned_none(value):
+            errors.append(
+                format_error(
+                    "no findings require a concrete reason",
+                    value,
+                    "no_findings",
+                )
+            )
         if followup_ids:
             errors.append("follow-up names findings while the Findings field reports none")
     else:
         if not finding_ids or not severities:
-            errors.append("findings require FIND/EVID ID and P0/P1/P2 severity")
+            errors.append(
+                format_error(
+                    "findings require FIND/EVID ID and P0/P1/P2 severity",
+                    value,
+                    "finding_record",
+                )
+            )
         elif finding_ids - severity_by_id.keys():
             errors.append("each FIND/EVID record requires an adjacent P0/P1/P2 severity")
         if severities.intersection({"P0", "P1"}) and is_none(followup):
@@ -1461,7 +1520,13 @@ def strict_errors(text: str) -> list[str]:
     policy = field_value(snapshot, FINGERPRINT_POLICY_FIELD).strip().lower()
     if policy == "required":
         if not fingerprint_entries(text):
-            errors.append("required fingerprint policy needs a SHA-256 ledger")
+            errors.append(
+                format_error(
+                    "required fingerprint policy needs a SHA-256 ledger",
+                    field_value(snapshot, "Current change-set fingerprint:"),
+                    "fingerprint_ledger",
+                )
+            )
     elif policy.startswith("n/a"):
         if lane != "fast" or not has_reasoned_na(policy):
             errors.append("fingerprint N/A is allowed only for an eligible Fast task")

@@ -1,6 +1,6 @@
 # Delivery Policy
 
-Workflow revision: `ai-team-2026-08-12-r19`.
+Workflow revision: `ai-team-2026-08-12-r20`.
 
 This is the single global authority for AI-team delivery lanes, states, gates, handoffs, validation, severity, acceptance, and re-entry. Copy it to `.ai-team/governance/workflow.md` during project initialization. The project-local copy is the runtime authority for that project.
 
@@ -134,7 +134,7 @@ Pending upstream implementation or a closed project stage is an implementation b
 - Record the review phase in every Review evidence record. Design/readiness records remain historical inputs at completion and retain their original Snapshot binding while still matching the current frozen Manifest; a Manifest or design-input change invalidates them. Verification and code-security records must bind the current completion Snapshot and Manifest. Never substitute one phase's PASS for another.
 - At a boundary, run `<script-root>/check_project_consistency.py <project-root> --task TASK-... --gate <task-design|implementation-ready|verified-complete> --next-action`. It combines task, project, fingerprint, backlog, and continuation checks. On FAIL it emits `NEXT fix-consistency` for the first source-located error; repair it locally and rerun. Use `validate_task_handoff.py --strict` only for focused card debugging.
 - For code, protocol, generated-output, dependency, runtime, Standard, or High-risk work, use `Fingerprint policy: required`. A pure Fast-path documentation/style/metadata task may use a reasoned `N/A`.
-- Gate validation locates the nearest ancestor manifest, rejects duplicate authoritative sections or fenced/comment-only fields, cross-checks Snapshot/Manifest revisions, validates state/outcome, reviewer separation, dispositions, test environment, scoped gate semantics, and linked local evidence, confirms the project authority layout, and automatically verifies required project-relative SHA-256 ledger entries. Before implementation, the inventory may include planned new files while the ledger freezes existing inputs. At `verified-complete`, regenerate from the actual files: the declared inventory must equal the ledger path set. Validation does not run project commands or prove test-result truth.
+- Gate validation locates the nearest ancestor manifest, rejects duplicate authoritative sections or fenced/comment-only fields, cross-checks Snapshot/Manifest revisions, validates state/outcome, reviewer separation, dispositions, test environment, scoped gate semantics, and linked local evidence, confirms the project authority layout, and automatically verifies required project-relative SHA-256 ledger entries. Before implementation, the inventory may include planned new files while the ledger freezes existing inputs. After the actual candidate path set settles, generate both fields with `<script-root>/render_fingerprint_ledger.py <project-root> <project-relative-path>...`; at `verified-complete`, the declared inventory must equal the generated ledger path set. Validation does not run project commands or prove test-result truth.
 
 ## Test execution
 
@@ -161,7 +161,7 @@ Finding severity is distinct from backlog priority.
 - `P1`: acceptance criterion, required regression, or security control not met. Return to implementation; do not request human acceptance.
 - `P2`: non-blocking improvement. Create an evidence-linked follow-up task; do not silently discard it or block completion.
 
-Record each finding in the task's main Findings field as a `FIND-...` or `EVID-...` ID immediately followed by its P0/P1/P2 severity, reproduction evidence, affected REQ/AC/TEST, disposition, and follow-up link. The main field is the authoritative inventory. An ID-adjacent severity in the open-follow-up field remains a blocking safety signal, but a follow-up ID absent from a main field that reports no findings is a cross-field inconsistency. Severity words in free or negative prose do not declare a finding. Put an unresolved P0/P1 FIND ID in the task's backlog blocker until remediation or disposition removes it; do not invent a DEC ID unless a separate material human decision is genuinely required. Unresolved P0/P1 blocks completion.
+Record each finding in the task's main Findings field as a `FIND-...` or `EVID-...` ID immediately followed by its P0/P1/P2 severity, reproduction evidence, affected REQ/AC/TEST, disposition, and follow-up link. Record no findings once as `none — <concrete reason>`; do not require an additional N/A marker. The main field is the authoritative inventory. An ID-adjacent severity in the open-follow-up field remains a blocking safety signal, but a follow-up ID absent from a main field that reports no findings is a cross-field inconsistency. Severity words in free or negative prose do not declare a finding. Put an unresolved P0/P1 FIND ID in the task's backlog blocker until remediation or disposition removes it; do not invent a DEC ID unless a separate material human decision is genuinely required. Unresolved P0/P1 blocks completion.
 
 ## Human decisions and acceptance
 

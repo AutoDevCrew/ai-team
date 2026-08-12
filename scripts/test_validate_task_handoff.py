@@ -53,7 +53,7 @@ def review_record(
 
 
 def completed_standard_card() -> str:
-    card = template_card("Complete Standard task card example")
+    card = template_card("Implementation-ready Standard task card example")
     replacements = {
         "implementation-ready / not-complete": "complete / verified-complete",
         "- [ ] AC-EXAMPLE-STD-001 / TEST-EXAMPLE-STD-001": "- [x] AC-EXAMPLE-STD-001 / TEST-EXAMPLE-STD-001",
@@ -217,7 +217,7 @@ class HandoffValidatorTests(unittest.TestCase):
             )
 
         self.assertLessEqual(field_count(template_card("Minimal Fast-path task card")), 22)
-        self.assertLessEqual(field_count(template_card("Complete Standard task card example")), 35)
+        self.assertLessEqual(field_count(template_card("Implementation-ready Standard task card example")), 35)
 
     def test_compact_examples_pass_expected_gates(self) -> None:
         fast = template_card("Minimal Fast-path task card")
@@ -227,7 +227,7 @@ class HandoffValidatorTests(unittest.TestCase):
         )
         self.assertEqual([], validator.validate(ready_fast, gate="implementation-ready"))
         self.assertEqual([], validator.validate(completed_fast_card(), gate="verified-complete"))
-        standard = template_card("Complete Standard task card example")
+        standard = template_card("Implementation-ready Standard task card example")
         self.assertEqual([], validator.validate(standard, gate="implementation-ready"))
         self.assertEqual([], validator.validate(completed_standard_card(), gate="verified-complete"))
 
@@ -250,7 +250,7 @@ class HandoffValidatorTests(unittest.TestCase):
 
     def test_stage_scope_is_bound_to_current_task(self) -> None:
         with tempfile.TemporaryDirectory() as temp:
-            card = self.materialize_project(Path(temp), template_card("Complete Standard task card example"))
+            card = self.materialize_project(Path(temp), template_card("Implementation-ready Standard task card example"))
             stage = Path(temp) / ".ai-team/stage.md"
             stage.write_text(
                 "# Project Stage\n\n- Stage: implementation-authorized\n"
@@ -286,7 +286,7 @@ class HandoffValidatorTests(unittest.TestCase):
         )
         errors = validator.validate(card, gate="verified-complete")
         self.assertTrue(any("absent from inventory" in error for error in errors), errors)
-        card = template_card("Complete Standard task card example").replace(
+        card = template_card("Implementation-ready Standard task card example").replace(
             "  - `tests/calculator/input.test.ts` = fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210\n",
             "",
         )
@@ -308,7 +308,7 @@ class HandoffValidatorTests(unittest.TestCase):
         self.assertTrue(any("separate code/security reviewer" in error for error in errors), errors)
 
     def test_security_trigger_requires_concrete_annex(self) -> None:
-        card = template_card("Complete Standard task card example").replace(
+        card = template_card("Implementation-ready Standard task card example").replace(
             "standard / M / none — synchronous local validation using the existing module contract",
             "standard / M / security",
         )
@@ -325,7 +325,7 @@ class HandoffValidatorTests(unittest.TestCase):
         self.assertTrue(any("may not be N/A" in error for error in errors), errors)
 
     def test_interface_trigger_requires_contract_reference_and_tests(self) -> None:
-        card = template_card("Complete Standard task card example").replace(
+        card = template_card("Implementation-ready Standard task card example").replace(
             "standard / M / none — synchronous local validation using the existing module contract",
             "standard / M / interface",
         ).replace(
@@ -340,7 +340,7 @@ class HandoffValidatorTests(unittest.TestCase):
         self.assertTrue(any("contract TEST IDs" in error for error in errors), errors)
 
     def test_testsprite_trigger_requires_web_ui_and_annex(self) -> None:
-        card = template_card("Complete Standard task card example").replace(
+        card = template_card("Implementation-ready Standard task card example").replace(
             "standard / M / none — synchronous local validation using the existing module contract",
             "standard / M / testsprite",
         )
@@ -349,7 +349,7 @@ class HandoffValidatorTests(unittest.TestCase):
         self.assertTrue(any("TestSprite MCP" in error for error in errors), errors)
 
     def test_high_risk_requires_material_trigger(self) -> None:
-        card = template_card("Complete Standard task card example").replace(
+        card = template_card("Implementation-ready Standard task card example").replace(
             "standard / M / none — synchronous local validation using the existing module contract",
             "high-risk / XL / experience",
         )
@@ -357,7 +357,7 @@ class HandoffValidatorTests(unittest.TestCase):
         self.assertTrue(any("material control trigger" in error for error in errors), errors)
 
     def test_standard_batch_regression_cannot_be_na(self) -> None:
-        card = template_card("Complete Standard task card example").replace(
+        card = template_card("Implementation-ready Standard task card example").replace(
             "- Batch regression: `npm test` once at BATCH-EXAMPLE-01 exit",
             "- Batch regression: N/A — suite is expensive",
         )
@@ -386,20 +386,47 @@ class HandoffValidatorTests(unittest.TestCase):
 
     def test_p0_p1_block_and_p2_requires_followup(self) -> None:
         p1 = completed_standard_card().replace(
-            "- Findings / severity / affected REQ-AC-TEST: none / N/A — no finding / REQ-EXAMPLE-STD-001 AC-EXAMPLE-STD-001 TEST-EXAMPLE-STD-001 TEST-EXAMPLE-STD-002",
+            "- Findings / severity / affected REQ-AC-TEST: none — no design finding after TEST-EXAMPLE-STD-001 and TEST-EXAMPLE-STD-002 planning review",
             "- Findings / severity / affected REQ-AC-TEST: FIND-P1-001 / P1 / REQ-EXAMPLE-STD-001 AC-EXAMPLE-STD-001 TEST-EXAMPLE-STD-001",
         ).replace("- Open P0/P1 / P2 follow-up: none", "- Open P0/P1 / P2 follow-up: FIND-P1-001")
         errors = validator.validate(p1, gate="verified-complete")
         self.assertTrue(any("unresolved P0/P1" in error for error in errors), errors)
         p2 = completed_standard_card().replace(
-            "- Findings / severity / affected REQ-AC-TEST: none / N/A — no finding / REQ-EXAMPLE-STD-001 AC-EXAMPLE-STD-001 TEST-EXAMPLE-STD-001 TEST-EXAMPLE-STD-002",
+            "- Findings / severity / affected REQ-AC-TEST: none — no design finding after TEST-EXAMPLE-STD-001 and TEST-EXAMPLE-STD-002 planning review",
             "- Findings / severity / affected REQ-AC-TEST: FIND-P2-001 / P2 / REQ-EXAMPLE-STD-001 AC-EXAMPLE-STD-001 TEST-EXAMPLE-STD-001",
         )
         errors = validator.validate(p2, gate="verified-complete")
         self.assertTrue(any("P2 findings require" in error for error in errors), errors)
 
+    def test_no_findings_uses_one_reasoned_none_semantic(self) -> None:
+        valid = completed_standard_card()
+        self.assertFalse(
+            any(
+                "no findings require a concrete reason" in error
+                for error in validator.validate(valid, gate="verified-complete")
+            )
+        )
+        bare = valid.replace(
+            "none — no design finding after TEST-EXAMPLE-STD-001 and TEST-EXAMPLE-STD-002 planning review",
+            "none",
+        )
+        errors = validator.validate(bare, gate="verified-complete")
+        self.assertTrue(any("no findings require a concrete reason" in error for error in errors), errors)
+        self.assertTrue(any("example: none — no findings" in error for error in errors), errors)
+
+    def test_actionable_pass_error_includes_value_expectation_and_example(self) -> None:
+        card = completed_standard_card().replace(
+            "- Build / generation / lint-typecheck results: PASS — lint completed",
+            "- Build / generation / lint-typecheck results: 5/5 PASS",
+        )
+        errors = validator.validate(card, gate="verified-complete")
+        message = next(error for error in errors if "build/lint PASS" in error)
+        self.assertIn("value='5/5 PASS'", message)
+        self.assertIn("expected start with PASS", message)
+        self.assertIn("example: PASS —", message)
+
     def test_negated_severity_words_do_not_create_findings(self) -> None:
-        base = template_card("Complete Standard task card example")
+        base = template_card("Implementation-ready Standard task card example")
         for followup in (
             "no P0/P1 open / TASK-010 recorded",
             "P0: none / P1: none / P2: none",
@@ -464,7 +491,7 @@ class HandoffValidatorTests(unittest.TestCase):
         )
 
     def test_conditional_readiness_activation_is_state_bound(self) -> None:
-        card = template_card("Complete Standard task card example").replace(
+        card = template_card("Implementation-ready Standard task card example").replace(
             "- Design/readiness verdict and conditions: implementation-ready / direct PASS; no deferred condition",
             "- Design/readiness verdict and conditions: conditional-pass / pending / dependency TASK-002 completion evidence",
         ).replace("implementation-ready / not-complete", "task-design-ready / not-complete")
@@ -477,19 +504,19 @@ class HandoffValidatorTests(unittest.TestCase):
         self.assertEqual([], validator.validate(active, gate="implementation-ready"))
 
     def test_cancelled_state_requires_feedback_record(self) -> None:
-        card = template_card("Complete Standard task card example").replace(
+        card = template_card("Implementation-ready Standard task card example").replace(
             "implementation-ready / not-complete", "cancelled/superseded / not-complete"
         )
         errors = validator.validate(card, strict=True)
         self.assertTrue(any("Human feedback and change record" in error for error in errors), errors)
 
     def test_invalid_state_and_missing_sections_are_rejected(self) -> None:
-        card = template_card("Complete Standard task card example").replace(
+        card = template_card("Implementation-ready Standard task card example").replace(
             "implementation-ready / not-complete", "banana / verified-complete"
         )
         errors = validator.validate(card, strict=True)
         self.assertTrue(any("invalid task state" in error for error in errors), errors)
-        no_plan = re.sub(r"\n## Plan and readiness\n.*?(?=\n## |\Z)", "", template_card("Complete Standard task card example"), flags=re.DOTALL)
+        no_plan = re.sub(r"\n## Plan and readiness\n.*?(?=\n## |\Z)", "", template_card("Implementation-ready Standard task card example"), flags=re.DOTALL)
         self.assertTrue(validator.validate(no_plan, gate="implementation-ready"))
 
 

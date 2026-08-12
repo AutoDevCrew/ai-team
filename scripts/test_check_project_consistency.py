@@ -23,7 +23,7 @@ TEMPLATES = PROJECT_TEMPLATE / ".ai-team/governance/templates.md"
 
 def standard_example() -> str:
     match = re.search(
-        r"## Complete Standard task card example.*?```md\n(.*?)\n```",
+        r"## Implementation-ready Standard task card example.*?```md\n(.*?)\n```",
         TEMPLATES.read_text(encoding="utf-8"),
         re.DOTALL,
     )
@@ -979,7 +979,7 @@ class ProjectConsistencyTests(unittest.TestCase):
                     "- Independent verifier verdict: FAIL — TEST-EXAMPLE-STD-001",
                 )
                 .replace(
-                    "- Findings / severity / affected REQ-AC-TEST: none / N/A — no finding / REQ-EXAMPLE-STD-001 AC-EXAMPLE-STD-001 TEST-EXAMPLE-STD-001 TEST-EXAMPLE-STD-002",
+                    "- Findings / severity / affected REQ-AC-TEST: none — no design finding after TEST-EXAMPLE-STD-001 and TEST-EXAMPLE-STD-002 planning review",
                     "- Findings / severity / affected REQ-AC-TEST: FIND-P1-001 / P1 / REQ-EXAMPLE-STD-001 AC-EXAMPLE-STD-001 TEST-EXAMPLE-STD-001",
                 )
                 .replace(

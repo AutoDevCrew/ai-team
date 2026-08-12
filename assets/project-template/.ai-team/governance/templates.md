@@ -1,6 +1,6 @@
 # Canonical Artifact Templates
 
-Workflow revision: `ai-team-2026-08-12-r19`.
+Workflow revision: `ai-team-2026-08-12-r20`.
 
 ## Catalog navigation
 
@@ -14,7 +14,7 @@ python3 .ai-team/scripts/extract_markdown_section.py .ai-team/governance/templat
 - Design: `Architecture and code-context pack`, `Experience design brief (UI scope only)`, `Engineering baseline`.
 - Governance: `Decision card`, `Discussion record`, `Role assignment envelope`, `Review evidence record`.
 - Delivery: `Task card`, `Conditional task annexes`, `Security-impact review`, `Acceptance checkpoint package`.
-- Focused examples: `Minimal Fast-path task card`, `Complete Standard task card example`, `Required fingerprint example`.
+- Focused examples: `Minimal Fast-path task card`, `Implementation-ready Standard task card example`, `Verified-complete Standard field delta`, `Required fingerprint example`.
 
 ## Source register
 
@@ -288,18 +288,18 @@ Use this compact delta card for Standard/High-risk work. Project-wide requiremen
 
 ## Implementation self-check
 - Implementation engineer identity: AGENT-<id>
-- Build / generation / lint-typecheck results:
-- Owner / affected / contract test results:
+- Build / generation / lint-typecheck results: PASS — <commands and results> / N/A — <concrete reason>
+- Owner / affected / contract test results: PASS — <commands and results>
 - Omitted checks, residual risks, and evidence:
 
 ## Verification and findings
 - Independent verifier identity: AGENT-<id>
 - Separate code/security reviewer identity: AGENT-<id> / N/A — Fast or ordinary Standard merged-verifier reason
-- Independent verifier verdict:
-- Separate code/security reviewer verdict:
+- Independent verifier verdict: PASS — <fresh verification summary> / pending / FAIL — <finding IDs>
+- Separate code/security reviewer verdict: PASS — <current review summary> / N/A — <merged-verifier reason> / FAIL — <finding IDs>
 - Independent verification evidence: `.ai-team/evidence/EVID-...md`
 - Separate code/security review evidence: `.ai-team/evidence/EVID-...md` / N/A — merged-verifier reason
-- Findings / severity / affected REQ-AC-TEST: none / N/A — no finding, or FIND-<id> / P0|P1|P2 / REQ-... AC-... TEST-...
+- Findings / severity / affected REQ-AC-TEST: none — <reason>, or FIND-<id> / P0|P1|P2 / REQ-... AC-... TEST-... / <reproduction and disposition>
 - Open P0/P1 / P2 follow-up: none / FIND-<id> / TASK-<id>
 - Verified Snapshot / Manifest / at: SNAP-<id> / TEM-<id> / <ISO timestamp>
 ```
@@ -445,7 +445,7 @@ This complete Fast-only skeleton contains every section required by strict valid
 # TASK-EXAMPLE-001: Clarify local contributor documentation
 
 ## Handoff Snapshot
-- Workflow revision: ai-team-2026-08-12-r19
+- Workflow revision: ai-team-2026-08-12-r20
 - Snapshot ID and updated at: SNAP-EXAMPLE-001-01 / 2026-08-12T10:00+08:00
 - Current state and technical outcome: awaiting-verification / not-complete
 - Scope, source, decision, and contract references: REQ-EXAMPLE-001 / AC-EXAMPLE-001 / TEST-EXAMPLE-001 / `.ai-team/sources.md`; no decision or contract change
@@ -468,11 +468,11 @@ This complete Fast-only skeleton contains every section required by strict valid
 ## Fast execution and verification
 - Implementer / self-check / evidence: AGENT-IE-EXAMPLE / PASS — markdownlint and requested wording inspection / `.ai-team/evidence/EXAMPLE-001.md`
 - Independent verifier / verdict / evidence: AGENT-IV-EXAMPLE / pending fresh TEST-EXAMPLE-001 / `.ai-team/evidence/EXAMPLE-001.md`
-- Findings / severity / affected / follow-up: none / N/A — no finding / REQ-EXAMPLE-001 AC-EXAMPLE-001 TEST-EXAMPLE-001 / none
+- Findings / severity / affected / follow-up: none — no finding after TEST-EXAMPLE-001 / REQ-EXAMPLE-001 AC-EXAMPLE-001 TEST-EXAMPLE-001 / none
 - Verified Snapshot / at: SNAP-EXAMPLE-001-01 / 2026-08-12T10:30+08:00
 ```
 
-## Complete Standard task card example
+## Implementation-ready Standard task card example
 
 This compact example passes the `implementation-ready` gate. Shared requirements, design, baseline, and batch regression remain project-level references instead of being recopied into the card.
 
@@ -480,7 +480,7 @@ This compact example passes the `implementation-ready` gate. Shared requirements
 # TASK-EXAMPLE-STD-001: Add validation for calculator expression input
 
 ## Handoff Snapshot
-- Workflow revision: ai-team-2026-08-12-r19
+- Workflow revision: ai-team-2026-08-12-r20
 - Snapshot ID and updated at: SNAP-EXAMPLE-STD-001-01 / 2026-08-12T11:00+08:00
 - Current state and technical outcome: implementation-ready / not-complete
 - Scope, source, decision, and contract references: REQ-EXAMPLE-STD-001 / AC-EXAMPLE-STD-001 / TEST-EXAMPLE-STD-001 TEST-EXAMPLE-STD-002 / `.ai-team/sources.md`; no decision or contract change
@@ -523,14 +523,53 @@ This compact example passes the `implementation-ready` gate. Shared requirements
 - Separate code/security reviewer verdict: N/A — no separate-review trigger
 - Independent verification evidence: `.ai-team/evidence/EXAMPLE-STD-001-verify.md`
 - Separate code/security review evidence: N/A — no separate-review trigger
-- Findings / severity / affected REQ-AC-TEST: none / N/A — no finding / REQ-EXAMPLE-STD-001 AC-EXAMPLE-STD-001 TEST-EXAMPLE-STD-001 TEST-EXAMPLE-STD-002
+- Findings / severity / affected REQ-AC-TEST: none — no design finding after TEST-EXAMPLE-STD-001 and TEST-EXAMPLE-STD-002 planning review
 - Open P0/P1 / P2 follow-up: none
 - Verified Snapshot / Manifest / at: SNAP-EXAMPLE-STD-001-01 / TEM-EXAMPLE-STD-001-01 / 2026-08-12T11:30+08:00
 ```
 
+## Verified-complete Standard field delta
+
+After implementation, regenerate the inventory and ledger from the actual changed files, refresh the Snapshot ID/time, and replace the implementation-ready values with current evidence. This is a field delta, not a second task-card schema.
+
+```sh
+python3 .ai-team/scripts/render_fingerprint_ledger.py . src/calculator/input.ts tests/calculator/input.test.ts
+```
+
+```md
+## Handoff Snapshot
+- Snapshot ID and updated at: SNAP-EXAMPLE-STD-001-02 / 2026-08-12T12:00+08:00
+- Current state and technical outcome: complete / verified-complete
+- Change-set file inventory: `src/calculator/input.ts`; `tests/calculator/input.test.ts`
+- Current change-set fingerprint:
+  - `src/calculator/input.ts` = 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+  - `tests/calculator/input.test.ts` = fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210
+
+## Acceptance criteria checklist
+- [x] AC-EXAMPLE-STD-001 / TEST-EXAMPLE-STD-001 rejects unsupported characters
+- [x] AC-EXAMPLE-STD-001 / TEST-EXAMPLE-STD-002 preserves valid arithmetic input
+
+## Implementation self-check
+- Implementation engineer identity: AGENT-IE-EXAMPLE
+- Build / generation / lint-typecheck results: PASS — `npm run lint`
+- Owner / affected / contract test results: PASS — calculator owner and affected regression groups passed
+- Omitted checks, residual risks, and evidence: none; `.ai-team/evidence/EXAMPLE-STD-001-verify.md`
+
+## Verification and findings
+- Independent verifier identity: AGENT-IV-EXAMPLE
+- Separate code/security reviewer identity: N/A — ordinary Standard merged-verifier review
+- Independent verifier verdict: PASS — fresh TEST-EXAMPLE-STD-001 and TEST-EXAMPLE-STD-002 passed
+- Separate code/security reviewer verdict: N/A — no separate-review trigger
+- Independent verification evidence: `.ai-team/evidence/EXAMPLE-STD-001-verify.md`
+- Separate code/security review evidence: N/A — no separate-review trigger
+- Findings / severity / affected REQ-AC-TEST: none — no findings after fresh task and affected-regression verification
+- Open P0/P1 / P2 follow-up: none
+- Verified Snapshot / Manifest / at: SNAP-EXAMPLE-STD-001-02 / TEM-EXAMPLE-STD-001-01 / 2026-08-12T12:00+08:00
+```
+
 ## Required fingerprint example
 
-This excerpt shows the exact ledger syntax for Standard, High-risk, and other tasks whose fingerprint policy is `required`. The digest values are illustrative; compute and replace them from the current files.
+This excerpt shows the exact ledger syntax for Standard, High-risk, and other tasks whose fingerprint policy is `required`. Generate the inventory and digests from the current files with `python3 .ai-team/scripts/render_fingerprint_ledger.py . <project-relative-path>...`; the values below are illustrative.
 
 ```md
 ## Handoff Snapshot

@@ -484,7 +484,11 @@ def task_inventory_errors(project_root: Path, task_root: Path, board: Path) -> l
             errors.append(f"batch member list contains duplicate task IDs for {batch_id}")
         if order != task_ids or len(order_list) != len(order):
             errors.append(
-                f"batch serial order must list each member once for {batch_id}"
+                validator.format_error(
+                    f"batch serial order must list each member once for {batch_id}",
+                    batch_row.get("Serial implementation order", ""),
+                    "serial_task_order",
+                )
             )
         for field in (
             "Objective",

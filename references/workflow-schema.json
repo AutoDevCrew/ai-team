@@ -1,6 +1,6 @@
 {
-  "schema_version": "2",
-  "workflow_revision": "ai-team-2026-08-12-r19",
+  "schema_version": "3",
+  "workflow_revision": "ai-team-2026-08-12-r20",
   "enums": {
     "gates": ["task-design", "implementation-ready", "verified-complete"],
     "task_states": ["analysis", "awaiting-human-decision", "task-design-ready", "implementation-ready", "implementing", "awaiting-verification", "complete", "cancelled/superseded"],
@@ -40,6 +40,32 @@
     "high-risk": {
       "readiness_section": "Plan and readiness",
       "execution_section": "Implementation self-check"
+    }
+  },
+  "formats": {
+    "pass_result": {
+      "expectation": "start with PASS; prose that merely contains PASS is not a passing status",
+      "example": "PASS — python -m pytest tests/ -v; 5/5 passed"
+    },
+    "reasoned_na": {
+      "expectation": "start with N/A and include a concrete rationale",
+      "example": "N/A — this project has no separate build step"
+    },
+    "no_findings": {
+      "expectation": "start with none and include a concrete reason; N/A is not required",
+      "example": "none — no findings after TEST-001..005"
+    },
+    "finding_record": {
+      "expectation": "record each finding as a FIND/EVID ID immediately followed by P0, P1, or P2 and affected traceability",
+      "example": "FIND-001 / P1 / REQ-001 AC-001 TEST-001 / reproduction and disposition"
+    },
+    "fingerprint_ledger": {
+      "expectation": "put each project-relative path and 64-hex SHA-256 digest on its own Markdown list line",
+      "example": "- `src/file.ts` = 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+    },
+    "serial_task_order": {
+      "expectation": "list every batch member TASK ID exactly once in execution order",
+      "example": "TASK-001 → TASK-002"
     }
   },
   "fields": {
