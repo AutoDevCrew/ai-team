@@ -1,8 +1,8 @@
 # Delivery Policy
 
-Workflow revision: `ai-team-2026-08-12-r12`.
+Workflow revision: `ai-team-2026-08-12-r13`.
 
-This is the single global authority for AI-team delivery lanes, states, gates, handoffs, validation, severity, acceptance, and re-entry. Copy it to `.ai-team/governance/workflow.md` during project initialization or migration. The project-local copy is the runtime authority for that project.
+This is the single global authority for AI-team delivery lanes, states, gates, handoffs, validation, severity, acceptance, and re-entry. Copy it to `.ai-team/governance/workflow.md` during project initialization. The project-local copy is the runtime authority for that project.
 
 Resolve all paths from `.ai-team/manifest.md`. Machine-readable active enums, compact field groups, stage authorization, and table contracts come from `governance/workflow-schema.json`; exact Markdown syntax comes from `governance/templates.md`.
 
@@ -128,7 +128,7 @@ Pending upstream implementation or a closed project stage is an implementation b
 - The compact task card is the canonical task delta, state, manifest reference, gate summary, and completion record. Project-wide facts remain in their project artifacts; supporting evidence may not override the card.
 - Bound ordinary assignments to the snapshot's exact project references; `Shared assignment contract` plus the assigned role section from `governance/roles.md`; the specifically named workflow section or gate checklist; and only the artifact template section being changed.
 - Use `<script-root>/extract_markdown_section.py <markdown-file> "<H2 heading>"` for bounded reads when available. It ignores headings inside fenced examples; do not use brittle line-number ranges.
-- Read complete authority files only during initialization, migration, workflow revision, or when an evidenced cross-section conflict cannot be resolved from the cited sections. The coordinator names the required headings in every assignment.
+- Read complete authority files only during initialization, workflow revision, or when an evidenced cross-section conflict cannot be resolved from the cited sections. The coordinator names the required headings in every assignment.
 - Keep raw logs and superseded snapshots/manifests/verdicts in `.ai-team/evidence/`; link only current evidence from the compact card.
 - Refresh the snapshot or compact Test Manifest reference after material source, decision, contract, code, test, command, fixture, environment, finding, or next-action changes.
 - Record the review phase in every Review evidence record. Design/readiness records remain historical inputs at completion and retain their original Snapshot binding while still matching the current frozen Manifest; a Manifest or design-input change invalidates them. Verification and code-security records must bind the current completion Snapshot and Manifest. Never substitute one phase's PASS for another.

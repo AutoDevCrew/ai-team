@@ -290,31 +290,6 @@ class ProjectConsistencyTests(unittest.TestCase):
                 errors,
             )
 
-    def test_legacy_complete_task_without_snapshot_is_preserved(self) -> None:
-        with tempfile.TemporaryDirectory() as temp_dir:
-            project = Path(temp_dir)
-            self.materialize_project(project)
-            card = project / ".ai-team/tasks/TASK-001-legacy.md"
-            card.write_text(
-                """\
-# TASK-001: Historical task
-
-## State
-complete
-""",
-                encoding="utf-8",
-            )
-            backlog = project / ".ai-team/tasks/backlog.md"
-            backlog.write_text(
-                backlog.read_text(encoding="utf-8").replace(
-                    "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |",
-                    "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n"
-                    "| TASK-001 | Historical task | complete |  |  |  | delivery coordinator | none | none | none | [card](TASK-001-legacy.md) |",
-                ),
-                encoding="utf-8",
-            )
-            self.assertEqual([], checker.check_project(project))
-
     def test_runtime_authority_revision_drift_is_reported(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             project = Path(temp_dir)
@@ -521,6 +496,33 @@ complete
             )
             backlog.write_text(text, encoding="utf-8")
             self.assertIn("TASK-002", checker.next_eligible_action(project) or "")
+
+    def test_next_action_starts_security_review_only_when_triggered(self) -> None:
+        for trigger, expected in (("none — ordinary task", False), ("security", True)):
+            with self.subTest(trigger=trigger), tempfile.TemporaryDirectory() as temp_dir:
+                project = Path(temp_dir)
+                self.materialize_project(project)
+                card = project / ".ai-team/tasks/TASK-001.md"
+                card.write_text(
+                    f"""# TASK-001: Verify candidate
+
+## Handoff Snapshot
+- Delivery lane / complexity / control triggers: standard / M / {trigger}
+""",
+                    encoding="utf-8",
+                )
+                backlog = project / ".ai-team/tasks/backlog.md"
+                backlog.write_text(
+                    backlog.read_text(encoding="utf-8").replace(
+                        "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |",
+                        "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n"
+                        "| TASK-001 | Verify | awaiting-verification | standard | M | B1 | independent verifier | none | none | verified-complete | [card](TASK-001.md) |",
+                    ),
+                    encoding="utf-8",
+                )
+                action = checker.next_eligible_action(project) or ""
+                self.assertIn("independent verification", action)
+                self.assertEqual(expected, "code/security review" in action)
 
     def test_blocking_checkpoint_becomes_the_next_action(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:

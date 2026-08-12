@@ -1,12 +1,12 @@
 # Role Protocol
 
-Workflow revision: `ai-team-2026-08-12-r12`.
+Workflow revision: `ai-team-2026-08-12-r13`.
 
-This is the single global authority for AI-team role responsibilities and boundaries. Copy it to `.ai-team/governance/roles.md` during project initialization or migration. The project-local copy is the runtime authority.
+This is the single global authority for AI-team role responsibilities and boundaries. Copy it to `.ai-team/governance/roles.md` during project initialization. The project-local copy is the runtime authority.
 
 Gate semantics and validation timing are defined only in `governance/workflow.md`. Machine-readable workflow values and field groups are defined in `governance/workflow-schema.json`; exact Markdown syntax is defined in `governance/templates.md`.
 
-During a normal role assignment, locate sections by exact H2 heading with the manifest-declared Markdown section extractor and read only `Shared assignment contract`, the assigned role section, and the workflow headings named in Required reads. Read this complete file only for initialization, migration, role-protocol revision, or an evidenced cross-role conflict.
+During a normal role assignment, locate sections by exact H2 heading with the manifest-declared Markdown section extractor and read only `Shared assignment contract`, the assigned role section, and the workflow headings named in Required reads. Read this complete file only for initialization, role-protocol revision, or an evidenced cross-role conflict.
 
 ## Shared assignment contract
 

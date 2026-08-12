@@ -943,7 +943,7 @@ def review_evidence_errors(
     return errors
 
 
-# Compact r12 task validation. Project-wide facts stay in project artifacts; task cards
+# Compact current-revision task validation. Project-wide facts stay in project artifacts; task cards
 # contain only the current task delta, gate summaries, and evidence links.
 
 

@@ -183,11 +183,7 @@ def card_identity(card: Path, text: str) -> tuple[str, str, str, str, str]:
     title = re.search(r"^#\s+(TASK-[^:\s]+)(?::|\s|$)", visible_markdown(text), re.MULTILINE)
     task_id = title.group(1) if title else ""
     snapshot = validator.section(text, "## Handoff Snapshot")
-    if snapshot:
-        state, _ = validator.state_and_outcome(snapshot)
-    else:
-        state_text = validator.section(text, "## State")
-        state = next((line.strip().lower() for line in state_text.splitlines()[1:] if line.strip()), "")
+    state, _ = validator.state_and_outcome(snapshot)
     lane, complexity, _ = validator.delivery_descriptor(snapshot)
     batch_value = validator.field_value(snapshot, "Batch / dependencies / entry:")
     batch = batch_value.split("/", 1)[0].strip()
@@ -424,9 +420,7 @@ def active_task_errors(project_root: Path, task_root: Path) -> list[str]:
         text = card.read_text(encoding="utf-8")
         snapshot = validator.section(text, "## Handoff Snapshot")
         if not snapshot:
-            _, state, _, _, _ = card_identity(card, text)
-            if state not in TERMINAL_STATES:
-                errors.append(f"active task card has no Handoff Snapshot: {card.relative_to(project_root)}")
+            errors.append(f"task card has no Handoff Snapshot: {card.relative_to(project_root)}")
             continue
         state, _ = validator.state_and_outcome(snapshot)
         if state == "implementing":
@@ -587,7 +581,7 @@ def next_eligible_action(project_root: Path) -> str | None:
         "task-design-ready": "run or activate implementation-readiness",
         "implementation-ready": "start the one serial implementation engineer",
         "implementing": "continue the one serial implementation engineer",
-        "awaiting-verification": "start independent verification and scoped code/security review",
+        "awaiting-verification": "start independent verification",
     }
     state_priority = (
         "implementing",
@@ -604,6 +598,12 @@ def next_eligible_action(project_root: Path) -> str | None:
             action = actions.get(state)
             if action is None:
                 continue
+            if state == "awaiting-verification":
+                card = resolve_card_link(board, row.get("Card", ""))
+                if card and card.is_file() and validator.separate_review_required(
+                    card.read_text(encoding="utf-8")
+                ):
+                    action += " and triggered code/security review"
             blocker = row.get("Blocker / decision", "").strip()
             if blocker and not validator.is_none(blocker):
                 continue
