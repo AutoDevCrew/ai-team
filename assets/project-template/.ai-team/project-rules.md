@@ -1,6 +1,6 @@
 # AI Team Project Rules
 
-Workflow revision: `ai-team-2026-08-12-r23`.
+Workflow revision: `ai-team-2026-08-12-r24`.
 
 This file is the project authority index and override surface. It does not redefine delivery rules, role responsibilities, or artifact fields.
 
