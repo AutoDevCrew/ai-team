@@ -1,6 +1,6 @@
 # Role Protocol
 
-Workflow revision: `ai-team-2026-08-12-r25`.
+Workflow revision: `ai-team-2026-08-12-r28`.
 
 This is the single global authority for AI-team role responsibilities and boundaries. Copy it to `.ai-team/governance/roles.md` during project initialization. The project-local copy is the runtime authority.
 
@@ -129,7 +129,8 @@ The coordinator starts the next eligible child or performs the next eligible loc
 3. Produce the minimal design, module/data boundaries, failure/recovery paths, risks, task dependencies, and requirement-to-design/test mapping.
 4. Declare each task's interface/protocol disposition and freeze changed contracts and compatibility expectations.
 5. Freeze runtime-chain and security treatments when the workflow triggers them.
-6. Analyze material baseline changes and update affected design/test/task constraints.
+6. Classify missing external credentials and tool authorizations using the workflow's mockable/equivalent-fallback/non-substitutable rule, and surface non-substitutable needs before the affected readiness gate.
+7. Analyze material baseline changes and update affected design/test/task constraints.
 
 ### Outputs and writes
 
@@ -179,10 +180,11 @@ The coordinator starts the next eligible child or performs the next eligible loc
 
 1. Independently review no-PRD intake and engineering baseline when the workflow requires them.
 2. Produce stable test IDs and a pre-implementation plan covering normal, boundary/error, permission, regression, and applicable contract/UI scenarios.
-3. Freeze the compact task Test Manifest. Inherit project-default commands from the engineering baseline and record only task-specific checks, environment differences, and batch regression timing.
-4. Validate traceability, interface/protocol disposition, runtime/security treatment, and task-design/implementation readiness against the workflow gates; for Standard work, produce the combined direct or conditional verdict in one planning assignment when allowed.
-5. For ordinary Standard work, combine independent diff review with fresh task acceptance/affected-regression tests and defer the approved full regression to batch exit. For triggered or High-risk work, wait for the separate reviewer fast-gate and run the required risk/full suite.
-6. Record a verification-phase scoped PASS only from current evidence and bind it to the current Snapshot ID, Manifest revision, fingerprinted candidate, verifier identity, and verification time; return reproducible failures to implementation and preserve unexecuted-test evidence when stopped early.
+3. For every client or Web UI task, map applicable TEST IDs to source-backed copy/content, visual layout and styling, interaction and component states, viewport/device adaptation, accessibility, and affected regression; record a reason for each inapplicable category. Compare only current-scope Figma/Demo/design-system evidence, use explicit visual tolerances rather than unsupported pixel-perfect assumptions, and identify any non-automatable visual checks for human acceptance.
+4. Freeze the compact task Test Manifest. Inherit project-default commands from the engineering baseline and record only task-specific checks, environment differences, and batch regression timing.
+5. Validate traceability, interface/protocol disposition, runtime/security treatment, and task-design/implementation readiness against the workflow gates; for Standard work, produce the combined direct or conditional verdict in one planning assignment when allowed.
+6. For ordinary Standard work, combine independent diff review with fresh task acceptance/affected-regression tests and defer the approved full regression to batch exit. For triggered or High-risk work, wait for the separate reviewer fast-gate and run the required risk/full suite.
+7. Record a verification-phase scoped PASS only from current evidence and bind it to the current Snapshot ID, Manifest revision, fingerprinted candidate, verifier identity, and verification time; return reproducible failures to implementation and preserve unexecuted-test evidence when stopped early.
 
 ### Outputs and writes
 
