@@ -272,6 +272,16 @@ class HandoffValidatorTests(unittest.TestCase):
         errors = validator.validate(source_change, strict=True)
         self.assertTrue(any("use Standard" in error for error in errors), errors)
         test_change = fast.replace("`CONTRIBUTING.md`", "`tests/app.test.ts`")
+        errors = validator.validate(test_change, strict=True)
+        self.assertTrue(any("test code" in error for error in errors), errors)
+        test_change = test_change.replace(
+            "- Fingerprint policy: N/A — Fast documentation-only change",
+            "- Fingerprint policy: required",
+        ).replace(
+            "- Current change-set fingerprint: N/A — Fast documentation-only change",
+            "- Current change-set fingerprint:\n"
+            "  - `tests/app.test.ts` = " + "0" * 64,
+        )
         self.assertEqual([], validator.validate(test_change, strict=True))
 
     def test_fast_lane_requires_a_concrete_inventory(self) -> None:

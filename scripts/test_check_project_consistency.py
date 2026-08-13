@@ -252,6 +252,28 @@ class ProjectConsistencyTests(unittest.TestCase):
             )
             self.assertIn("TASK-EXAMPLE-STD-001", checker.next_eligible_action(project) or "")
 
+    def test_selected_task_gate_resolves_a_slugged_card_filename(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            project = Path(temp_dir)
+            self.materialize_project(project)
+            card, backlog = self.prepare_standard_ready_project(project)
+            slugged_card = card.with_name("TASK-EXAMPLE-STD-001-input-validation.md")
+            card.rename(slugged_card)
+            backlog.write_text(
+                backlog.read_text(encoding="utf-8").replace(
+                    "[card](TASK-EXAMPLE-STD-001.md)",
+                    "[card](TASK-EXAMPLE-STD-001-input-validation.md)",
+                ),
+                encoding="utf-8",
+            )
+            self.assertEqual([], checker.check_project(project))
+            self.assertEqual(
+                [],
+                checker.selected_task_gate_errors(
+                    project, "TASK-EXAMPLE-STD-001", "implementation-ready"
+                ),
+            )
+
     def test_shared_spec_error_is_located_once_across_multiple_cards(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             project = Path(temp_dir)

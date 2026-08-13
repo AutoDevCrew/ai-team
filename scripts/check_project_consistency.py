@@ -878,7 +878,7 @@ def selected_task_gate_errors(project_root: Path, task_id: str, gate: str) -> li
         card
         for card in task_root.rglob("*.md")
         if card.name != "README.md"
-        and validator.first_identifier(card.stem, "TASK") == task_id.upper()
+        and card_identity(card, card.read_text(encoding="utf-8"))[0] == task_id.upper()
     ]
     if len(matches) != 1:
         return [f"selected task must resolve to one card: {task_id} -> {len(matches)} matches"]

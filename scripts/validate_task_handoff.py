@@ -522,6 +522,18 @@ def fast_change_surface_errors(text: str) -> list[str]:
     return errors
 
 
+def fast_fingerprint_policy_errors(text: str) -> list[str]:
+    """Require fingerprints for executable Fast test-code changes."""
+    test_code = any(
+        re.search(r"(^|/)(?:tests?|__tests__)(?:/|$)|\.(?:test|spec)\.[^/]+$", path, re.I)
+        for path in inventory_paths(text)
+    )
+    snapshot = section(text, "## Handoff Snapshot")
+    if test_code and field_value(snapshot, FINGERPRINT_POLICY_FIELD).strip().lower() != "required":
+        return ["Fast test code requires Fingerprint policy: required"]
+    return []
+
+
 def inventory_ledger_errors(text: str) -> list[str]:
     inventory = inventory_paths(text)
     ledger = [path for path, _ in fingerprint_entries(text)]
@@ -605,7 +617,10 @@ def project_stage_errors(task_card: Path, gate: str) -> list[str]:
     if is_placeholder(scope):
         errors.append("project stage requires a concrete scope")
     elif gate in {"implementation-ready", "verified-complete"}:
-        task_id = first_identifier(task_card.stem, "TASK")
+        title = re.search(
+            r"^#\s+[^\n]+", visible_markdown(task_card.read_text(encoding="utf-8")), re.MULTILINE
+        )
+        task_id = first_identifier(title.group(0) if title else "", "TASK")
         scope_lower = scope.strip().lower()
         if scope_lower != "all tasks" and (
             not task_id or task_id not in identifiers(scope, "TASK")
@@ -1577,6 +1592,7 @@ def strict_errors(text: str) -> list[str]:
     if lane == "fast":
         errors.extend(fast_gate_common_errors(text, "strict"))
         errors.extend(fast_change_surface_errors(text))
+        errors.extend(fast_fingerprint_policy_errors(text))
     else:
         errors.extend(planning_errors(text))
     policy = field_value(snapshot, FINGERPRINT_POLICY_FIELD).strip().lower()

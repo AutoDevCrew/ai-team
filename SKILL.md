@@ -7,7 +7,7 @@ description: Launch or refine a Codex-run local software delivery team from a PR
 
 Run a Codex-native software delivery workflow from requirement input through local verification and named human acceptance checkpoints. Use one serial implementation engineer and independent verification; do not build another orchestration framework.
 
-Workflow revision: `ai-team-2026-08-13-r31`. Projects use this current layout only; older workflow layouts are unsupported.
+Workflow revision: `ai-team-2026-08-13-r34`. Projects use this current layout only; older workflow layouts are unsupported.
 
 ## Authority model
 
@@ -51,27 +51,19 @@ The global Skill is the installation source, not a project runtime dependency. N
 
 ## Run delivery
 
-Follow the project-local workflow and roles. At a minimum:
+Follow the project-local workflow and role protocol; do not recreate their rules in task prompts.
 
-1. Register the PRD or verbatim initial request; Figma and Demo are optional evidence.
-2. Scope Demo inspection to the current phase before using the browser. Authorized login, navigation, and non-mutating search/filter actions are allowed; do not change business data, settings, permissions, or external state. Record exclusions and do not infer uninspected legacy behavior.
-3. Have product analysis produce traceable, testable acceptance criteria. Activate UX/UI only when UI evidence and existing patterns leave material experience details unspecified.
-4. Have the technical lead derive an existing-repository baseline or create a greenfield baseline and minimal design. For an unfamiliar or large repository, use `$repomix-explorer` for scoped read-only discovery when available; otherwise continue with targeted local search and record the limitation.
-5. Have the independent verifier review intake/baseline when applicable and perform one batch-planning pass for task test coverage and readiness. Product, UX, technical, and implementation authors never approve the delivery artifacts they authored.
-6. Maintain one backlog and one compact delta card per work item. Keep project-wide requirements, baseline, design, default commands, and traceability in their existing project artifacts; never copy them into every card.
-7. When the host supports child agents, keep the root agent as coordinator. Reuse a bounded specialist within the same task or batch while role, scope, and frozen requirement/contract inputs remain unchanged; invalidate evidence rather than the Agent merely because code changes. Start exactly one serial implementation engineer only after implementation readiness and scoped `.ai-team/stage.md` authorization pass.
-8. For Fast and ordinary Standard work, one independent verifier may combine diff review and test verification while remaining independent from the implementer. Launch a separate code/security reviewer only for High-risk or interface, security, runtime-chain, or material baseline triggers.
-9. After the actual candidate path set settles, use the manifest-declared fingerprint helper to generate the inventory and SHA-256 ledger for required-fingerprint work. Run focused verification per task and one approved full regression at batch exit; High-risk work may retain a per-task full suite. A task becomes `complete / verified-complete` only from current evidence; human acceptance occurs only at a named checkpoint.
-
-Within the authorized stage, continue to the next eligible planning, remediation, implementation, or verification action. At a task boundary, use one project-check command with `--task TASK-... --gate <gate> --next-action`; execute or dispatch an eligible local action instead of merely reporting it. Stop only for a genuine human decision, missing required external authority/evidence, completion of all allowed work, a user pause/status request, or a forced turn end.
+1. Register sources and establish project-stage authority under `Sources and intake`.
+2. Dispatch the applicable product, UX/UI, technical, and verification roles to produce the acceptance, baseline, design, and test inputs required by `Gate authority`.
+3. Maintain one backlog and compact delta cards under `Task planning and batches`; start one serial implementation engineer only after the task's readiness gate and stage authority pass.
+4. Validate the current candidate under `Handoffs and validation`, `Test execution`, and `Completion, acceptance, and re-entry`, using the manifest-declared helpers and independent roles they require.
+5. At each task boundary, run the project check with `--task TASK-... --gate <gate> --next-action`; execute or dispatch its eligible local action. Continue within authorized scope until the workflow's stop condition applies.
 
 ## Project boundaries
 
-- Work locally only. Do not create branches, commits, pushes, pull requests, deployments, or production changes unless the user explicitly changes the project policy.
-- Use only authorized non-production accounts and data. Never write credentials into project artifacts.
-- Only the serial implementation engineer modifies approved business-code paths. The verifier may add independent tests/evidence but not business code; the security reviewer is read-only.
-- Every role assignment states required reads, allowed writes, forbidden writes, and exit conditions.
-- Decide autonomously from sufficient sources, decisions, code, tests, and reversible local conventions. Escalate only unresolved evidence/authority/scope or material irreversible, security, privacy, permission, external-cost, or production impact.
+- Work locally only; do not perform Git publication, deployment, or production actions. Use authorized non-production accounts/data and never store credentials in project artifacts.
+- Apply write boundaries and assignment contracts from the project-local role protocol.
+- Apply autonomous-decision, escalation, and stop conditions only from the project-local delivery policy.
 
 ## Improve this Skill
 

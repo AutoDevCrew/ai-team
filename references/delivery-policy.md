@@ -1,6 +1,6 @@
 # Delivery Policy
 
-Workflow revision: `ai-team-2026-08-13-r31`.
+Workflow revision: `ai-team-2026-08-13-r34`.
 
 This is the single global authority for AI-team delivery lanes, states, gates, handoffs, validation, severity, acceptance, and re-entry. Copy it to `.ai-team/governance/workflow.md` during project initialization. The project-local copy is the runtime authority for that project.
 
@@ -36,7 +36,7 @@ Record one lane before task design.
 - `standard`: ordinary M/L work or shared UI, data, module, compatibility, or regression impact.
 - `high-risk`: XL work or any security, permission, sensitive-data, protocol, migration, transaction, worker/async, external side effect, or production-capability boundary.
 
-Fast path uses the lane-contract sections declared in the Schema and may claim `implementation-ready` directly when its verifier verdict and project stage pass. It lists every changed path but may use a reasoned fingerprint N/A. It omits Standard planning and all untriggered annexes but never removes traceability, acceptance evidence, independent verification, or scope checks. Reclassify whenever the change surface grows.
+Fast path uses the lane-contract sections declared in the Schema and may claim `implementation-ready` directly when its verifier verdict and project stage pass. It lists every changed path. Pure Fast documentation/style/metadata work may use a reasoned fingerprint N/A; Fast test-code work uses the required fingerprint policy. It omits Standard planning and all untriggered annexes but never removes traceability, acceptance evidence, independent verification, or scope checks. Reclassify whenever the change surface grows.
 
 ## State and outcome model
 
@@ -74,7 +74,7 @@ An existing repository derives these constraints from manifests, configuration, 
 
 1. Every evaluated requirement is covered, out of scope with source/decision rationale, or awaiting a decision; only covered requirements need AC/TASK/TEST delivery mappings.
 2. Observable acceptance criteria map `REQ → AC → TEST → TASK → evidence`.
-3. The compact card references project-level source/baseline/design evidence and records one control-trigger set. It represents one independently verifiable implementation slice; any retained L/XL task cites why a contract, transaction, or shared-boundary change must remain atomic. `none` requires a concrete rationale; triggered experience, Web UI, interface, security, runtime-chain, TestSprite, or baseline-change treatment uses only its applicable annex/reference.
+3. The compact card references project-level source/baseline/design evidence and records one control-trigger set. It satisfies the independently verifiable slice test under Task planning and batches; any retained L/XL task records the applicable stop-splitting rationale. `none` requires a concrete rationale; triggered experience, Web UI, interface, security, runtime-chain, TestSprite, or baseline-change treatment uses only its applicable annex/reference.
 4. An interface trigger requires a frozen contract reference and contract-test IDs; use it only for a public or cross-process, service, team, or compatibility-promised boundary. A private signature inside a new module is technical design, not an interface trigger. Absence of the trigger means no interface/protocol change is in task scope.
 5. Required test accounts, fixtures, dependencies, reset method, commands, and evidence expectations are defined.
 6. Security and runtime-chain treatment is complete when triggered.
@@ -86,7 +86,7 @@ Pending upstream implementation or a closed project stage is an implementation b
 
 1. Design dependencies are frozen.
 2. Implementation dependencies and environment are ready.
-3. The task has a current independent implementation-readiness PASS, issued directly or activated from an uninvalidated conditional PASS after only its enumerated mechanical conditions became true.
+3. The task has a current independent PASS in its lane-declared readiness phase: `fast-design-readiness` for Fast or `implementation-readiness` for Standard/High-risk. A Standard conditional PASS may be activated only after its enumerated mechanical conditions become true without an invalidating change.
 4. Assigned batch entry criteria pass, or the card records `batch-not-applicable`.
 5. No human decision or P0/P1 blocks the task.
 6. The manifest-declared project stage is `implementation-authorized` for the task scope. A user's local build/change/fix request authorizes the coordinator to set that stage unless the user explicitly limits work to analysis; never invent another human implementation gate.
@@ -114,11 +114,13 @@ Pending upstream implementation or a closed project stage is an implementation b
 ## Task planning and batches
 
 - Maintain one Markdown backlog and one unique card per task. Task IDs are monotonic and never reused.
-- Record complexity S/M/L/XL with concrete drivers and prefer S/M implementation slices. Before task-design PASS, split L/XL work that contains more than one independently verifiable behavior or risk boundary; retain it only when contract, transaction, or shared-boundary atomicity makes splitting less safe, and record that rationale. Keep resulting tasks in serial order, use focused per-task verification, and retain one approved full regression at batch exit rather than duplicating it for every slice.
+- Record complexity S/M/L/XL with concrete drivers; complexity is a review signal, not a command to split. A slice is independently verifiable only when it has one primary observable outcome, mapped AC/TEST and one focused verification group, failures can be attributed and remediated within its declared owner surface, and it does not require changing another unfinished task's owner surface.
+- Before task-design PASS, split work only when it contains multiple independently verifiable outcomes or independently remediable risk boundaries, or when a likely failure would otherwise invalidate unrelated evidence. Stop splitting when a child cannot pass or fail independently, a contract/transaction/shared-boundary change must remain atomic, or child cards would repeat substantially the same files and checks. Record the applicable rationale; prefer S/M only when it reduces failure or retest scope.
+- Count each extra card, Snapshot, gate, reviewer handoff, fingerprint, and context rebuild as split cost. Do not split when that cost creates no smaller failure or retest domain. Reuse frozen project/batch references and default commands, and record only task deltas.
 - Plan serial batch slices around stable ownership surfaces. Keep tightly coupled changes to a shared boundary in its owner task before verification. If later work must change a verified shared boundary, create a narrow boundary-extension task and re-enter only its direct dependents; do not combine it with unrelated business behavior.
 - A batch records objective, members, duplicate-free serial order, entry criteria, exit evidence, and any named acceptance checkpoint with mode and status. Before completion, `Exit evidence` records the planned regression command; after all members complete it records `PASS` plus current evidence/time or `FAIL` plus affected-scope evidence. It never bulk-promotes tasks; each card needs its own readiness and verification.
 - Do not start a later member before every earlier member in that batch's serial order is complete. More than one task may not be `implementing` at once.
-- Run focused owner/affected verification for each ordinary task and one approved full regression at batch exit. The batch is not finished and no checkpoint is presented until `Exit evidence` records a current regression PASS. High-risk work may retain a per-task full suite. A batch regression failure re-enters only affected completed tasks.
+- A batch is not finished and no checkpoint is presented until `Exit evidence` records the current regression result required by Test execution.
 - A completed batch with a pending blocking checkpoint stops later batches and produces a human-readable checkpoint package. A non-blocking checkpoint does not pause otherwise eligible work.
 - Rejected or conditional acceptance preserves accepted scope and autonomously re-enters only affected requirements/tasks; conditional status remains blocking until its recorded conditions become verified or the human changes the checkpoint outcome.
 - Separate design dependencies from implementation dependencies. Continue downstream design from frozen upstream contracts.
@@ -134,14 +136,14 @@ Pending upstream implementation or a closed project stage is an implementation b
 - Refresh the snapshot or compact Test Manifest reference after material source, decision, contract, code, test, command, fixture, environment, finding, or next-action changes.
 - Record one Schema-declared review phase in every Review evidence record: `intake`, `baseline`, `task-design`, `implementation-readiness`, `fast-design-readiness`, `verification`, or `code-security`. Design/readiness records remain historical inputs at completion and retain their original Snapshot binding while still matching the current frozen Manifest; a Manifest or design-input change invalidates them. Verification and code-security records must bind the current completion Snapshot and Manifest. Never substitute one phase's PASS for another.
 - At a boundary, run `<script-root>/check_project_consistency.py <project-root> --task TASK-... --gate <task-design|implementation-ready|verified-complete> --next-action`. It combines task, project, fingerprint, backlog, and continuation checks. On FAIL it emits `NEXT fix-consistency` for the first source-located error; repair it locally and rerun. Use `validate_task_handoff.py --strict` only for focused card debugging.
-- For code, protocol, generated-output, dependency, runtime, Standard, or High-risk work, use `Fingerprint policy: required`. A pure Fast-path documentation/style/metadata task may use a reasoned `N/A`.
+- For test code, production code, protocol, generated-output, dependency, runtime, Standard, or High-risk work, use `Fingerprint policy: required`. A pure Fast-path documentation/style/metadata task may use a reasoned `N/A`.
 - Gate validation locates the nearest ancestor manifest, rejects duplicate authoritative sections or fenced/comment-only fields, cross-checks Snapshot/Manifest revisions, validates state/outcome, reviewer separation, dispositions, test environment, scoped gate semantics, and linked local evidence, and confirms the project authority layout. A required candidate ledger becomes mandatory only at `awaiting-verification` and `verified-complete`; before then record `N/A — candidate files do not exist yet` when no candidate exists, or an optional existing-input ledger without planned paths. After the actual candidate path set settles, generate inventory and ledger with `<script-root>/render_fingerprint_ledger.py <project-root> <project-relative-path>...`; at `verified-complete`, the declared inventory must equal the generated ledger path set. Validation does not run project commands or prove test-result truth.
 
 ## Test execution
 
 - The independent verifier freezes one compact task Test Manifest reference before implementation. Project-default commands remain in the engineering baseline; the card records task-specific implementer checks, independent checks, batch regression, risk/contract checks, and environment differences.
 - The implementation engineer runs focused owner/affected checks while iterating. The independent verifier runs fresh task acceptance and affected-regression checks against the current candidate.
-- Ordinary Standard work runs the approved full regression once at batch exit, not once per task. High-risk work may require it for each candidate. A batch regression failure re-enters affected tasks with the failing evidence.
+- Ordinary Standard work runs the approved full regression once at batch exit, not once per task. High-risk work may require it for each candidate. A batch regression failure re-enters only affected completed tasks with the failing evidence.
 - For Fast and ordinary Standard work without a separate-review trigger, the verifier combines independent diff review and test verification in one assignment. When a separate review is triggered, its scoped fast-gate precedes expensive independent regression.
 - `Fresh` means independently running frozen commands against the current candidate; it does not mean creating a new Agent process. Reuse the same verifier within the frozen task/batch scope after it reads the refreshed Snapshot and diff.
 - On deterministic P0/P1, capture the manifest revision, executed groups/results, unexecuted groups, and stop reason; stop unrelated broad execution and return to focused rework.
