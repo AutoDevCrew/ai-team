@@ -1,6 +1,6 @@
 # Delivery Policy
 
-Workflow revision: `ai-team-2026-08-13-r36`.
+Workflow revision: `ai-team-2026-08-13-r37`.
 
 This is the single global authority for AI-team delivery lanes, states, gates, handoffs, validation, severity, acceptance, and re-entry. Copy it to `.ai-team/governance/workflow.md` during project initialization. The project-local copy is the runtime authority for that project.
 
@@ -134,6 +134,7 @@ Pending upstream implementation or a closed project stage is an implementation b
 - Read complete authority files only during initialization, workflow revision, or when an evidenced cross-section conflict cannot be resolved from the cited sections. The coordinator names the required headings in every assignment.
 - Keep raw logs and superseded snapshots/manifests/verdicts in `.ai-team/evidence/`; link only current evidence from the compact card.
 - Refresh the snapshot or compact Test Manifest reference after material source, decision, contract, code, test, command, fixture, environment, finding, or next-action changes.
+- Within one reviewer role, review phase, and Snapshot/Manifest binding, aggregate related checks, commands, and findings into one Review evidence record. Use separate records only when the reviewer role, phase, candidate/freshness binding, or independence requirement differs.
 - Record one Schema-declared review phase in every Review evidence record: `intake`, `baseline`, `task-design`, `implementation-readiness`, `fast-design-readiness`, `verification`, or `code-security`. Design/readiness records remain historical inputs at completion and retain their original Snapshot binding while still matching the current frozen Manifest; a Manifest or design-input change invalidates them. Verification and code-security records must bind the current completion Snapshot and Manifest. Never substitute one phase's PASS for another.
 - At a boundary, run `<script-root>/check_project_consistency.py <project-root> --task TASK-... --gate <task-design|implementation-ready|verified-complete> --next-action`. It combines task, project, fingerprint, backlog, and continuation checks. On FAIL it emits `NEXT fix-consistency` for the first source-located error; repair it locally and rerun. Use `validate_task_handoff.py --strict` only for focused card debugging.
 - For test code, production code, protocol, generated-output, dependency, runtime, Standard, or High-risk work, use `Fingerprint policy: required`. A pure Fast-path documentation/style/metadata task may use a reasoned `N/A`.

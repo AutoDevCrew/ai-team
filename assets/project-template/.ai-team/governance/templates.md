@@ -1,10 +1,10 @@
 # Canonical Artifact Templates
 
-Workflow revision: `ai-team-2026-08-13-r36`.
+Workflow revision: `ai-team-2026-08-13-r37`.
 
 ## Catalog navigation
 
-For normal work, read only the named H2 section below; do not load the entire catalog. Use the manifest-declared `extract_markdown_section.py` so headings inside fenced templates do not terminate the read. Use `Task card` for Standard/High-risk work and `Minimal Fast-path task card` only for eligible Fast work.
+For normal work, read only one named H2 section below; do not load the entire catalog. Use the manifest-declared `extract_markdown_section.py` so headings inside fenced templates do not terminate the read. For Standard/High-risk work, read `Task card` when creating or changing structure, or `Implementation-ready Standard task card example` when resolving validator-compatible value syntax; do not read both by default. Use `Minimal Fast-path task card` only for eligible Fast work.
 
 ```sh
 python3 .ai-team/scripts/extract_markdown_section.py .ai-team/governance/templates.md "Task card"
@@ -398,6 +398,8 @@ active / summarized / awaiting human decision / resolved
 
 ## Review evidence record
 
+Use one record for checks performed by the same reviewer role in the same review phase against the same Snapshot/Manifest. Aggregate commands and findings in the existing fields; split records only when role, phase, candidate/freshness binding, or independence differs.
+
 ```md
 # EVID-<id>: <task and review scope>
 
@@ -447,7 +449,7 @@ This complete Fast-only skeleton contains every section required by strict valid
 # TASK-EXAMPLE-001: Clarify local contributor documentation
 
 ## Handoff Snapshot
-- Workflow revision: ai-team-2026-08-13-r36
+- Workflow revision: ai-team-2026-08-13-r37
 - Snapshot ID and updated at: SNAP-EXAMPLE-001-01 / 2026-08-12T10:00+08:00
 - Current state and technical outcome: awaiting-verification / not-complete
 - Scope, source, decision, and contract references: REQ-EXAMPLE-001 / AC-EXAMPLE-001 / TEST-EXAMPLE-001 / `.ai-team/sources.md`; no decision or contract change
@@ -482,7 +484,7 @@ This compact example passes the `implementation-ready` gate. Shared requirements
 # TASK-EXAMPLE-STD-001: Add validation for calculator expression input
 
 ## Handoff Snapshot
-- Workflow revision: ai-team-2026-08-13-r36
+- Workflow revision: ai-team-2026-08-13-r37
 - Snapshot ID and updated at: SNAP-EXAMPLE-STD-001-01 / 2026-08-12T11:00+08:00
 - Current state and technical outcome: implementation-ready / not-complete
 - Scope, source, decision, and contract references: REQ-EXAMPLE-STD-001 / AC-EXAMPLE-STD-001 / TEST-EXAMPLE-STD-001 TEST-EXAMPLE-STD-002 / `.ai-team/sources.md`; no decision or contract change
