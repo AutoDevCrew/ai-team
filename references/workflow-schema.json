@@ -1,6 +1,6 @@
 {
   "schema_version": "4",
-  "workflow_revision": "ai-team-2026-08-13-r34",
+  "workflow_revision": "ai-team-2026-08-13-r35",
   "enums": {
     "gates": ["task-design", "implementation-ready", "verified-complete"],
     "task_states": ["analysis", "awaiting-human-decision", "task-design-ready", "implementation-ready", "implementing", "awaiting-verification", "complete", "cancelled/superseded"],

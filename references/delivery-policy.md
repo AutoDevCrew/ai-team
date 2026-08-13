@@ -1,6 +1,6 @@
 # Delivery Policy
 
-Workflow revision: `ai-team-2026-08-13-r34`.
+Workflow revision: `ai-team-2026-08-13-r35`.
 
 This is the single global authority for AI-team delivery lanes, states, gates, handoffs, validation, severity, acceptance, and re-entry. Copy it to `.ai-team/governance/workflow.md` during project initialization. The project-local copy is the runtime authority for that project.
 
@@ -107,7 +107,7 @@ Pending upstream implementation or a closed project stage is an implementation b
 3. Required owner, affected/regression, contract, final-suite, and independent risk evidence is valid.
 4. The independent verifier records a fresh verification-phase PASS bound to the current Snapshot ID, Test Manifest revision, fingerprinted candidate, and verification time. A PASS field begins with explicit status `PASS`; `NOT PASS` or other prose containing the word does not pass.
 5. Fast and ordinary Standard work may use one independent verifier for diff review and test verification. High-risk work and interface, security, runtime-chain, or material baseline triggers require a separate current code-security-phase evidence record. No unresolved P0/P1 remains.
-6. The implementation engineer differs from the independent verifier; any separately required code/security reviewer differs from both. Product/technical artifact authors do not approve their own work.
+6. The implementation engineer differs from the independent verifier; any separately required code/security reviewer differs from both.
 7. Required fingerprint policy and strict validation pass.
 8. Set task state `complete` and technical outcome `verified-complete`, then continue unless a named checkpoint blocks the covered scope.
 

@@ -16,6 +16,7 @@ except ImportError:
 SKILL_ROOT = Path(__file__).resolve().parent.parent
 TEMPLATES = SKILL_ROOT / "assets/project-template/.ai-team/governance/templates.md"
 ROLES = SKILL_ROOT / "references/role-protocol.md"
+POLICY = SKILL_ROOT / "references/delivery-policy.md"
 
 
 class MarkdownSectionTests(unittest.TestCase):
@@ -97,6 +98,24 @@ class MarkdownSectionTests(unittest.TestCase):
             if extractor.extract_h2_section(text, heading) is None
         ]
         self.assertEqual([], missing)
+
+    def test_run_delivery_policy_links_resolve_to_exact_h2_sections(self) -> None:
+        skill = (SKILL_ROOT / "SKILL.md").read_text(encoding="utf-8")
+        run_delivery = extractor.extract_h2_section(skill, "Run delivery")
+        self.assertIsNotNone(run_delivery)
+        references = re.findall(
+            r"\[([^\]]+)\]\(references/delivery-policy\.md#([^)]+)\)",
+            run_delivery,
+        )
+        self.assertTrue(references)
+        policy = POLICY.read_text(encoding="utf-8")
+        for heading, anchor in references:
+            expected_anchor = re.sub(r"[^a-z0-9 -]", "", heading.lower()).replace(" ", "-")
+            self.assertEqual(expected_anchor, anchor, heading)
+            self.assertIsNotNone(
+                extractor.extract_h2_section(policy, heading),
+                f"delivery-policy H2 not found: {heading}",
+            )
 
 
 if __name__ == "__main__":
