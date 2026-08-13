@@ -1,6 +1,6 @@
 # Role Protocol
 
-Workflow revision: `ai-team-2026-08-13-r35`.
+Workflow revision: `ai-team-2026-08-13-r36`.
 
 This is the single global authority for AI-team role responsibilities and boundaries. Copy it to `.ai-team/governance/roles.md` during project initialization. The project-local copy is the runtime authority.
 
@@ -45,7 +45,7 @@ The coordinator starts the next eligible child or performs the next eligible loc
 
 1. Select the current phase and launch only the bounded specialist agents required by the workflow, following the lifecycle and concurrency limits above.
 2. Maintain backlog, task cards, discussions, decisions, batches, duplicate-free serial order, and named checkpoint mode/status together with the active Handoff Snapshot.
-3. Assign task lane, complexity, dependencies, write boundaries, exit conditions, and the compact control-trigger set using the project workflow.
+3. Assign task lane, complexity, dependencies, write boundaries, exit conditions, and the compact control-trigger set. Make the final slice/retention decision from the technical lead's boundary/dependency proposal and the product/verifier AC/TEST evidence, using the project workflow.
 4. Keep project-wide source, baseline, design, commands, and traceability out of task cards; reference their current artifacts and record only task deltas.
 5. Distinguish design blockers, implementation blockers, quality findings, human decisions, and acceptance checkpoints.
 6. Package only genuine human decisions and present them one at a time in dependency order.

@@ -1,6 +1,6 @@
 # Delivery Policy
 
-Workflow revision: `ai-team-2026-08-13-r35`.
+Workflow revision: `ai-team-2026-08-13-r36`.
 
 This is the single global authority for AI-team delivery lanes, states, gates, handoffs, validation, severity, acceptance, and re-entry. Copy it to `.ai-team/governance/workflow.md` during project initialization. The project-local copy is the runtime authority for that project.
 
@@ -58,7 +58,7 @@ analysis → task-design-ready → implementation-ready → implementing → awa
 
 ## Gate authority
 
-The following checklists are normative. Supporting prose explains evidence and exceptions; when wording differs, the checklist controls.
+Across this policy, each gate checklist controls its gate. Supporting prose explains evidence and exceptions; when a checklist delegates to another section, apply that section only to the scope named by the checklist.
 
 ### Engineering baseline PASS
 
@@ -74,7 +74,7 @@ An existing repository derives these constraints from manifests, configuration, 
 
 1. Every evaluated requirement is covered, out of scope with source/decision rationale, or awaiting a decision; only covered requirements need AC/TASK/TEST delivery mappings.
 2. Observable acceptance criteria map `REQ → AC → TEST → TASK → evidence`.
-3. The compact card references project-level source/baseline/design evidence and records one control-trigger set. It satisfies the independently verifiable slice test under Task planning and batches; any retained L/XL task records the applicable stop-splitting rationale. `none` requires a concrete rationale; triggered experience, Web UI, interface, security, runtime-chain, TestSprite, or baseline-change treatment uses only its applicable annex/reference.
+3. The compact card references project-level source/baseline/design evidence and records one control-trigger set. It satisfies the independently verifiable slice test under Task planning and batches; any retained L/XL task records `split-decision: retained — <stop-splitting rationale>` in its design/readiness verdict. `none` requires a concrete rationale; triggered experience, Web UI, interface, security, runtime-chain, TestSprite, or baseline-change treatment uses only its applicable annex/reference.
 4. An interface trigger requires a frozen contract reference and contract-test IDs; use it only for a public or cross-process, service, team, or compatibility-promised boundary. A private signature inside a new module is technical design, not an interface trigger. Absence of the trigger means no interface/protocol change is in task scope.
 5. Required test accounts, fixtures, dependencies, reset method, commands, and evidence expectations are defined.
 6. Security and runtime-chain treatment is complete when triggered.
@@ -115,8 +115,8 @@ Pending upstream implementation or a closed project stage is an implementation b
 
 - Maintain one Markdown backlog and one unique card per task. Task IDs are monotonic and never reused.
 - Record complexity S/M/L/XL with concrete drivers; complexity is a review signal, not a command to split. A slice is independently verifiable only when it has one primary observable outcome, mapped AC/TEST and one focused verification group, failures can be attributed and remediated within its declared owner surface, and it does not require changing another unfinished task's owner surface.
-- Before task-design PASS, split work only when it contains multiple independently verifiable outcomes or independently remediable risk boundaries, or when a likely failure would otherwise invalidate unrelated evidence. Stop splitting when a child cannot pass or fail independently, a contract/transaction/shared-boundary change must remain atomic, or child cards would repeat substantially the same files and checks. Record the applicable rationale; prefer S/M only when it reduces failure or retest scope.
-- Count each extra card, Snapshot, gate, reviewer handoff, fingerprint, and context rebuild as split cost. Do not split when that cost creates no smaller failure or retest domain. Reuse frozen project/batch references and default commands, and record only task deltas.
+- Before task-design PASS, split work only when it contains multiple independently verifiable outcomes or independently remediable risk boundaries, or when a likely failure would otherwise invalidate unrelated evidence. Stop splitting when a child cannot pass or fail independently, a contract/transaction/shared-boundary change must remain atomic, or child cards would repeat substantially the same files and checks. Prefer S/M only when it reduces failure or retest scope.
+- Compare both sides: split cost includes each extra card, Snapshot, gate, reviewer handoff, fingerprint, and context rebuild; retention cost includes lane escalation, broader failure/re-entry scope, and per-candidate risk or full-suite work. Choose the lower total failure/retest cost, reuse frozen project/batch references and default commands, and record only task deltas.
 - Plan serial batch slices around stable ownership surfaces. Keep tightly coupled changes to a shared boundary in its owner task before verification. If later work must change a verified shared boundary, create a narrow boundary-extension task and re-enter only its direct dependents; do not combine it with unrelated business behavior.
 - A batch records objective, members, duplicate-free serial order, entry criteria, exit evidence, and any named acceptance checkpoint with mode and status. Before completion, `Exit evidence` records the planned regression command; after all members complete it records `PASS` plus current evidence/time or `FAIL` plus affected-scope evidence. It never bulk-promotes tasks; each card needs its own readiness and verification.
 - Do not start a later member before every earlier member in that batch's serial order is complete. More than one task may not be `implementing` at once.

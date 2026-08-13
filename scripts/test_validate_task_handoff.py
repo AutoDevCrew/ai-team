@@ -265,6 +265,22 @@ class HandoffValidatorTests(unittest.TestCase):
         self.assertEqual([], validator.validate(standard, gate="implementation-ready"))
         self.assertEqual([], validator.validate(completed_standard_card(), gate="verified-complete"))
 
+    def test_retained_large_task_requires_stop_splitting_rationale(self) -> None:
+        standard = template_card("Implementation-ready Standard task card example")
+        self.assertEqual([], validator.planning_errors(standard))
+        for complexity in ("L", "XL"):
+            retained = standard.replace(
+                "standard / M /", f"standard / {complexity} /"
+            )
+            errors = validator.planning_errors(retained)
+            self.assertTrue(any("split-decision" in error for error in errors), errors)
+            retained = retained.replace(
+                "implementation-ready / direct PASS; no deferred condition",
+                "implementation-ready / direct PASS; no deferred condition; "
+                "split-decision: retained — shared transaction boundary must remain atomic",
+            )
+            self.assertEqual([], validator.planning_errors(retained))
+
     def test_fast_lane_accepts_only_declared_non_behavior_surfaces(self) -> None:
         fast = template_card("Minimal Fast-path task card")
         self.assertEqual([], validator.validate(fast, strict=True))

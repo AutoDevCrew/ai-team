@@ -1186,10 +1186,21 @@ def planning_errors(text: str) -> list[str]:
         verifier_report
     ):
         errors.append("Planning verifier/report requires an AGENT ID and evidence path")
-    lane, _, _ = delivery_descriptor(section(text, "## Handoff Snapshot"))
+    lane, complexity, _ = delivery_descriptor(section(text, "## Handoff Snapshot"))
     batch_regression = field_value(planning, "Batch regression:")
     if lane in {"standard", "high-risk"} and has_reasoned_na(batch_regression):
         errors.append(f"{lane} planning requires a concrete batch or per-task regression command")
+    if complexity in {"l", "xl"}:
+        verdict = field_value(planning, "Design/readiness verdict and conditions:")
+        split_decision = re.search(
+            r"\bsplit-decision\s*:\s*retained\s*(?:—|:|-)\s*(\S.*)",
+            verdict,
+            re.IGNORECASE,
+        )
+        if not split_decision or len(split_decision.group(1).strip()) < 10:
+            errors.append(
+                "retained L/XL planning requires split-decision: retained — <concrete stop-splitting rationale>"
+            )
     errors.extend(trigger_errors(text))
     return errors
 
