@@ -8,7 +8,7 @@ import hashlib
 from pathlib import Path
 
 
-WORKFLOW_REVISION = "ai-team-2026-08-13-r30"
+WORKFLOW_REVISION = "ai-team-2026-08-13-r31"
 
 
 def render(project_root: Path, paths: list[str]) -> str:

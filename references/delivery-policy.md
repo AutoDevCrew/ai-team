@@ -1,6 +1,6 @@
 # Delivery Policy
 
-Workflow revision: `ai-team-2026-08-13-r30`.
+Workflow revision: `ai-team-2026-08-13-r31`.
 
 This is the single global authority for AI-team delivery lanes, states, gates, handoffs, validation, severity, acceptance, and re-entry. Copy it to `.ai-team/governance/workflow.md` during project initialization. The project-local copy is the runtime authority for that project.
 
@@ -74,7 +74,7 @@ An existing repository derives these constraints from manifests, configuration, 
 
 1. Every evaluated requirement is covered, out of scope with source/decision rationale, or awaiting a decision; only covered requirements need AC/TASK/TEST delivery mappings.
 2. Observable acceptance criteria map `REQ → AC → TEST → TASK → evidence`.
-3. The compact card references project-level source/baseline/design evidence and records one control-trigger set. It represents one independently verifiable implementation slice; any retained L/XL task cites why contract, transaction, or shared-module atomicity makes further safe splitting worse. `none` requires a concrete rationale; triggered experience, Web UI, interface, security, runtime-chain, TestSprite, or baseline-change treatment uses only its applicable annex/reference.
+3. The compact card references project-level source/baseline/design evidence and records one control-trigger set. It represents one independently verifiable implementation slice; any retained L/XL task cites why a contract, transaction, or shared-boundary change must remain atomic. `none` requires a concrete rationale; triggered experience, Web UI, interface, security, runtime-chain, TestSprite, or baseline-change treatment uses only its applicable annex/reference.
 4. An interface trigger requires a frozen contract reference and contract-test IDs; use it only for a public or cross-process, service, team, or compatibility-promised boundary. A private signature inside a new module is technical design, not an interface trigger. Absence of the trigger means no interface/protocol change is in task scope.
 5. Required test accounts, fixtures, dependencies, reset method, commands, and evidence expectations are defined.
 6. Security and runtime-chain treatment is complete when triggered.
@@ -114,8 +114,8 @@ Pending upstream implementation or a closed project stage is an implementation b
 ## Task planning and batches
 
 - Maintain one Markdown backlog and one unique card per task. Task IDs are monotonic and never reused.
-- Record complexity S/M/L/XL with concrete drivers and prefer S/M implementation slices. Before task-design PASS, split L/XL work that contains more than one independently verifiable behavior or risk boundary; retain it only when contract, transaction, or shared-module atomicity makes splitting less safe, and record that rationale. Keep resulting tasks in serial order, use focused per-task verification, and retain one approved full regression at batch exit rather than duplicating it for every slice.
-- Plan serial batch slices around stable ownership surfaces. When the same shared module needs tightly coupled consecutive changes, keep them in one task before verification rather than repeatedly modifying an already verified file.
+- Record complexity S/M/L/XL with concrete drivers and prefer S/M implementation slices. Before task-design PASS, split L/XL work that contains more than one independently verifiable behavior or risk boundary; retain it only when contract, transaction, or shared-boundary atomicity makes splitting less safe, and record that rationale. Keep resulting tasks in serial order, use focused per-task verification, and retain one approved full regression at batch exit rather than duplicating it for every slice.
+- Plan serial batch slices around stable ownership surfaces. Keep tightly coupled changes to a shared boundary in its owner task before verification. If later work must change a verified shared boundary, create a narrow boundary-extension task and re-enter only its direct dependents; do not combine it with unrelated business behavior.
 - A batch records objective, members, duplicate-free serial order, entry criteria, exit evidence, and any named acceptance checkpoint with mode and status. Before completion, `Exit evidence` records the planned regression command; after all members complete it records `PASS` plus current evidence/time or `FAIL` plus affected-scope evidence. It never bulk-promotes tasks; each card needs its own readiness and verification.
 - Do not start a later member before every earlier member in that batch's serial order is complete. More than one task may not be `implementing` at once.
 - Run focused owner/affected verification for each ordinary task and one approved full regression at batch exit. The batch is not finished and no checkpoint is presented until `Exit evidence` records a current regression PASS. High-risk work may retain a per-task full suite. A batch regression failure re-enters only affected completed tasks.
