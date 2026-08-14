@@ -252,12 +252,116 @@ def has_batch_evidence(value: str) -> bool:
     )
 
 
+def testsprite_card_requirements(card: Path) -> tuple[bool, set[str], set[str]]:
+    text = card.read_text(encoding="utf-8")
+    snapshot = validator.section(text, "## Handoff Snapshot")
+    _, _, triggers = validator.delivery_descriptor(snapshot)
+    if "web-ui" not in triggers:
+        return False, set(), set()
+    annex = validator.section(text, "## TestSprite MCP (authorized Web UI only)")
+    test_ids = validator.identifiers(
+        validator.field_value(annex, "Provider-neutral TEST IDs and source oracles:"),
+        "TEST",
+    )
+    snapshot_ids = validator.identifiers(
+        validator.field_value(snapshot, "Snapshot ID and updated at:"), "SNAP"
+    )
+    return True, test_ids, snapshot_ids
+
+
+def testsprite_report_path(value: str, marker: str) -> str:
+    match = re.search(
+        rf"\b{re.escape(marker)}\s*=\s*(?:`([^`]+)`|(https?://[^;\s]+))",
+        value,
+        re.IGNORECASE,
+    )
+    return (match.group(1) or match.group(2)) if match else ""
+
+
+def testsprite_batch_exit_errors(
+    project_root: Path,
+    value: str,
+    required_tests: set[str],
+    required_snapshots: set[str],
+) -> list[str]:
+    if not validator.is_pass(value):
+        return []
+    errors: list[str] = []
+    if not re.search(r"\bTestSprite-final\s*=\s*PASS\b", value, re.IGNORECASE):
+        errors.append("Web UI batch exit requires TestSprite-final=PASS")
+    for marker in ("run", "candidate", "prerequisite-at", "testsprite-at"):
+        if not re.search(rf"\b{marker}\s*=\s*[^;]+", value, re.IGNORECASE):
+            errors.append(f"Web UI batch exit requires {marker}=")
+    executed_tests = validator.identifiers(value, "TEST")
+    if required_tests - executed_tests:
+        errors.append(
+            "Web UI batch TestSprite evidence is missing frozen TEST IDs: "
+            + ", ".join(sorted(required_tests - executed_tests))
+        )
+    candidate_snapshots = validator.identifiers(value, "SNAP")
+    if required_snapshots - candidate_snapshots:
+        errors.append(
+            "Web UI batch TestSprite candidate is missing current snapshots: "
+            + ", ".join(sorted(required_snapshots - candidate_snapshots))
+        )
+    prerequisite_match = re.search(
+        r"\bprerequisite-at\s*=\s*([^;]+)", value, re.IGNORECASE
+    )
+    testsprite_match = re.search(
+        r"\btestsprite-at\s*=\s*([^;]+)", value, re.IGNORECASE
+    )
+    prerequisite_at = validator.iso_datetime(
+        prerequisite_match.group(1) if prerequisite_match else ""
+    )
+    testsprite_at = validator.iso_datetime(
+        testsprite_match.group(1) if testsprite_match else ""
+    )
+    if prerequisite_at is None or testsprite_at is None:
+        errors.append("Web UI batch exit requires valid prerequisite-at and testsprite-at ISO times")
+    elif testsprite_at < prerequisite_at:
+        errors.append("Web UI batch final TestSprite run must occur after prerequisite suites")
+    resolved_project_root = project_root.resolve()
+    for marker in ("report", "visual-evidence"):
+        reference = testsprite_report_path(value, marker)
+        if not reference:
+            errors.append(f"Web UI batch exit requires {marker}= report evidence")
+        elif not reference.startswith(("http://", "https://")):
+            path = Path(reference)
+            resolved = (resolved_project_root / path).resolve()
+            try:
+                resolved.relative_to(resolved_project_root)
+            except ValueError:
+                errors.append(f"Web UI batch {marker} path escapes project: {reference}")
+            else:
+                if not resolved.is_file():
+                    errors.append(f"Web UI batch {marker} file not found: {reference}")
+    return errors
+
+
 def resolve_card_link(board: Path, value: str) -> Path | None:
     match = LINK_PATTERN.search(value)
     if not match:
         return None
     target = local_link_target(match.group(1))
     return (board.parent / target).resolve() if target else None
+
+
+def batch_testsprite_requirements(
+    board: Path, members: list[str], row_by_id: dict[str, dict[str, str]]
+) -> tuple[bool, set[str], set[str]]:
+    has_web_ui = False
+    tests: set[str] = set()
+    snapshots: set[str] = set()
+    for member in members:
+        row = row_by_id.get(member, {})
+        card = resolve_card_link(board, row.get("Card", ""))
+        if card is None or not card.is_file():
+            continue
+        task_web_ui, task_tests, task_snapshots = testsprite_card_requirements(card)
+        has_web_ui = has_web_ui or task_web_ui
+        tests |= task_tests
+        snapshots |= task_snapshots
+    return has_web_ui, tests, snapshots
 
 
 def dependency_cycle(graph: dict[str, set[str]]) -> list[str]:
@@ -516,8 +620,22 @@ def task_inventory_errors(project_root: Path, task_root: Path, board: Path) -> l
             errors.append(
                 f"implementation batch {batch_id} named checkpoint requires pending, accepted, or rejected status"
             )
+        has_web_ui = False
+        testsprite_tests: set[str] = set()
+        testsprite_snapshots: set[str] = set()
+        for task_id in task_ids:
+            task_web_ui, task_tests, task_snapshots = testsprite_card_requirements(
+                cards[task_id][0]
+            )
+            has_web_ui = has_web_ui or task_web_ui
+            testsprite_tests |= task_tests
+            testsprite_snapshots |= task_snapshots
+        exit_evidence = batch_row.get("Exit evidence", "")
+        if has_web_ui and "testsprite" not in exit_evidence.casefold():
+            errors.append(
+                f"Web UI batch {batch_id} must plan prerequisite suites followed by final TestSprite in Exit evidence"
+            )
         if task_ids and all(cards[task_id][1] == "complete" for task_id in task_ids):
-            exit_evidence = batch_row.get("Exit evidence", "")
             if validator.is_pass(exit_evidence) and (
                 not has_batch_evidence(exit_evidence)
                 or not validator.iso_datetime(exit_evidence)
@@ -535,6 +653,16 @@ def task_inventory_errors(project_root: Path, task_root: Path, board: Path) -> l
             ):
                 errors.append(
                     f"completed batch {batch_id} regression FAIL requires evidence and affected TASK/TEST/FIND scope"
+                )
+            if has_web_ui:
+                errors.extend(
+                    f"completed batch {batch_id}: {error}"
+                    for error in testsprite_batch_exit_errors(
+                        project_root,
+                        exit_evidence,
+                        testsprite_tests,
+                        testsprite_snapshots,
+                    )
                 )
     return errors
 
@@ -696,6 +824,21 @@ def next_eligible_action(project_root: Path) -> str | None:
         batch_id = batch.get("Batch", "").strip()
         if re.match(r"^\s*FAIL(?:\s|[-—:]|$)", exit_evidence, re.IGNORECASE):
             return f"{batch_id}: re-enter affected completed tasks from failed batch regression; evidence={exit_evidence}"
+        has_web_ui, testsprite_tests, testsprite_snapshots = batch_testsprite_requirements(
+            board, members, row_by_id
+        )
+        if has_web_ui:
+            testsprite_errors = testsprite_batch_exit_errors(
+                project_root,
+                exit_evidence,
+                testsprite_tests,
+                testsprite_snapshots,
+            )
+            if not validator.is_pass(exit_evidence) or testsprite_errors:
+                return (
+                    f"{batch_id}: run prerequisite suites, then TestSprite as the final Web UI "
+                    "acceptance execution and record its report/visual evidence"
+                )
         if not validator.is_pass(exit_evidence):
             return f"{batch_id}: run the planned batch regression and record PASS or FAIL; plan={exit_evidence or 'missing'}"
         checkpoint_status = batch.get("Checkpoint status", "").strip().casefold()

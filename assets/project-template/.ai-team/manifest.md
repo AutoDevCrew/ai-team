@@ -1,7 +1,7 @@
 # AI Team Layout Manifest
 
 - Layout version: `ai-team-layout-1`
-- Workflow revision: `ai-team-2026-08-14-r40`
+- Workflow revision: `ai-team-2026-08-14-r41`
 - Governance root: `.ai-team/governance`
 - Source register: `.ai-team/sources.md`
 - Acceptance specification: `.ai-team/specs/acceptance.md`

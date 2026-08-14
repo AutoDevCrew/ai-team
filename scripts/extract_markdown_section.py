@@ -9,7 +9,7 @@ import re
 import sys
 
 
-WORKFLOW_REVISION = "ai-team-2026-08-14-r40"
+WORKFLOW_REVISION = "ai-team-2026-08-14-r41"
 
 
 def normalize_heading(value: str) -> str:

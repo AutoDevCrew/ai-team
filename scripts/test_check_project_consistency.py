@@ -847,6 +847,48 @@ class ProjectConsistencyTests(unittest.TestCase):
             self.assertIn("run the planned batch regression", action)
             self.assertNotIn("human acceptance required", action)
 
+    def test_web_ui_batch_exit_requires_final_testsprite_evidence(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            project = Path(temp_dir)
+            report = project / "testsprite_tests/TestSprite_MCP_Test_Report.md"
+            visual = project / "testsprite_tests/tmp/test_results.json"
+            report.parent.mkdir(parents=True)
+            visual.parent.mkdir(parents=True)
+            report.write_text("# TestSprite report\n", encoding="utf-8")
+            visual.write_text("{}\n", encoding="utf-8")
+            required_tests = {"TEST-UI-001", "TEST-UI-002"}
+            required_snapshots = {"SNAP-UI-001-02"}
+
+            generic_pass = "PASS — EVID-BATCH-001 / 2026-08-12T12:00+08:00"
+            errors = checker.testsprite_batch_exit_errors(
+                project, generic_pass, required_tests, required_snapshots
+            )
+            self.assertTrue(any("TestSprite-final=PASS" in error for error in errors), errors)
+
+            final_pass = (
+                "PASS — EVID-BATCH-001; prerequisite-at=2026-08-12T12:00+08:00; "
+                "TestSprite-final=PASS; run=TS-RUN-001; candidate=SNAP-UI-001-02; "
+                "tests=TEST-UI-001 TEST-UI-002; "
+                "report=`testsprite_tests/TestSprite_MCP_Test_Report.md`; "
+                "visual-evidence=`testsprite_tests/tmp/test_results.json`; "
+                "testsprite-at=2026-08-12T12:20+08:00"
+            )
+            self.assertEqual(
+                [],
+                checker.testsprite_batch_exit_errors(
+                    project, final_pass, required_tests, required_snapshots
+                ),
+            )
+
+            wrong_order = final_pass.replace(
+                "testsprite-at=2026-08-12T12:20+08:00",
+                "testsprite-at=2026-08-12T11:50+08:00",
+            )
+            errors = checker.testsprite_batch_exit_errors(
+                project, wrong_order, required_tests, required_snapshots
+            )
+            self.assertTrue(any("after prerequisite suites" in error for error in errors), errors)
+
     def test_failed_batch_regression_reenters_affected_scope(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             project = Path(temp_dir)

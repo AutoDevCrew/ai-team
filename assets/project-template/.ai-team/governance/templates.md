@@ -1,6 +1,6 @@
 # Canonical Artifact Templates
 
-Workflow revision: `ai-team-2026-08-14-r40`.
+Workflow revision: `ai-team-2026-08-14-r41`.
 
 ## Catalog navigation
 
@@ -10,50 +10,11 @@ For normal work, read only one named H2 section below; do not load the entire ca
 python3 .ai-team/scripts/extract_markdown_section.py .ai-team/governance/templates.md "Task card"
 ```
 
-- Intake and specification: `Source register`, `Requirement traceability matrix`, `Acceptance specification`.
+- Intake and specification: use the [Source Register](../sources.md) directly; use `Requirement traceability matrix` and `Acceptance specification` below.
 - Design: `Architecture and code-context pack`, `Experience design brief (UI scope only)`, `Engineering baseline`.
 - Governance: `Decision card`, `Discussion record`, `Role assignment envelope`, `Review evidence record`.
 - Delivery: `Task card`, `Conditional task annexes`, `Security-impact review`, `Acceptance checkpoint package`.
 - Focused examples: `Minimal Fast-path task card`, `Implementation-ready Standard task card example`, `Verified-complete Standard field delta`, `Required fingerprint example`.
-
-## Source register
-
-```md
-# Source Register
-
-## Product requirement source
-- Type: PRD / initial user request
-- URL or verbatim request:
-- Authority: primary business-rule source
-- Status: provided / no-PRD intake
-- Version or updated at:
-- Read at:
-
-## Figma (optional)
-- URL / page / node:
-- Authority: visual, layout, component-state evidence
-- Read at:
-- Status: provided / not provided
-
-## Demo (optional)
-- URL and environment:
-- Authorized test-account method:
-- Allowed read-only actions: login / navigation / pagination / search / filter
-- Forbidden mutations and any separately authorized reversible test action:
-- Authority: scoped behavioral evidence
-- Current-phase read-only scope (flows/pages/routes):
-- Explicit legacy exclusions:
-- Inspected pages/routes and evidence time:
-- Evidence gap:
-
-## Code baseline
-- Repository / directory:
-- Mode: existing-code / greenfield
-- Repomix initialization: PASS — Repomix <version>; runner=<repomix or npx --yes repomix@latest>; command=<exact command>; scope=<packed scope>; exclusions=<secret/generated/dependency exclusions>; files=<count>; tokens=<count> / N/A — greenfield has no pre-existing business or test source
-- Baseline description:
-- Modules and tests inspected:
-- Read at:
-```
 
 ## Requirement traceability matrix
 
@@ -322,11 +283,14 @@ Append only annexes named by `control triggers`. Do not copy N/A annexes into an
 
 ```md
 ## TestSprite MCP (authorized Web UI only)
-- Eligibility and provider-neutral test IDs:
-- Local service URL/port and project path:
-- Account, allowed read/write actions, test-data cleanup:
-- TestSprite plan/cases:
-- Implementation self-check evidence:
+- Provider-neutral TEST IDs and source oracles:
+- Local service, MCP/config readiness, and project path:
+- Account, allowed actions, data, and cleanup:
+- Coverage map: copy=TEST-...; visual=TEST-...; interaction=TEST-... / N/A — <reason>; responsive=TEST-... / N/A — <reason>; accessibility=TEST-... / N/A — <reason>; regression=TEST-...
+- Final-gate plan: run prerequisite suites first; run TestSprite last against the frozen candidate; invalidate on source, oracle, code, test, configuration, data, or environment change
+- Prerequisite suites / evidence / completed at:
+- Final TestSprite run / candidate / completed at:
+- TestSprite result / report / visual evidence:
 - Independent verifier evidence:
 
 ## Security impact
@@ -461,7 +425,7 @@ This complete Fast-only skeleton contains every section required by strict valid
 # TASK-EXAMPLE-001: Clarify local contributor documentation
 
 ## Handoff Snapshot
-- Workflow revision: ai-team-2026-08-14-r40
+- Workflow revision: ai-team-2026-08-14-r41
 - Snapshot ID and updated at: SNAP-EXAMPLE-001-01 / 2026-08-12T10:00+08:00
 - Current state and technical outcome: awaiting-verification / not-complete
 - Scope, source, decision, and contract references: REQ-EXAMPLE-001 / AC-EXAMPLE-001 / TEST-EXAMPLE-001 / `.ai-team/sources.md`; no decision or contract change
@@ -496,7 +460,7 @@ This compact example passes the `implementation-ready` gate. Shared requirements
 # TASK-EXAMPLE-STD-001: Add validation for calculator expression input
 
 ## Handoff Snapshot
-- Workflow revision: ai-team-2026-08-14-r40
+- Workflow revision: ai-team-2026-08-14-r41
 - Snapshot ID and updated at: SNAP-EXAMPLE-STD-001-01 / 2026-08-12T11:00+08:00
 - Current state and technical outcome: implementation-ready / not-complete
 - Scope, source, decision, and contract references: REQ-EXAMPLE-STD-001 / AC-EXAMPLE-STD-001 / TEST-EXAMPLE-STD-001 TEST-EXAMPLE-STD-002 / `.ai-team/sources.md`; no decision or contract change

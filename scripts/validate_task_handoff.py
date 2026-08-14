@@ -1364,6 +1364,99 @@ def separate_review_required(text: str) -> bool:
     )
 
 
+def testsprite_coverage_values(value: str) -> dict[str, str]:
+    categories = ("copy", "visual", "interaction", "responsive", "accessibility", "regression")
+    return {
+        category: match.group(1).strip()
+        for category in categories
+        if (match := re.search(
+            rf"(?:^|;)\s*{category}\s*=\s*([^;]+)", value, re.IGNORECASE
+        ))
+    }
+
+
+def testsprite_design_errors(annex: str) -> list[str]:
+    errors: list[str] = []
+    declared = identifiers(
+        field_value(annex, "Provider-neutral TEST IDs and source oracles:"), "TEST"
+    )
+    coverage = testsprite_coverage_values(field_value(annex, "Coverage map:"))
+    for category in ("copy", "visual", "interaction", "responsive", "accessibility", "regression"):
+        value = coverage.get(category, "")
+        if not value:
+            errors.append(f"TestSprite coverage map is missing {category}=")
+        elif category in {"copy", "visual"} and not identifiers(value, "TEST"):
+            errors.append(f"TestSprite {category} coverage requires a TEST-... ID")
+        elif not identifiers(value, "TEST") and not has_reasoned_na(value):
+            errors.append(
+                f"TestSprite {category} coverage requires TEST IDs or a reasoned N/A"
+            )
+    coverage_ids = set().union(
+        *(identifiers(value, "TEST") for value in coverage.values())
+    ) if coverage else set()
+    if not declared:
+        errors.append("TestSprite requires provider-neutral TEST IDs")
+    elif coverage_ids - declared:
+        errors.append(
+            "TestSprite coverage map references TEST IDs absent from its declared source-oracle set: "
+            + ", ".join(sorted(coverage_ids - declared))
+        )
+    final_plan = field_value(annex, "Final-gate plan:")
+    if not re.search(r"\btestsprite\b", final_plan, re.IGNORECASE):
+        errors.append("TestSprite final-gate plan must name TestSprite")
+    if not re.search(r"\b(?:last|final)\b", final_plan, re.IGNORECASE):
+        errors.append("TestSprite final-gate plan must make it the last automated UI execution")
+    if not re.search(r"invalidate|失效|变化|变更", final_plan, re.IGNORECASE):
+        errors.append("TestSprite final-gate plan must state invalidation conditions")
+    return errors
+
+
+def testsprite_completion_errors(annex: str) -> list[str]:
+    errors = concrete_value_errors(
+        annex, TESTSPRITE_COMPLETION_FIELDS, "TestSprite MCP completion"
+    )
+    prerequisite = field_value(annex, "Prerequisite suites / evidence / completed at:")
+    final_run = field_value(annex, "Final TestSprite run / candidate / completed at:")
+    result = field_value(annex, "TestSprite result / report / visual evidence:")
+    verifier = field_value(annex, "Independent verifier evidence:")
+    for label, value in (
+        ("prerequisite suites", prerequisite),
+        ("final TestSprite run", final_run),
+        ("TestSprite result", result),
+        ("independent verifier evidence", verifier),
+    ):
+        if not is_pass(value):
+            errors.append(f"TestSprite completion requires {label} to start with PASS")
+    prerequisite_at = iso_datetime(prerequisite)
+    testsprite_at = iso_datetime(final_run)
+    if prerequisite_at is None:
+        errors.append("TestSprite prerequisite suites require an ISO completion time")
+    if testsprite_at is None:
+        errors.append("final TestSprite run requires an ISO completion time")
+    if prerequisite_at and testsprite_at and testsprite_at < prerequisite_at:
+        errors.append("final TestSprite run must occur after prerequisite suites")
+    if not re.search(r"\btestsprite\b", final_run, re.IGNORECASE):
+        errors.append("final TestSprite run must identify TestSprite")
+    if not re.search(r"\brun\s*=\s*[^;]+", final_run, re.IGNORECASE):
+        errors.append("final TestSprite run requires a run= identifier")
+    if not first_identifier(final_run, "SNAP"):
+        errors.append("final TestSprite run must bind the current SNAP-... candidate")
+    if not is_pass(result) or not PROJECT_PATH_PATTERN.search(result):
+        errors.append("TestSprite result requires PASS and a report path")
+    if not re.search(r"visual|screenshot|video|截图|视觉", result, re.IGNORECASE):
+        errors.append("TestSprite result requires screenshot/video visual evidence")
+    declared = identifiers(
+        field_value(annex, "Provider-neutral TEST IDs and source oracles:"), "TEST"
+    )
+    executed = identifiers(final_run + " " + result, "TEST")
+    if declared - executed:
+        errors.append(
+            "final TestSprite evidence is missing frozen TEST IDs: "
+            + ", ".join(sorted(declared - executed))
+        )
+    return errors
+
+
 def trigger_errors(text: str) -> list[str]:
     snapshot = section(text, "## Handoff Snapshot")
     lane, _, triggers = delivery_descriptor(snapshot)
@@ -1371,6 +1464,8 @@ def trigger_errors(text: str) -> list[str]:
     errors: list[str] = []
     if lane == "fast" and triggers != {"none"}:
         errors.append("Fast lane may use only a reasoned none control trigger")
+    if "web-ui" in triggers and "testsprite" not in triggers:
+        errors.append("Web UI trigger requires the TestSprite final-gate trigger")
     if "testsprite" in triggers and "web-ui" not in triggers:
         errors.append("TestSprite trigger requires the web-ui trigger")
     if "experience" in triggers:
@@ -1431,6 +1526,7 @@ def trigger_errors(text: str) -> list[str]:
             errors.extend(
                 concrete_value_errors(annex, TESTSPRITE_DESIGN_FIELDS, "TestSprite MCP")
             )
+            errors.extend(testsprite_design_errors(annex))
     return errors
 
 
@@ -1832,15 +1928,10 @@ def verification_errors(text: str) -> list[str]:
     if not re.search(r"^- \[[xX]\]", acceptance, flags=re.MULTILINE):
         errors.append("verified-complete gate requires checked acceptance evidence")
     _, _, triggers = delivery_descriptor(snapshot)
-    if "testsprite" in triggers:
+    batch = field_value(snapshot, "Batch / dependencies / entry:").split("/", 1)[0].strip()
+    if "testsprite" in triggers and batch.casefold().startswith("batch-not-applicable"):
         testsprite = section(text, "## TestSprite MCP (authorized Web UI only)")
-        errors.extend(
-            concrete_value_errors(
-                testsprite, TESTSPRITE_COMPLETION_FIELDS, "TestSprite MCP completion"
-            )
-        )
-        if not is_pass(field_value(testsprite, "Independent verifier evidence:")):
-            errors.append("TestSprite completion requires independent verifier PASS evidence")
+        errors.extend(testsprite_completion_errors(testsprite))
     return errors
 
 

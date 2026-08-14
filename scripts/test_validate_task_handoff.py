@@ -19,6 +19,9 @@ except ImportError:
 SKILL_ROOT = Path(__file__).resolve().parent.parent
 PROJECT_TEMPLATE = SKILL_ROOT / "assets/project-template"
 TEMPLATES = PROJECT_TEMPLATE / ".ai-team/governance/templates.md"
+SOURCES = PROJECT_TEMPLATE / ".ai-team/sources.md"
+MANIFEST = PROJECT_TEMPLATE / ".ai-team/manifest.md"
+BACKLOG = PROJECT_TEMPLATE / ".ai-team/tasks/backlog.md"
 
 
 def template_card(title: str) -> str:
@@ -79,6 +82,23 @@ def completed_fast_card() -> str:
     for old, new in replacements.items():
         card = card.replace(old, new)
     return card
+
+
+def make_testsprite_annex(*, completed: bool = False) -> str:
+    completion = """
+- Prerequisite suites / evidence / completed at: PASS — EVID-UI-PREREQ; unit, contract, and regression passed; 2026-08-12T12:00+08:00
+- Final TestSprite run / candidate / completed at: PASS — TestSprite; run=TS-RUN-001; candidate=SNAP-EXAMPLE-STD-001-01; tests=TEST-EXAMPLE-STD-001 TEST-EXAMPLE-STD-002; 2026-08-12T12:20+08:00
+- TestSprite result / report / visual evidence: PASS — TEST-EXAMPLE-STD-001 TEST-EXAMPLE-STD-002; report=`testsprite_tests/TestSprite_MCP_Test_Report.md`; visual screenshots/video=`testsprite_tests/tmp/test_results.json`
+- Independent verifier evidence: PASS — AGENT-IV-EXAMPLE reviewed current TestSprite report and visual evidence
+""" if completed else ""
+    return """
+## TestSprite MCP (authorized Web UI only)
+- Provider-neutral TEST IDs and source oracles: TEST-EXAMPLE-STD-001 TEST-EXAMPLE-STD-002 / REQ-EXAMPLE-STD-001 AC-EXAMPLE-STD-001 / `.ai-team/specs/acceptance.md`; `.ai-team/design/calculator-input.md`
+- Local service, MCP/config readiness, and project path: PASS — MCP discovered with redacted API key; http://127.0.0.1:5173; project `.`
+- Account, allowed actions, data, and cleanup: no login; read/navigation/input only; isolated fixtures; reset by reload
+- Coverage map: copy=TEST-EXAMPLE-STD-001; visual=TEST-EXAMPLE-STD-002; interaction=N/A — static validation message only; responsive=N/A — single fixed test viewport; accessibility=TEST-EXAMPLE-STD-002; regression=TEST-EXAMPLE-STD-001 TEST-EXAMPLE-STD-002
+- Final-gate plan: run prerequisite suites first; run TestSprite last against the frozen candidate; invalidate on source, oracle, code, test, configuration, data, or environment change
+""" + completion
 
 
 class HandoffValidatorTests(unittest.TestCase):
@@ -205,25 +225,45 @@ class HandoffValidatorTests(unittest.TestCase):
         standard = template_card("Task card")
         fast = template_card("Minimal Fast-path task card")
         baseline = template_card("Engineering baseline")
-        source_register = template_card("Source register")
-        for fields in (
-            validator.SNAPSHOT_FIELDS,
-            validator.PLANNING_FIELDS,
-            validator.SELF_CHECK_FIELDS,
-            validator.VERIFICATION_FIELDS,
-        ):
+        template_catalog = TEMPLATES.read_text(encoding="utf-8")
+        source_register = SOURCES.read_text(encoding="utf-8")
+        manifest = MANIFEST.read_text(encoding="utf-8")
+        authorities = {
+            "snapshot": standard,
+            "planning": standard,
+            "self_check": standard,
+            "verification": standard,
+            "fast_gate": fast,
+            "fast_completion": fast,
+            "runtime": template_catalog,
+            "security": template_catalog,
+            "testsprite_design": template_catalog,
+            "testsprite_completion_extra": template_catalog,
+            "layout_authority": manifest,
+            "source_register": source_register,
+            "code_baseline": source_register,
+            "acceptance_intake": template_catalog,
+            "acceptance_scope": template_catalog,
+            "review_evidence": template_catalog,
+            "cancellation": template_catalog,
+            "credential_readiness": baseline,
+        }
+        self.assertEqual(set(validator.WORKFLOW_SCHEMA["fields"]), set(authorities))
+        for group, fields in validator.WORKFLOW_SCHEMA["fields"].items():
             for field in fields:
-                self.assertIn(field, standard)
-        for field in validator.FAST_GATE_FIELDS:
-            self.assertIn(field, fast)
-        for field in validator.FAST_COMPLETION_FIELDS:
-            self.assertIn(field, fast)
-        for field in validator.CREDENTIAL_READINESS_FIELDS:
-            self.assertIn(field, baseline)
+                self.assertIn(field, authorities[group], f"{group}: {field}")
         for column in validator.CREDENTIAL_READINESS_COLUMNS:
             self.assertIn(column, baseline)
-        for field in validator.CODE_BASELINE_FIELDS:
-            self.assertIn(field, source_register)
+        table_authorities = {
+            "traceability_columns": template_catalog,
+            "backlog_columns": BACKLOG.read_text(encoding="utf-8"),
+            "batch_columns": BACKLOG.read_text(encoding="utf-8"),
+            "credential_readiness_columns": baseline,
+        }
+        self.assertEqual(set(validator.WORKFLOW_SCHEMA["tables"]), set(table_authorities))
+        for group, columns in validator.WORKFLOW_SCHEMA["tables"].items():
+            for column in columns:
+                self.assertIn(column, table_authorities[group], f"{group}: {column}")
         self.assertNotIn("transitions", validator.WORKFLOW_SCHEMA)
         self.assertNotIn("reentry_targets", validator.WORKFLOW_SCHEMA)
 
@@ -693,6 +733,50 @@ class HandoffValidatorTests(unittest.TestCase):
         errors = validator.validate(card, gate="implementation-ready")
         self.assertTrue(any("requires the web-ui trigger" in error for error in errors), errors)
         self.assertTrue(any("TestSprite MCP" in error for error in errors), errors)
+
+        web_only = template_card("Implementation-ready Standard task card example").replace(
+            "standard / M / none — synchronous local validation using the existing module contract",
+            "standard / M / web-ui",
+        )
+        errors = validator.validate(web_only, gate="implementation-ready")
+        self.assertTrue(any("requires the TestSprite" in error for error in errors), errors)
+
+    def test_testsprite_design_requires_copy_and_visual_test_ids(self) -> None:
+        card = template_card("Implementation-ready Standard task card example").replace(
+            "standard / M / none — synchronous local validation using the existing module contract",
+            "standard / M / web-ui testsprite",
+        ) + make_testsprite_annex()
+        errors = validator.validate(card, gate="implementation-ready")
+        self.assertFalse(any("TestSprite" in error for error in errors), errors)
+
+        missing_visual = card.replace(
+            "visual=TEST-EXAMPLE-STD-002", "visual=N/A — visual comparison skipped"
+        )
+        errors = validator.validate(missing_visual, gate="implementation-ready")
+        self.assertTrue(any("visual coverage requires" in error for error in errors), errors)
+
+    def test_standalone_web_ui_requires_testsprite_after_prerequisite_suites(self) -> None:
+        card = completed_standard_card().replace(
+            "standard / M / none — synchronous local validation using the existing module contract",
+            "standard / M / web-ui testsprite",
+        ).replace(
+            "BATCH-EXAMPLE-01 / none / frozen design and planning PASS",
+            "batch-not-applicable / none / frozen design and planning PASS",
+        ) + make_testsprite_annex(completed=True)
+        self.assertEqual([], validator.validate(card, gate="verified-complete"))
+
+        playwright_only = card.replace(
+            "PASS — TestSprite; run=TS-RUN-001",
+            "PASS — Playwright; run=PW-RUN-001",
+        )
+        errors = validator.validate(playwright_only, gate="verified-complete")
+        self.assertTrue(any("identify TestSprite" in error for error in errors), errors)
+
+        wrong_order = card.replace(
+            "2026-08-12T12:20+08:00", "2026-08-12T11:50+08:00"
+        )
+        errors = validator.validate(wrong_order, gate="verified-complete")
+        self.assertTrue(any("after prerequisite suites" in error for error in errors), errors)
 
     def test_high_risk_requires_material_trigger(self) -> None:
         card = template_card("Implementation-ready Standard task card example").replace(

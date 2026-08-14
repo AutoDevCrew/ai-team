@@ -7,7 +7,7 @@ description: Launch or refine a Codex-run local software delivery team from a PR
 
 Run a Codex-native software delivery workflow from requirement input through local verification and named human acceptance checkpoints. Use one serial implementation engineer and independent verification; do not build another orchestration framework.
 
-Workflow revision: `ai-team-2026-08-14-r40`. Projects use this current layout only; older workflow layouts are unsupported.
+Workflow revision: `ai-team-2026-08-14-r41`. Projects use this current layout only; older workflow layouts are unsupported.
 
 ## Authority model
 
@@ -24,18 +24,7 @@ Do not restate one rule across several files. Use these global authorities:
 
 Read the complete delivery policy and role protocol before initializing or materially revising a project workflow. Read the template catalog when creating or changing an artifact schema.
 
-After initialization, the project-local copies are the runtime authority:
-
-- `.ai-team/manifest.md` — paths.
-- `.ai-team/governance/workflow-schema.json` — deterministic workflow contract consumed by project validators.
-- `.ai-team/stage.md` — current project-stage authorization and provenance.
-- `.ai-team/project-rules.md` — project overrides and authority index only.
-- `.ai-team/governance/workflow.md` — project delivery policy snapshot.
-- `.ai-team/governance/roles.md` — project role protocol snapshot.
-- `.ai-team/governance/templates.md` — exact project artifact schemas.
-- `.ai-team/governance/decisions.md` — human decision log; only confirmed entries grant authority.
-- `.ai-team/sources.md` plus the manifest-declared acceptance specification and requirement traceability matrix — current product evidence and frozen coverage.
-- `.ai-team/tasks/` — task state and evidence-linked cards.
+After initialization, `.ai-team/manifest.md` is the sole path authority and `.ai-team/project-rules.md` defines project-local authority precedence. Follow their project-local workflow, role, schema, template, stage, decision, source, specification, traceability, task, and evidence paths.
 
 The global Skill is the installation source, not a project runtime dependency. Never link project artifacts to files under the installed Skill directory.
 

@@ -1,6 +1,6 @@
 # Role Protocol
 
-Workflow revision: `ai-team-2026-08-14-r40`.
+Workflow revision: `ai-team-2026-08-14-r41`.
 
 This is the single global authority for AI-team role responsibilities and boundaries. Copy it to `.ai-team/governance/roles.md` during project initialization. The project-local copy is the runtime authority.
 
@@ -73,7 +73,7 @@ The coordinator starts the next eligible child or performs the next eligible loc
 
 ### Responsibilities
 
-1. Define target users, goals, in/out-of-scope behavior, user stories, normal/error/boundary states, and observable acceptance criteria.
+1. Define target users, goals, in/out-of-scope behavior, user stories, normal/error/boundary states, exact source-backed Web UI copy when applicable, and observable acceptance criteria.
 2. Classify every requirement by source and record conflicts or missing authority.
 3. For no-PRD intake, create the lightweight product brief without inventing material product rules.
 4. Scope Demo inspection before browsing and record inspected/current-phase versus excluded legacy behavior.
@@ -101,7 +101,7 @@ The coordinator starts the next eligible child or performs the next eligible loc
 
 1. Activate only when UI behavior remains materially underspecified.
 2. Preserve supplied design evidence and define only missing hierarchy, interaction, component-state, responsive, accessibility, content, and asset details.
-3. Reuse existing patterns and map each experience rule to a requirement and acceptance criterion.
+3. Reuse existing patterns and map each experience rule to a requirement and acceptance criterion; freeze the visual oracle, required viewports/states, and explicit tolerances for browser-rendered Web UI.
 4. Clarify feasibility with the technical lead and observable UI outcomes with the verifier.
 
 ### Outputs and writes
@@ -180,10 +180,10 @@ The coordinator starts the next eligible child or performs the next eligible loc
 
 1. Independently review no-PRD intake and engineering baseline when the workflow requires them.
 2. Produce stable test IDs and a pre-implementation plan covering normal, boundary/error, permission, regression, and applicable contract/UI scenarios.
-3. For every client or Web UI task, map applicable TEST IDs to source-backed copy/content, visual layout and styling, interaction and component states, viewport/device adaptation, accessibility, and affected regression; record a reason for each inapplicable category. Compare only current-scope Figma/Demo/design-system evidence, use explicit visual tolerances rather than unsupported pixel-perfect assumptions, and identify any non-automatable visual checks for human acceptance.
+3. For every client UI task, map applicable TEST IDs to source-backed copy/content, visual layout and styling, interaction and component states, viewport/device adaptation, accessibility, and affected regression; record a reason for each inapplicable category. For browser-rendered Web UI, always assign copy and visual TEST IDs and map the frozen set to the mandatory final TestSprite gate. Compare only current-scope Figma/Demo/design-system/accepted-baseline evidence, use explicit visual tolerances rather than unsupported pixel-perfect assumptions, and identify non-automatable visual checks for human acceptance.
 4. Freeze the compact task Test Manifest. Inherit project-default commands from the engineering baseline and record only task-specific checks, environment differences, and batch regression timing. For a mockable external integration, freeze both contract-faithful mock checks and the later live authentication/contract TEST IDs.
 5. Validate traceability, interface/protocol disposition, runtime/security treatment, and task-design/implementation readiness against the workflow gates; for Standard work, produce the combined direct or conditional verdict in one planning assignment when allowed.
-6. For ordinary Standard work, combine independent diff review with fresh task acceptance/affected-regression tests and defer the approved full regression to batch exit. For triggered or High-risk work, wait for the separate reviewer fast-gate and run the required risk/full suite.
+6. For ordinary Standard work, combine independent diff review with fresh task acceptance/affected-regression tests and defer the approved full regression to batch exit. For a Web UI batch, run prerequisite suites first and TestSprite once as its final automated UI acceptance execution; for standalone Web UI, record the same ordered gate in the task annex. For triggered or High-risk work, wait for the separate reviewer fast-gate and run the required risk/full suite.
 7. Record a verification-phase scoped PASS only from current evidence and bind it to the current Snapshot ID, Manifest revision, fingerprinted candidate, verifier identity, and verification time; return reproducible failures to implementation and preserve unexecuted-test evidence when stopped early.
 
 ### Outputs and writes

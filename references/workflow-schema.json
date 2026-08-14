@@ -1,6 +1,5 @@
 {
-  "schema_version": "5",
-  "workflow_revision": "ai-team-2026-08-14-r40",
+  "workflow_revision": "ai-team-2026-08-14-r41",
   "enums": {
     "gates": ["task-design", "implementation-ready", "verified-complete"],
     "task_states": ["analysis", "awaiting-human-decision", "task-design-ready", "implementation-ready", "implementing", "awaiting-verification", "complete", "cancelled/superseded"],
@@ -74,6 +73,10 @@
     "repomix_initialization": {
       "expectation": "for existing-code, start with PASS and name Repomix version, runner, exact command, scope, exclusions, and file or token metrics; for greenfield, use reasoned N/A",
       "example": "PASS — Repomix 1.9.0; runner=npx --yes repomix@latest; command=npx --yes repomix@latest --compress ...; scope=.; exclusions=.ai-team,node_modules,.env*; files=120; tokens=45000"
+    },
+    "testsprite_batch_exit": {
+      "expectation": "start with PASS and record prerequisite-at, TestSprite-final=PASS, run, candidate snapshots, explicit TEST IDs, report, visual-evidence, and testsprite-at; TestSprite must be later than prerequisite tests",
+      "example": "PASS — EVID-BATCH-001; prerequisite-at=2026-08-14T10:00+08:00; TestSprite-final=PASS; run=TS-RUN-001; candidate=SNAP-UI-001; tests=TEST-UI-001 TEST-UI-002; report=`testsprite_tests/TestSprite_MCP_Test_Report.md`; visual-evidence=`testsprite_tests/tmp/test_results.json`; testsprite-at=2026-08-14T10:20+08:00"
     }
   },
   "fields": {
@@ -85,8 +88,8 @@
     "fast_completion": ["Implementer / self-check / evidence:", "Independent verifier / verdict / evidence:", "Findings / severity / affected / follow-up:", "Verified Snapshot / at:"],
     "runtime": ["Trigger:", "Entry → authorization/precondition → scheduling or claim → state transition → side effect → recovery/compensation → observable result:", "REQ / AC / module / test mapping for each critical stage:"],
     "security": ["Triggered:", "Review:", "Required mitigations and negative tests:"],
-    "testsprite_design": ["Eligibility and provider-neutral test IDs:", "Local service URL/port and project path:", "Account, allowed read/write actions, test-data cleanup:", "TestSprite plan/cases:"],
-    "testsprite_completion_extra": ["Implementation self-check evidence:", "Independent verifier evidence:"],
+    "testsprite_design": ["Provider-neutral TEST IDs and source oracles:", "Local service, MCP/config readiness, and project path:", "Account, allowed actions, data, and cleanup:", "Coverage map:", "Final-gate plan:"],
+    "testsprite_completion_extra": ["Prerequisite suites / evidence / completed at:", "Final TestSprite run / candidate / completed at:", "TestSprite result / report / visual evidence:", "Independent verifier evidence:"],
     "layout_authority": ["Project rules:", "Delivery policy:", "Role protocol:", "Artifact templates:", "Workflow schema:", "Project stage:", "Handoff validator:", "Markdown section extractor:", "Project consistency checker:", "Fingerprint ledger helper:"],
     "source_register": ["Type:", "URL or verbatim request:", "Authority:", "Status:", "Version or updated at:", "Read at:"],
     "code_baseline": ["Repository / directory:", "Mode:", "Repomix initialization:", "Baseline description:", "Modules and tests inspected:", "Read at:"],
