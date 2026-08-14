@@ -1,6 +1,6 @@
 # Canonical Artifact Templates
 
-Workflow revision: `ai-team-2026-08-13-r37`.
+Workflow revision: `ai-team-2026-08-14-r39`.
 
 ## Catalog navigation
 
@@ -207,6 +207,16 @@ python3 .ai-team/scripts/extract_markdown_section.py .ai-team/governance/templat
 | Component (if applicable) |  |  |  |  |
 | End-to-end (if applicable) |  |  |  |  |
 | Security/accessibility/performance (if applicable) |  |  |  |  |
+
+## External integration and credential readiness
+Record key names and redacted status only; never put credential values in this artifact.
+
+- Applicability: applicable / none — <source/code evidence>
+- Consolidated user-action notice: none — all configured or no integrations / issued <ISO timestamp>; needed-now=EXT-...; safely-deferrable=EXT-...; optional=EXT-...
+
+| Integration | Credential/config key names | Contract/source | Treatment | Safe local target/scaffold | Action/readiness status | TEST IDs (mock/fallback; live) | Affected TASK/latest-needed gate | Redacted probe |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| EXT-<id> / <capability> |  |  | mockable / equivalent-fallback / non-substitutable |  | configured-redacted / notified-needed-now / notified-deferred / notified-optional / fallback-active | mock=TEST-...; live=TEST-... | TASK-... / implementation-ready, verified-complete, or human-acceptance |  |
 
 ## Boundaries and rationale
 - External services, licensing, cost, and production exclusions:
@@ -449,7 +459,7 @@ This complete Fast-only skeleton contains every section required by strict valid
 # TASK-EXAMPLE-001: Clarify local contributor documentation
 
 ## Handoff Snapshot
-- Workflow revision: ai-team-2026-08-13-r37
+- Workflow revision: ai-team-2026-08-14-r39
 - Snapshot ID and updated at: SNAP-EXAMPLE-001-01 / 2026-08-12T10:00+08:00
 - Current state and technical outcome: awaiting-verification / not-complete
 - Scope, source, decision, and contract references: REQ-EXAMPLE-001 / AC-EXAMPLE-001 / TEST-EXAMPLE-001 / `.ai-team/sources.md`; no decision or contract change
@@ -484,7 +494,7 @@ This compact example passes the `implementation-ready` gate. Shared requirements
 # TASK-EXAMPLE-STD-001: Add validation for calculator expression input
 
 ## Handoff Snapshot
-- Workflow revision: ai-team-2026-08-13-r37
+- Workflow revision: ai-team-2026-08-14-r39
 - Snapshot ID and updated at: SNAP-EXAMPLE-STD-001-01 / 2026-08-12T11:00+08:00
 - Current state and technical outcome: implementation-ready / not-complete
 - Scope, source, decision, and contract references: REQ-EXAMPLE-STD-001 / AC-EXAMPLE-STD-001 / TEST-EXAMPLE-STD-001 TEST-EXAMPLE-STD-002 / `.ai-team/sources.md`; no decision or contract change

@@ -1,6 +1,6 @@
 # Role Protocol
 
-Workflow revision: `ai-team-2026-08-13-r37`.
+Workflow revision: `ai-team-2026-08-14-r39`.
 
 This is the single global authority for AI-team role responsibilities and boundaries. Copy it to `.ai-team/governance/roles.md` during project initialization. The project-local copy is the runtime authority.
 
@@ -47,7 +47,7 @@ The coordinator starts the next eligible child or performs the next eligible loc
 2. Maintain backlog, task cards, discussions, decisions, batches, duplicate-free serial order, and named checkpoint mode/status together with the active Handoff Snapshot.
 3. Assign task lane, complexity, dependencies, write boundaries, exit conditions, and the compact control-trigger set. Make the final slice/retention decision from the technical lead's boundary/dependency proposal and the product/verifier AC/TEST evidence, using the project workflow.
 4. Keep project-wide source, baseline, design, commands, and traceability out of task cards; reference their current artifacts and record only task deltas.
-5. Distinguish design blockers, implementation blockers, quality findings, human decisions, and acceptance checkpoints.
+5. Distinguish design blockers, implementation blockers, quality findings, human decisions, acceptance checkpoints, and credential setup actions. Consolidate credential actions into one safe, path-specific notice; after the user reports setup complete, dispatch the redacted readiness probe and resume the affected gate without waiting for another prompt.
 6. Package only genuine human decisions and present them one at a time in dependency order.
 7. Activate a verifier's conditional Standard readiness only when every enumerated mechanical condition is evidenced and no recorded invalidation trigger occurred; otherwise return it to the verifier.
 8. After each handoff, launch or execute the next eligible action in serial order, including batch regression and evidence-backed P0/P1 re-entry; never allow two tasks to remain `implementing`. Clear blockers whose referenced task or confirmed decision is resolved. Record an exact continuation point when a turn must end.
@@ -129,16 +129,16 @@ The coordinator starts the next eligible child or performs the next eligible loc
 3. Produce the minimal design, module/data boundaries, failure/recovery paths, risks, task dependencies, and requirement-to-design/test mapping.
 4. Declare each task's interface/protocol disposition and freeze changed contracts and compatibility expectations.
 5. Freeze runtime-chain and security treatments when the workflow triggers them.
-6. Classify missing external credentials and tool authorizations using the workflow's mockable/equivalent-fallback/non-substitutable rule, and surface non-substitutable needs before the affected readiness gate.
+6. During source intake and engineering-baseline work, inventory external integrations and credential/tool authorization readiness in the Schema-declared baseline fields/table, and propose `external-integration` for each affected task. Reuse the verified project secret-loading convention or, when absent, create only the permitted blank local scaffold and narrow ignore rule; record key names and redacted readiness, never secret values.
 7. Analyze material baseline changes and update affected design/test/task constraints.
 
 ### Outputs and writes
 
-- Engineering baseline/change impact, code-context pack, architecture/design, contract, quality-attribute treatment, and task/dependency proposal.
+- Engineering baseline/change impact, external-integration credential readiness and any safe local scaffold, code-context pack, architecture/design, contract, quality-attribute treatment, and task/dependency proposal.
 
 ### Does not
 
-- Rewrite product intent, implement business code while acting as technical lead, approve its own baseline/design, or widen task scope silently.
+- Rewrite product intent, implement business code while acting as technical lead, approve its own baseline/design, widen task scope silently, overwrite an existing secret-bearing file, or read/echo/copy credential values.
 
 ### Exit
 
@@ -181,7 +181,7 @@ The coordinator starts the next eligible child or performs the next eligible loc
 1. Independently review no-PRD intake and engineering baseline when the workflow requires them.
 2. Produce stable test IDs and a pre-implementation plan covering normal, boundary/error, permission, regression, and applicable contract/UI scenarios.
 3. For every client or Web UI task, map applicable TEST IDs to source-backed copy/content, visual layout and styling, interaction and component states, viewport/device adaptation, accessibility, and affected regression; record a reason for each inapplicable category. Compare only current-scope Figma/Demo/design-system evidence, use explicit visual tolerances rather than unsupported pixel-perfect assumptions, and identify any non-automatable visual checks for human acceptance.
-4. Freeze the compact task Test Manifest. Inherit project-default commands from the engineering baseline and record only task-specific checks, environment differences, and batch regression timing.
+4. Freeze the compact task Test Manifest. Inherit project-default commands from the engineering baseline and record only task-specific checks, environment differences, and batch regression timing. For a mockable external integration, freeze both contract-faithful mock checks and the later live authentication/contract TEST IDs.
 5. Validate traceability, interface/protocol disposition, runtime/security treatment, and task-design/implementation readiness against the workflow gates; for Standard work, produce the combined direct or conditional verdict in one planning assignment when allowed.
 6. For ordinary Standard work, combine independent diff review with fresh task acceptance/affected-regression tests and defer the approved full regression to batch exit. For triggered or High-risk work, wait for the separate reviewer fast-gate and run the required risk/full suite.
 7. Record a verification-phase scoped PASS only from current evidence and bind it to the current Snapshot ID, Manifest revision, fingerprinted candidate, verifier identity, and verification time; return reproducible failures to implementation and preserve unexecuted-test evidence when stopped early.

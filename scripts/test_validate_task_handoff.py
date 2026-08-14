@@ -196,6 +196,7 @@ class HandoffValidatorTests(unittest.TestCase):
     def test_schema_and_templates_are_aligned(self) -> None:
         standard = template_card("Task card")
         fast = template_card("Minimal Fast-path task card")
+        baseline = template_card("Engineering baseline")
         for fields in (
             validator.SNAPSHOT_FIELDS,
             validator.PLANNING_FIELDS,
@@ -208,6 +209,10 @@ class HandoffValidatorTests(unittest.TestCase):
             self.assertIn(field, fast)
         for field in validator.FAST_COMPLETION_FIELDS:
             self.assertIn(field, fast)
+        for field in validator.CREDENTIAL_READINESS_FIELDS:
+            self.assertIn(field, baseline)
+        for column in validator.CREDENTIAL_READINESS_COLUMNS:
+            self.assertIn(column, baseline)
         self.assertNotIn("transitions", validator.WORKFLOW_SCHEMA)
         self.assertNotIn("reentry_targets", validator.WORKFLOW_SCHEMA)
 
@@ -411,6 +416,128 @@ class HandoffValidatorTests(unittest.TestCase):
                     expected_phase="baseline",
                 ),
             )
+
+    def test_credential_readiness_requires_notice_and_mock_live_tests(self) -> None:
+        def baseline(section_text: str) -> str:
+            return f"""# Engineering Baseline: example
+
+## State
+- Version: 1
+- Mode: greenfield
+- Status: Engineering baseline PASS
+- Technical lead: AGENT-TL-001
+- Independent verifier: AGENT-IV-001
+- Reviewed scope and verdict: PASS — current source and integration inventory reviewed
+
+{section_text}
+"""
+
+        no_integrations = baseline(
+            """## External integration and credential readiness
+- Applicability: none — source and code inspection found no external integration
+- Consolidated user-action notice: none — no integration credential action exists
+
+| Integration | Credential/config key names | Contract/source | Treatment | Safe local target/scaffold | Action/readiness status | TEST IDs (mock/fallback; live) | Affected TASK/latest-needed gate | Redacted probe |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+"""
+        )
+        with tempfile.TemporaryDirectory() as temp_dir:
+            path = Path(temp_dir) / "baseline.md"
+            path.write_text(no_integrations, encoding="utf-8")
+            self.assertEqual([], validator.engineering_baseline_errors(path))
+
+        mockable = baseline(
+            """## External integration and credential readiness
+- Applicability: applicable
+- Consolidated user-action notice: issued 2026-08-14T09:00+08:00; safely-deferrable=EXT-001
+
+| Integration | Credential/config key names | Contract/source | Treatment | Safe local target/scaffold | Action/readiness status | TEST IDs (mock/fallback; live) | Affected TASK/latest-needed gate | Redacted probe |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| EXT-001 / supplier sandbox | SUPPLIER_API_KEY | `docs/supplier-contract.md` | mockable | `.env.local.example` | notified-deferred | mock=TEST-001; live=TEST-002 | TASK-001 / verified-complete | N/A — live probe awaits user configuration |
+"""
+        )
+        self.assertEqual([], validator.credential_readiness_result(mockable)[0])
+        self.assertEqual(
+            [], validator.credential_task_gate_errors(mockable, "TASK-001", "implementation-ready")
+        )
+        blocked = validator.credential_task_gate_errors(
+            mockable, "TASK-001", "verified-complete"
+        )
+        self.assertTrue(any("latest-needed verified-complete" in error for error in blocked), blocked)
+
+        missing_live = mockable.replace("; live=TEST-002", "; live=none")
+        errors = validator.credential_readiness_result(missing_live)[0]
+        self.assertTrue(any("requires mock and live TEST IDs" in error for error in errors), errors)
+
+        missing_notice = mockable.replace(
+            "issued 2026-08-14T09:00+08:00; safely-deferrable=EXT-001",
+            "none — user was not notified",
+        )
+        errors = validator.credential_readiness_result(missing_notice)[0]
+        self.assertTrue(any("timestamped consolidated notice" in error for error in errors), errors)
+
+    def test_external_integration_gate_reads_the_linked_baseline(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            project = Path(temp_dir)
+            card = self.materialize_project(
+                project, template_card("Implementation-ready Standard task card example")
+            )
+            baseline = project / ".ai-team/design/engineering-baseline.md"
+            baseline.write_text(
+                """# Engineering Baseline: calculator
+
+## State
+- Version: 1
+- Mode: derived-existing-repository
+- Status: Engineering baseline PASS
+- Technical lead: AGENT-TL-EXAMPLE
+- Independent verifier: AGENT-IV-EXAMPLE
+- Reviewed scope and verdict: PASS — integration inventory and commands reviewed
+
+## External integration and credential readiness
+- Applicability: applicable
+- Consolidated user-action notice: issued 2026-08-14T09:00+08:00; safely-deferrable=EXT-001
+
+| Integration | Credential/config key names | Contract/source | Treatment | Safe local target/scaffold | Action/readiness status | TEST IDs (mock/fallback; live) | Affected TASK/latest-needed gate | Redacted probe |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| EXT-001 / expression provider | PROVIDER_KEY | `docs/provider.md` | mockable | `.env.local.example` | notified-deferred | mock=TEST-EXAMPLE-STD-001; live=TEST-EXAMPLE-STD-002 | TASK-EXAMPLE-STD-001 / verified-complete | N/A — live probe awaits user configuration |
+""",
+                encoding="utf-8",
+            )
+            text = card.read_text(encoding="utf-8").replace(
+                "standard / M / none — synchronous local validation using the existing module contract",
+                "standard / M / external-integration",
+            ).replace(
+                "`.ai-team/design/calculator-input.md`;",
+                "`.ai-team/design/engineering-baseline.md`;",
+            )
+            errors = validator.gate_reference_errors(card, text, "implementation-ready")
+            self.assertEqual([], errors)
+            errors = validator.gate_reference_errors(card, text, "verified-complete")
+            self.assertTrue(any("latest-needed verified-complete" in error for error in errors), errors)
+
+            unknown_test = text
+            baseline.write_text(
+                baseline.read_text(encoding="utf-8").replace(
+                    "live=TEST-EXAMPLE-STD-002", "live=TEST-UNKNOWN-001"
+                ),
+                encoding="utf-8",
+            )
+            errors = validator.gate_reference_errors(card, unknown_test, "implementation-ready")
+            self.assertTrue(any("absent from Requirement traceability" in error for error in errors), errors)
+            baseline.write_text(
+                baseline.read_text(encoding="utf-8").replace(
+                    "live=TEST-UNKNOWN-001", "live=TEST-EXAMPLE-STD-002"
+                ),
+                encoding="utf-8",
+            )
+
+            untriggered = text.replace(
+                "standard / M / external-integration",
+                "standard / M / none — no external integration",
+            )
+            errors = validator.gate_reference_errors(card, untriggered, "implementation-ready")
+            self.assertTrue(any("lacks the external-integration trigger" in error for error in errors), errors)
 
     def test_merged_standard_reviewer_is_allowed_but_triggered_review_is_required(self) -> None:
         self.assertEqual([], validator.validate(completed_standard_card(), gate="verified-complete"))

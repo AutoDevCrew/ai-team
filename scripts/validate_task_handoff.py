@@ -104,6 +104,13 @@ ACCEPTANCE_SCOPE_FIELDS = _values("acceptance_scope")
 TRACEABILITY_COLUMNS = tuple(WORKFLOW_SCHEMA["tables"]["traceability_columns"])
 REVIEW_EVIDENCE_FIELDS = _values("review_evidence")
 CANCELLATION_FIELDS = _values("cancellation")
+CREDENTIAL_READINESS_FIELDS = _values("credential_readiness")
+CREDENTIAL_READINESS_COLUMNS = tuple(
+    WORKFLOW_SCHEMA["tables"]["credential_readiness_columns"]
+)
+CREDENTIAL_TREATMENTS = _enum("credential_treatments")
+CREDENTIAL_STATUSES = _enum("credential_statuses")
+CREDENTIAL_DEADLINES = _enum("credential_deadlines")
 
 REFERENCE_PATTERN = re.compile(
     r"(?:https?://\S+|`[^`]+`|\b(?:REQ|AC|DEC|TASK|TEST|EVID|FIND|DISC|SNAP|TEM)-[A-Za-z0-9._-]+\b)",
@@ -307,6 +314,175 @@ def concrete_value_errors(
                         "reasoned_na",
                     )
                 )
+    return errors
+
+
+def canonical_table_rows(
+    content: str, columns: tuple[str, ...], table_name: str
+) -> tuple[list[str], list[dict[str, str]]]:
+    lines = visible_markdown(content).splitlines()
+    header = next(
+        (
+            (index, [cell.strip() for cell in line.strip().strip("|").split("|")])
+            for index, line in enumerate(lines)
+            if line.strip().startswith("|")
+            and line.strip().strip("|").split("|")[0].strip() == columns[0]
+        ),
+        None,
+    )
+    if header is None:
+        return [f"{table_name} is missing its canonical table"], []
+    header_index, actual_columns = header
+    errors = (
+        []
+        if tuple(actual_columns) == columns
+        else [f"{table_name} columns must be: " + " | ".join(columns)]
+    )
+    rows: list[dict[str, str]] = []
+    for line in lines[header_index + 2 :]:
+        if not line.strip().startswith("|"):
+            break
+        cells = [cell.strip() for cell in line.strip().strip("|").split("|")]
+        if len(cells) != len(actual_columns):
+            errors.append(f"{table_name} row has the wrong number of cells")
+            continue
+        rows.append(dict(zip(actual_columns, cells)))
+    return errors, rows
+
+
+def enum_lead(value: str) -> str:
+    return re.split(r"\s*(?:—|:|\s)\s*", value.strip().lower(), maxsplit=1)[0]
+
+
+def credential_readiness_result(text: str) -> tuple[list[str], list[dict[str, str]]]:
+    heading = "## External integration and credential readiness"
+    errors = exact_section_errors(text, (heading,))
+    if errors:
+        return errors, []
+    readiness = section(text, heading)
+    errors.extend(concrete_value_errors(readiness, CREDENTIAL_READINESS_FIELDS, "Credential readiness"))
+    applicability = field_value(readiness, "Applicability:")
+    notice = field_value(readiness, "Consolidated user-action notice:")
+    applicable = applicability.strip().lower() == "applicable"
+    if not applicable and not has_reasoned_none(applicability):
+        errors.append(
+            "Credential readiness Applicability must be applicable or none with source/code evidence"
+        )
+    notice_issued = bool(re.match(r"^issued\s+\d{4}-\d{2}-\d{2}(?=[T\s]|$)", notice, re.I))
+    if not is_none(notice) and not notice_issued:
+        errors.append(
+            "Credential readiness notice must be none with a reason or issued with an ISO timestamp"
+        )
+    table_errors, rows = canonical_table_rows(
+        readiness, CREDENTIAL_READINESS_COLUMNS, "Credential readiness"
+    )
+    errors.extend(table_errors)
+    if not applicable:
+        if rows:
+            errors.append("Credential readiness marked none may not contain integration rows")
+        return errors, rows
+    if not rows:
+        errors.append("Applicable credential readiness requires at least one EXT-... row")
+        return errors, rows
+
+    seen: set[str] = set()
+    for row in rows:
+        integration = first_identifier(row.get("Integration", ""), "EXT")
+        if not integration:
+            errors.append("Credential readiness row requires one EXT-... ID")
+            continue
+        if integration in seen:
+            errors.append(f"duplicate Credential readiness row: {integration}")
+        seen.add(integration)
+        missing_columns = [
+            column
+            for column in (
+                "Credential/config key names",
+                "Contract/source",
+                "Safe local target/scaffold",
+                "TEST IDs (mock/fallback; live)",
+                "Affected TASK/latest-needed gate",
+                "Redacted probe",
+            )
+            if is_placeholder(row.get(column, ""))
+        ]
+        errors.extend(
+            f"{integration} credential readiness lacks {column}"
+            for column in missing_columns
+        )
+        treatment = enum_lead(row.get("Treatment", ""))
+        if treatment not in CREDENTIAL_TREATMENTS:
+            errors.append(f"{integration} has invalid credential treatment")
+        status = enum_lead(row.get("Action/readiness status", ""))
+        if status not in CREDENTIAL_STATUSES:
+            errors.append(f"{integration} has invalid credential action/readiness status")
+        tests = row.get("TEST IDs (mock/fallback; live)", "")
+        tagged_tests = {
+            match.group(1).lower(): identifiers(match.group(2), "TEST")
+            for match in re.finditer(r"\b(mock|fallback|live)\s*=\s*([^;]+)", tests, re.I)
+        }
+        if treatment == "mockable" and not all(tagged_tests.get(key) for key in ("mock", "live")):
+            errors.append(f"{integration} mockable treatment requires mock and live TEST IDs")
+        if treatment == "equivalent-fallback" and not tagged_tests.get("fallback"):
+            errors.append(f"{integration} equivalent fallback requires fallback TEST IDs")
+        if treatment == "non-substitutable" and not tagged_tests.get("live"):
+            errors.append(f"{integration} non-substitutable treatment requires live TEST IDs")
+        affected = row.get("Affected TASK/latest-needed gate", "")
+        if not identifiers(affected, "TASK"):
+            errors.append(f"{integration} requires an affected TASK-... ID")
+        deadlines = {item for item in CREDENTIAL_DEADLINES if item in affected.lower()}
+        if len(deadlines) != 1:
+            errors.append(f"{integration} requires exactly one latest-needed gate")
+        if status.startswith("notified-"):
+            if not notice_issued or integration not in notice.upper():
+                errors.append(
+                    f"{integration} notified status requires the timestamped consolidated notice to name it"
+                )
+        elif status in {"configured-redacted", "fallback-active"} and not is_pass(
+            row.get("Redacted probe", "")
+        ):
+            errors.append(f"{integration} ready status requires a redacted PASS probe")
+        if status == "fallback-active" and treatment != "equivalent-fallback":
+            errors.append(f"{integration} fallback-active status requires equivalent-fallback treatment")
+    return errors, rows
+
+
+def credential_task_gate_errors(
+    baseline_text: str, task_id: str, gate: str, known_tests: set[str] | None = None
+) -> list[str]:
+    readiness_errors, rows = credential_readiness_result(baseline_text)
+    if readiness_errors:
+        return []
+    errors: list[str] = []
+    matching = [
+        row
+        for row in rows
+        if task_id in identifiers(row.get("Affected TASK/latest-needed gate", ""), "TASK")
+    ]
+    if not matching:
+        return [f"{task_id} external-integration trigger has no Credential readiness row"]
+    order = {"task-design": 0, "implementation-ready": 1, "verified-complete": 2, "human-acceptance": 3}
+    for row in matching:
+        integration = first_identifier(row.get("Integration", ""), "EXT")
+        declared_tests = identifiers(row.get("TEST IDs (mock/fallback; live)", ""), "TEST")
+        if known_tests is not None and declared_tests - known_tests:
+            errors.append(
+                f"{integration} references TEST IDs absent from Requirement traceability: "
+                + ", ".join(sorted(declared_tests - known_tests))
+            )
+        status = enum_lead(row.get("Action/readiness status", ""))
+        affected = row.get("Affected TASK/latest-needed gate", "").lower()
+        deadline = next(
+            (item for item in CREDENTIAL_DEADLINES if item in affected), ""
+        )
+        if (
+            status in {"notified-needed-now", "notified-deferred"}
+            and deadline
+            and order.get(gate, -1) >= order[deadline]
+        ):
+            errors.append(
+                f"{integration} credential remains unavailable at its latest-needed {deadline} gate"
+            )
     return errors
 
 
@@ -975,7 +1151,8 @@ def iso_datetime(value: str) -> datetime | None:
 
 
 def engineering_baseline_errors(path: Path) -> list[str]:
-    state = section(path.read_text(encoding="utf-8"), "## State")
+    text = path.read_text(encoding="utf-8")
+    state = section(text, "## State")
     fields = (
         "Version:",
         "Mode:",
@@ -994,6 +1171,7 @@ def engineering_baseline_errors(path: Path) -> list[str]:
             "Engineering baseline",
         )
     )
+    errors.extend(credential_readiness_result(text)[0])
     return errors
 
 
@@ -1681,7 +1859,9 @@ def gate_reference_errors(task_card: Path, text: str, gate: str) -> list[str]:
         return [layout_error]
     assert project_root is not None
     snapshot = section(text, "## Handoff Snapshot")
-    lane, _, _ = delivery_descriptor(snapshot)
+    lane, _, triggers = delivery_descriptor(snapshot)
+    title = re.search(r"^#\s+[^\n]+", visible_markdown(text), flags=re.MULTILINE)
+    task_id = first_identifier(title.group(0) if title else "", "TASK")
     snapshot_id = first_identifier(field_value(snapshot, "Snapshot ID and updated at:"), "SNAP")
     manifest_id = manifest_revision(text)
     errors: list[str] = []
@@ -1736,6 +1916,70 @@ def gate_reference_errors(task_card: Path, text: str, gate: str) -> list[str]:
                 continue
             if not path.is_file():
                 errors.append(f"baseline/design evidence not found: {raw}")
+
+        reference_paths = [
+            (project_root / raw).resolve()
+            for raw in paths
+            if (project_root / raw).resolve().is_file()
+        ]
+        baseline_paths = []
+        for candidate in reference_paths:
+            candidate_text = candidate.read_text(encoding="utf-8")
+            status = field_value(section(candidate_text, "## State"), "Status:").lower()
+            if "engineering baseline" in status:
+                baseline_paths.append(candidate)
+        for baseline_path in baseline_paths:
+            errors.extend(
+                evidence_errors(baseline_path, engineering_baseline_errors(baseline_path))
+            )
+        if "external-integration" in triggers:
+            if not baseline_paths:
+                errors.append(
+                    "external-integration trigger requires a linked Engineering baseline credential-readiness section"
+                )
+            elif len(baseline_paths) > 1:
+                errors.append(
+                    "external-integration trigger references more than one credential-readiness baseline"
+                )
+            else:
+                baseline_path = baseline_paths[0]
+                manifest_text = (project_root / ".ai-team/manifest.md").read_text(
+                    encoding="utf-8"
+                )
+                trace_value = markdown_path_value(
+                    field_value(manifest_text, "Requirement traceability:")
+                )
+                trace_path = (project_root / trace_value).resolve()
+                known_tests = (
+                    identifiers(trace_path.read_text(encoding="utf-8"), "TEST")
+                    if trace_path.is_file()
+                    else set()
+                )
+                errors.extend(
+                    evidence_errors(
+                        baseline_path,
+                        credential_task_gate_errors(
+                            baseline_path.read_text(encoding="utf-8"),
+                            task_id,
+                            gate,
+                            known_tests,
+                        ),
+                    )
+                )
+        elif baseline_paths:
+            affected = set()
+            for baseline_path in baseline_paths:
+                _, rows = credential_readiness_result(
+                    baseline_path.read_text(encoding="utf-8")
+                )
+                for row in rows:
+                    affected |= identifiers(
+                        row.get("Affected TASK/latest-needed gate", ""), "TASK"
+                    )
+            if task_id in affected:
+                errors.append(
+                    "task is listed in Credential readiness but lacks the external-integration trigger"
+                )
 
     if gate == "verified-complete":
         if lane == "fast":
