@@ -28,7 +28,7 @@ When the host provides child agents, use actual temporary agents for independent
 1. Keep the root agent as the delivery coordinator and durable owner of backlog state.
 2. Allow exactly one writable serial implementation engineer. Never parallelize business-code writers.
 3. Allow at most two concurrent read-only specialists or reviewers, and only when their scopes are independent. Ordered artifact authorship still follows the delivery path.
-4. Give every child one role, one bounded scope, one current snapshot, exact authority headings, allowed/forbidden writes, expected output, receiving role, and exit condition.
+4. Before dispatching a child, complete the `Role assignment envelope` in `governance/templates.md`; bind it to one role, one bounded task/scope, and the current Snapshot.
 5. Reuse a specialist within the same task or batch while its role, scope, and frozen requirement/contract inputs remain unchanged. A code-only candidate change invalidates evidence, not the Agent; provide the refreshed Snapshot and diff before reuse.
 6. Retire a child when the task/batch scope closes, its role changes, requirement/contract authority changes, or its context cannot be refreshed safely. Do not accumulate duplicate reviewers or duplicate broad runs.
 7. If child agents are unavailable, execute the same roles sequentially with separate artifact authorship and disclose the limitation; do not weaken independent review criteria.

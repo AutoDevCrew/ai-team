@@ -99,6 +99,14 @@ class MarkdownSectionTests(unittest.TestCase):
         ]
         self.assertEqual([], missing)
 
+    def test_role_assignment_envelope_is_referenced_by_role_protocol(self) -> None:
+        templates = TEMPLATES.read_text(encoding="utf-8")
+        roles = ROLES.read_text(encoding="utf-8")
+        self.assertIsNotNone(
+            extractor.extract_h2_section(templates, "Role assignment envelope")
+        )
+        self.assertIn("`Role assignment envelope`", roles)
+
     def test_run_delivery_policy_links_resolve_to_exact_h2_sections(self) -> None:
         skill = (SKILL_ROOT / "SKILL.md").read_text(encoding="utf-8")
         run_delivery = extractor.extract_h2_section(skill, "Run delivery")
