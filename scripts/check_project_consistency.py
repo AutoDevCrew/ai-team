@@ -615,6 +615,12 @@ def check_project(project_root: Path) -> list[str]:
         errors.append(f"manifest workflow revision must be {WORKFLOW_REVISION}")
     errors.extend(validator.project_authority_errors_from_root(project_root))
     errors.extend(revision_errors(project_root, manifest_text))
+    source = manifest_path(project_root, manifest_text, "Source register:")
+    if validator.repository_contains_code(project_root):
+        if source is None or not source.is_file():
+            errors.append("existing-code initialization requires the manifest-declared Source register")
+        else:
+            errors.extend(validator.code_baseline_errors(source))
     task_root = manifest_path(project_root, manifest_text, "Task root:")
     board = manifest_path(project_root, manifest_text, "Canonical task board:")
     if task_root is None or not task_root.is_dir():
@@ -632,7 +638,6 @@ def check_project(project_root: Path) -> list[str]:
             validator.section(card.read_text(encoding="utf-8"), "## Handoff Snapshot")
             for card in task_cards
         ):
-            source = manifest_path(project_root, manifest_text, "Source register:")
             evidence_root = manifest_path(project_root, manifest_text, "Evidence root:")
             if source is None or not source.is_file():
                 errors.append("active delivery requires the manifest-declared Source register")

@@ -1,6 +1,6 @@
 {
-  "schema_version": "4",
-  "workflow_revision": "ai-team-2026-08-14-r39",
+  "schema_version": "5",
+  "workflow_revision": "ai-team-2026-08-14-r40",
   "enums": {
     "gates": ["task-design", "implementation-ready", "verified-complete"],
     "task_states": ["analysis", "awaiting-human-decision", "task-design-ready", "implementation-ready", "implementing", "awaiting-verification", "complete", "cancelled/superseded"],
@@ -70,6 +70,10 @@
     "serial_task_order": {
       "expectation": "list every batch member TASK ID exactly once in execution order",
       "example": "TASK-001 → TASK-002"
+    },
+    "repomix_initialization": {
+      "expectation": "for existing-code, start with PASS and name Repomix version, runner, exact command, scope, exclusions, and file or token metrics; for greenfield, use reasoned N/A",
+      "example": "PASS — Repomix 1.9.0; runner=npx --yes repomix@latest; command=npx --yes repomix@latest --compress ...; scope=.; exclusions=.ai-team,node_modules,.env*; files=120; tokens=45000"
     }
   },
   "fields": {
@@ -85,6 +89,7 @@
     "testsprite_completion_extra": ["Implementation self-check evidence:", "Independent verifier evidence:"],
     "layout_authority": ["Project rules:", "Delivery policy:", "Role protocol:", "Artifact templates:", "Workflow schema:", "Project stage:", "Handoff validator:", "Markdown section extractor:", "Project consistency checker:", "Fingerprint ledger helper:"],
     "source_register": ["Type:", "URL or verbatim request:", "Authority:", "Status:", "Version or updated at:", "Read at:"],
+    "code_baseline": ["Repository / directory:", "Mode:", "Repomix initialization:", "Baseline description:", "Modules and tests inspected:", "Read at:"],
     "acceptance_intake": ["Source:", "Status:", "Product analyst:", "Independent review:", "Evidence-backed rules:", "Conventional low-risk MVP assumptions and rationale:", "Awaiting material human decision:"],
     "acceptance_scope": ["In scope:", "Out of scope:"],
     "review_evidence": ["Reviewer identity:", "Role:", "Review phase:", "Snapshot and Manifest:", "Reviewed scope and inputs:", "Commands or inspection performed:", "Evidence and findings:", "Verdict:", "Invalidated by:", "Recorded at:"],

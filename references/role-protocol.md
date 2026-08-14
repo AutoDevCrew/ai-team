@@ -1,6 +1,6 @@
 # Role Protocol
 
-Workflow revision: `ai-team-2026-08-14-r39`.
+Workflow revision: `ai-team-2026-08-14-r40`.
 
 This is the single global authority for AI-team role responsibilities and boundaries. Copy it to `.ai-team/governance/roles.md` during project initialization. The project-local copy is the runtime authority.
 
@@ -124,8 +124,8 @@ The coordinator starts the next eligible child or performs the next eligible loc
 
 ### Responsibilities
 
-1. Derive the existing engineering baseline or author a greenfield baseline without replacing supported stack choices unnecessarily.
-2. Use scoped `$repomix-explorer` for unfamiliar or large repositories when available; otherwise apply the workflow's non-blocking degradation rule and continue with targeted local search.
+1. Classify the repository as existing-code or greenfield, then derive the existing engineering baseline or author a greenfield baseline without replacing supported stack choices unnecessarily.
+2. For existing-code, run scoped `$repomix-explorer` before product analysis, baseline derivation, or task design. Prefer installed `repomix`; otherwise use `npx --yes repomix@latest`. Record version, runner, exact command, scope, exclusions, and metrics in the source register. Do not substitute targeted search when this initialization gate fails. After it passes, prefer Repomix for broad discovery and use targeted search for known symbols or paths.
 3. Produce the minimal design, module/data boundaries, failure/recovery paths, risks, task dependencies, and requirement-to-design/test mapping.
 4. Declare each task's interface/protocol disposition and freeze changed contracts and compatibility expectations.
 5. Freeze runtime-chain and security treatments when the workflow triggers them.

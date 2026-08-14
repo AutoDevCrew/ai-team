@@ -7,7 +7,7 @@ description: Launch or refine a Codex-run local software delivery team from a PR
 
 Run a Codex-native software delivery workflow from requirement input through local verification and named human acceptance checkpoints. Use one serial implementation engineer and independent verification; do not build another orchestration framework.
 
-Workflow revision: `ai-team-2026-08-14-r39`. Projects use this current layout only; older workflow layouts are unsupported.
+Workflow revision: `ai-team-2026-08-14-r40`. Projects use this current layout only; older workflow layouts are unsupported.
 
 ## Authority model
 
@@ -46,7 +46,7 @@ The global Skill is the installation source, not a project runtime dependency. N
 3. Copy `references/delivery-policy.md` to `.ai-team/governance/workflow.md`, `references/role-protocol.md` to `.ai-team/governance/roles.md`, and `references/workflow-schema.json` to `.ai-team/governance/workflow-schema.json`. Treat them as project-canonical snapshots; record project differences only in `.ai-team/project-rules.md` or confirmed decisions.
 4. Keep `.ai-team/governance/workflow-schema.json` as the machine-readable field-group and enum authority, and `.ai-team/governance/templates.md` as the exact Markdown syntax authority. Do not reproduce their contracts elsewhere.
 5. Copy `scripts/validate_task_handoff.py`, `scripts/extract_markdown_section.py`, `scripts/check_project_consistency.py`, and `scripts/render_fingerprint_ledger.py` to `.ai-team/scripts/` when task cards or role handoffs exist.
-6. Create or update `.ai-team/sources.md` when delivery intake starts. Before promoting Standard/High-risk work, create the manifest-declared frozen acceptance specification and requirement traceability matrix. A standalone Fast non-behavior task may rely on its card-local traceability when both files are intentionally absent. Create other artifacts only when needed.
+6. Create or update `.ai-team/sources.md` when delivery intake starts. Apply the existing-code Repomix initialization gate under [`Sources and intake`](references/delivery-policy.md#sources-and-intake) before product analysis, baseline work, or task design. Before promoting Standard/High-risk work, create the manifest-declared frozen acceptance specification and requirement traceability matrix. A standalone Fast non-behavior task may rely on its card-local traceability when both files are intentionally absent. Create other artifacts only when needed.
 7. Preserve existing project material and history. Do not create root-level AI-team `docs/`, `tasks/`, `discussions/`, or helper-script trees.
 
 ## Run delivery

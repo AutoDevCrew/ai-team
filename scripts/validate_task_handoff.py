@@ -7,6 +7,7 @@ import argparse
 from datetime import datetime, timezone
 import hashlib
 import json
+import os
 from pathlib import Path
 import re
 
@@ -99,6 +100,7 @@ TASK_ROOT_FIELD = "Task root:"
 CHANGE_INVENTORY_FIELD = "Change-set file inventory:"
 LAYOUT_AUTHORITY_FIELDS = _values("layout_authority")
 SOURCE_REGISTER_FIELDS = _values("source_register")
+CODE_BASELINE_FIELDS = _values("code_baseline")
 ACCEPTANCE_INTAKE_FIELDS = _values("acceptance_intake")
 ACCEPTANCE_SCOPE_FIELDS = _values("acceptance_scope")
 TRACEABILITY_COLUMNS = tuple(WORKFLOW_SCHEMA["tables"]["traceability_columns"])
@@ -111,6 +113,18 @@ CREDENTIAL_READINESS_COLUMNS = tuple(
 CREDENTIAL_TREATMENTS = _enum("credential_treatments")
 CREDENTIAL_STATUSES = _enum("credential_statuses")
 CREDENTIAL_DEADLINES = _enum("credential_deadlines")
+
+CODE_SUFFIXES = {
+    ".c", ".cc", ".cpp", ".cs", ".dart", ".ex", ".exs", ".fs", ".fsx",
+    ".go", ".h", ".hpp", ".java", ".js", ".jsx", ".kt", ".kts", ".php",
+    ".proto", ".py", ".rb", ".rs", ".scala", ".sh", ".sol", ".sql", ".swift",
+    ".ts", ".tsx", ".vue",
+}
+CODE_SCAN_EXCLUDED_DIRS = {
+    ".ai-team", ".git", ".hg", ".svn", ".cache", ".next", ".nuxt", ".venv",
+    "__pycache__", "build", "coverage", "dist", "generated", "node_modules", "out",
+    "target", "vendor", "venv",
+}
 
 REFERENCE_PATTERN = re.compile(
     r"(?:https?://\S+|`[^`]+`|\b(?:REQ|AC|DEC|TASK|TEST|EVID|FIND|DISC|SNAP|TEM)-[A-Za-z0-9._-]+\b)",
@@ -832,7 +846,81 @@ def source_register_errors(source: Path) -> list[str]:
     read_at = field_value(product, "Read at:")
     if not re.search(r"\b\d{4}-\d{2}-\d{2}(?=[T\s]|$)", read_at):
         errors.append("Source register Read at needs an ISO-style date")
+
+    errors.extend(code_baseline_errors(source))
     return errors
+
+
+def code_baseline_errors(source: Path) -> list[str]:
+    text = source.read_text(encoding="utf-8")
+    errors: list[str] = []
+    code = section(text, "## Code baseline")
+    if not code:
+        return ["Source register is missing the Code baseline section"]
+    errors.extend(
+        concrete_value_errors(
+            code,
+            CODE_BASELINE_FIELDS,
+            "Source register Code baseline",
+            allow_reasoned_na={"Repomix initialization:", "Modules and tests inspected:"},
+        )
+    )
+    mode = field_value(code, "Mode:").strip().lower()
+    ai_team_root = next(
+        (ancestor for ancestor in source.resolve().parents if ancestor.name == ".ai-team"),
+        None,
+    )
+    existing_code = bool(
+        ai_team_root and repository_contains_code(ai_team_root.parent)
+    )
+    if mode not in {"existing-code", "greenfield"}:
+        errors.append("Source register Code baseline Mode must be existing-code or greenfield")
+    if existing_code and mode != "existing-code":
+        errors.append(
+            "repository contains business or test source; Code baseline Mode must be existing-code"
+        )
+
+    repomix = field_value(code, "Repomix initialization:")
+    if existing_code or mode == "existing-code":
+        required_markers = ("runner=", "command=", "scope=", "exclusions=")
+        if (
+            not is_pass(repomix)
+            or not re.search(r"\brepomix\b", repomix, re.IGNORECASE)
+            or not re.search(r"\b\d+\.\d+(?:\.\d+)?\b", repomix)
+            or any(marker not in repomix.lower() for marker in required_markers)
+            or not re.search(r"\b(?:files|tokens)=\d+\b", repomix, re.IGNORECASE)
+        ):
+            errors.append(
+                format_error(
+                    "Source register Repomix initialization is incomplete",
+                    repomix,
+                    "repomix_initialization",
+                )
+            )
+    elif mode == "greenfield" and not has_reasoned_na(repomix):
+        errors.append(
+            format_error(
+                "Greenfield Repomix initialization",
+                repomix,
+                "repomix_initialization",
+            )
+        )
+
+    code_read_at = field_value(code, "Read at:")
+    if not re.search(r"\b\d{4}-\d{2}-\d{2}(?=[T\s]|$)", code_read_at):
+        errors.append("Source register Code baseline Read at needs an ISO-style date")
+    return errors
+
+
+def repository_contains_code(project_root: Path) -> bool:
+    """Conservatively detect pre-existing business or test source outside generated trees."""
+    for _, directories, files in os.walk(project_root):
+        directories[:] = [
+            name for name in directories if name not in CODE_SCAN_EXCLUDED_DIRS
+        ]
+        if any(Path(name).suffix.lower() in CODE_SUFFIXES for name in files):
+            return True
+    return False
 
 
 def acceptance_spec_errors(path: Path) -> tuple[list[str], set[str], set[str]]:

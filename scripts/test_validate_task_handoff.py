@@ -111,6 +111,14 @@ class HandoffValidatorTests(unittest.TestCase):
 - Status: no-prd intake
 - Version or updated at: N/A — initial request captured once
 - Read at: 2026-08-12T10:00+08:00
+
+## Code baseline
+- Repository / directory: `.`
+- Mode: existing-code
+- Repomix initialization: PASS — Repomix 1.9.0; runner=npx --yes repomix@latest; command=npx --yes repomix@latest --compress --output /tmp/project.xml; scope=.; exclusions=.ai-team,node_modules,.env*; files=2; tokens=100
+- Baseline description: existing calculator source and regression tests
+- Modules and tests inspected: `src/calculator/input.ts`; `tests/calculator/input.test.ts`
+- Read at: 2026-08-12T10:01+08:00
 """,
             encoding="utf-8",
         )
@@ -197,6 +205,7 @@ class HandoffValidatorTests(unittest.TestCase):
         standard = template_card("Task card")
         fast = template_card("Minimal Fast-path task card")
         baseline = template_card("Engineering baseline")
+        source_register = template_card("Source register")
         for fields in (
             validator.SNAPSHOT_FIELDS,
             validator.PLANNING_FIELDS,
@@ -213,8 +222,61 @@ class HandoffValidatorTests(unittest.TestCase):
             self.assertIn(field, baseline)
         for column in validator.CREDENTIAL_READINESS_COLUMNS:
             self.assertIn(column, baseline)
+        for field in validator.CODE_BASELINE_FIELDS:
+            self.assertIn(field, source_register)
         self.assertNotIn("transitions", validator.WORKFLOW_SCHEMA)
         self.assertNotIn("reentry_targets", validator.WORKFLOW_SCHEMA)
+
+    def test_existing_code_requires_a_complete_repomix_initialization_record(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            project = Path(temp_dir)
+            ai_team = project / ".ai-team"
+            ai_team.mkdir()
+            source = ai_team / "sources.md"
+            source.write_text(
+                """# Source Register
+
+## Product requirement source
+- Type: initial user request
+- URL or verbatim request: Extend the existing calculator.
+- Authority: primary business-rule source
+- Status: no-prd intake
+- Version or updated at: N/A — initial request captured once
+- Read at: 2026-08-14T10:00+08:00
+
+## Code baseline
+- Repository / directory: `.`
+- Mode: greenfield
+- Repomix initialization: N/A — no pre-existing business or test source
+- Baseline description: no prior code
+- Modules and tests inspected: N/A — no prior source
+- Read at: 2026-08-14T10:01+08:00
+""",
+                encoding="utf-8",
+            )
+            self.assertEqual([], validator.source_register_errors(source))
+            code = project / "src/existing.py"
+            code.parent.mkdir()
+            code.write_text("VALUE = 1\n", encoding="utf-8")
+
+            errors = validator.source_register_errors(source)
+            self.assertTrue(any("Mode must be existing-code" in error for error in errors), errors)
+
+            text = source.read_text(encoding="utf-8").replace(
+                "- Mode: greenfield", "- Mode: existing-code"
+            )
+            source.write_text(text, encoding="utf-8")
+            errors = validator.source_register_errors(source)
+            self.assertTrue(any("Repomix initialization is incomplete" in error for error in errors), errors)
+
+            source.write_text(
+                text.replace(
+                    "- Repomix initialization: N/A — no pre-existing business or test source",
+                    "- Repomix initialization: PASS — Repomix 1.9.0; runner=npx --yes repomix@latest; command=npx --yes repomix@latest --compress --output /tmp/project.xml; scope=.; exclusions=.ai-team,node_modules,.env*; files=1; tokens=10",
+                ),
+                encoding="utf-8",
+            )
+            self.assertEqual([], validator.source_register_errors(source))
 
     def test_identifier_ranges_are_rejected_at_task_and_matrix_boundaries(self) -> None:
         self.assertEqual(

@@ -29,6 +29,8 @@ Fill the product requirement source before product analysis. Add optional eviden
 
 ## Code baseline
 - Repository / directory:
+- Mode: existing-code / greenfield
+- Repomix initialization: PASS — Repomix <version>; runner=<repomix or npx --yes repomix@latest>; command=<exact command>; scope=<packed scope>; exclusions=<secret/generated/dependency exclusions>; files=<count>; tokens=<count> / N/A — greenfield has no pre-existing business or test source
 - Baseline description:
 - Modules and tests inspected:
 - Read at:

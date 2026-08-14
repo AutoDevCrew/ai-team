@@ -95,6 +95,18 @@ class ProjectConsistencyTests(unittest.TestCase):
         }
         for old, new in replacements.items():
             text = text.replace(old, new, 1)
+        code_replacements = {
+            "- Repository / directory:": "- Repository / directory: `.`",
+            "- Mode: existing-code / greenfield": "- Mode: existing-code",
+            "- Repomix initialization: PASS — Repomix <version>; runner=<repomix or npx --yes repomix@latest>; command=<exact command>; scope=<packed scope>; exclusions=<secret/generated/dependency exclusions>; files=<count>; tokens=<count> / N/A — greenfield has no pre-existing business or test source": "- Repomix initialization: PASS — Repomix 1.9.0; runner=npx --yes repomix@latest; command=npx --yes repomix@latest --compress --output /tmp/project.xml; scope=.; exclusions=.ai-team,node_modules,.env*; files=2; tokens=100",
+            "- Baseline description:": "- Baseline description: existing calculator source and regression tests",
+            "- Modules and tests inspected:": "- Modules and tests inspected: `src/calculator/input.ts`; `tests/calculator/input.test.ts`",
+        }
+        for old, new in code_replacements.items():
+            text = text.replace(old, new, 1)
+        before, marker, after = text.rpartition("- Read at:")
+        self.assertTrue(marker)
+        text = before + "- Read at: 2026-08-11T10:01+08:00" + after
         source.write_text(text, encoding="utf-8")
 
     def fill_specs(self, project: Path) -> None:
@@ -229,6 +241,20 @@ class ProjectConsistencyTests(unittest.TestCase):
                 text=True,
             )
             self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+
+    def test_existing_code_blocks_project_check_until_repomix_intake_is_recorded(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            project = Path(temp_dir)
+            self.materialize_project(project)
+            source = project / "src/existing.py"
+            source.parent.mkdir()
+            source.write_text("VALUE = 1\n", encoding="utf-8")
+
+            errors = checker.check_project(project)
+            self.assertTrue(any("Repomix" in error for error in errors), errors)
+
+            self.fill_source_register(project)
+            self.assertEqual([], checker.check_project(project))
 
     def test_rendered_relative_paths_are_posix_on_windows(self) -> None:
         root = PureWindowsPath(r"C:\work\project")
