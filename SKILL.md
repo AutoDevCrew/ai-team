@@ -7,7 +7,7 @@ description: Launch or refine a Codex-run local software delivery team from a PR
 
 Run a Codex-native software delivery workflow from requirement input through local verification and named human acceptance checkpoints. Use one serial implementation engineer and independent verification; do not build another orchestration framework.
 
-Workflow revision: `ai-team-2026-08-14-r42`. Projects use this current layout only; older workflow layouts are unsupported.
+Workflow revision: `ai-team-2026-08-14-r43`. Projects use this current layout only; older workflow layouts are unsupported.
 
 ## Authority model
 
@@ -42,8 +42,8 @@ The global Skill is the installation source, not a project runtime dependency. N
 
 Follow the project-local workflow and role protocol; do not recreate their rules in task prompts.
 
-1. Register sources under [`Sources and intake`](references/delivery-policy.md#sources-and-intake), and establish project-stage authority under [`Gate authority`](references/delivery-policy.md#gate-authority).
-2. Dispatch the applicable product, UX/UI, technical, and verification roles to produce the acceptance, baseline, design, and test inputs required by [`Gate authority`](references/delivery-policy.md#gate-authority).
+1. Register sources under [`Sources and intake`](references/delivery-policy.md#sources-and-intake); establish project-stage authority and select only the applicable checklist: [`Engineering baseline PASS`](references/delivery-policy.md#engineering-baseline-pass), [`Task-design-ready`](references/delivery-policy.md#task-design-ready), [`Implementation-ready`](references/delivery-policy.md#implementation-ready), or [`Technical completion`](references/delivery-policy.md#technical-completion).
+2. Dispatch the applicable product, UX/UI, technical, and verification roles to produce only the inputs required by that exact checklist.
 3. Maintain one backlog and compact delta cards under [`Task planning and batches`](references/delivery-policy.md#task-planning-and-batches); start one serial implementation engineer only after the task's readiness gate and stage authority pass.
 4. Validate the current candidate under [`Handoffs and validation`](references/delivery-policy.md#handoffs-and-validation) and [`Test execution`](references/delivery-policy.md#test-execution); apply [`Human decisions and acceptance`](references/delivery-policy.md#human-decisions-and-acceptance) and [`Change and feedback re-entry`](references/delivery-policy.md#change-and-feedback-re-entry) when triggered.
 5. At each task boundary, run the project check with `--task TASK-... --gate <gate> --next-action`; execute or dispatch its eligible local action, then continue according to [`Autonomous progression and turn boundary`](references/delivery-policy.md#autonomous-progression-and-turn-boundary).

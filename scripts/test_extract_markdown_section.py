@@ -136,6 +136,39 @@ class MarkdownSectionTests(unittest.TestCase):
                 f"delivery-policy H2 not found: {heading}",
             )
 
+    def test_gate_checklists_are_independently_extractable(self) -> None:
+        policy = POLICY.read_text(encoding="utf-8")
+        navigation = extractor.extract_h2_section(policy, "Gate authority")
+        self.assertIsNotNone(navigation)
+        self.assertNotIn("Required for a greenfield project", navigation)
+        for heading in (
+            "Engineering baseline PASS",
+            "Task-design-ready",
+            "Implementation-ready",
+            "Technical completion",
+        ):
+            with self.subTest(heading=heading):
+                section = extractor.extract_h2_section(policy, heading)
+                self.assertIsNotNone(section)
+                self.assertGreater(len(section), 200)
+
+    def test_conditional_tool_policy_sections_are_independently_extractable(self) -> None:
+        policy = POLICY.read_text(encoding="utf-8")
+        general = extractor.extract_h2_section(policy, "Tool use and degradation")
+        credentials = extractor.extract_h2_section(
+            policy, "Credential and integration treatment"
+        )
+        web_ui = extractor.extract_h2_section(
+            policy, "Web UI and TestSprite treatment"
+        )
+        self.assertIsNotNone(general)
+        self.assertIsNotNone(credentials)
+        self.assertIsNotNone(web_ui)
+        self.assertNotIn("API_KEY", general)
+        self.assertIn("For `mockable`", credentials)
+        self.assertNotIn("TestSprite MCP installation", credentials)
+        self.assertIn("TestSprite MCP installation", web_ui)
+
 
 if __name__ == "__main__":
     unittest.main()

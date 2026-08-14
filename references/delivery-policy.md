@@ -1,6 +1,6 @@
 # Delivery Policy
 
-Workflow revision: `ai-team-2026-08-14-r42`.
+Workflow revision: `ai-team-2026-08-14-r43`.
 
 This is the single global authority for AI-team delivery lanes, states, gates, handoffs, validation, severity, acceptance, and re-entry. Copy it to `.ai-team/governance/workflow.md` during project initialization. The project-local copy is the runtime authority for that project.
 
@@ -67,7 +67,7 @@ analysis → task-design-ready → implementation-ready → implementing → awa
 
 Across this policy, each gate checklist controls its gate. Supporting prose explains evidence and exceptions; when a checklist delegates to another section, apply that section only to the scope named by the checklist.
 
-### Engineering baseline PASS
+## Engineering baseline PASS
 
 Required for a greenfield project and after a material baseline change:
 
@@ -77,7 +77,7 @@ Required for a greenfield project and after a material baseline change:
 
 An existing repository derives these constraints from manifests, configuration, code, and tests. Preserve its established stack unless a task requires change.
 
-### Task-design-ready
+## Task-design-ready
 
 1. Every evaluated requirement is covered, out of scope with source/decision rationale, or awaiting a decision; only covered requirements need AC/TASK/TEST delivery mappings.
 2. Observable acceptance criteria map `REQ → AC → TEST → TASK → evidence`.
@@ -89,7 +89,7 @@ An existing repository derives these constraints from manifests, configuration, 
 
 Pending upstream implementation or a closed project stage is an implementation blocker, not a design failure, when the upstream contract is frozen.
 
-### Implementation-ready
+## Implementation-ready
 
 1. Design dependencies are frozen.
 2. Implementation dependencies and environment are ready.
@@ -107,7 +107,7 @@ Pending upstream implementation or a closed project stage is an implementation b
 - Require a fresh verifier review for any unlisted discrepancy or change to source, requirement, design, contract, test manifest, risk treatment, or relevant environment assumption.
 - Exclude High-risk tasks; they always receive a separate current implementation-readiness review after task design.
 
-### Technical completion
+## Technical completion
 
 1. The change remains within approved scope or has a confirmed decision.
 2. Implementation self-check records build/generation/lint/type-check, required tests, omissions, and residual risks.
@@ -214,7 +214,11 @@ Finding severity is distinct from backlog priority.
 ## Tool use and degradation
 
 - For every existing-code repository, use scoped `$repomix-explorer` for the mandatory initialization above and prefer it for later broad architecture or cross-file discovery. Regenerate the temporary pack when relevant code changes. Use targeted local search for a known symbol or exact path after initialization.
-- An unavailable optional Figma, browser route, or convenience tool is not by itself a blocker. Continue with targeted source/code evidence or provider-neutral tests and record the limitation. Repomix is not optional for existing-code initialization, and TestSprite is not optional for the final gate of browser-rendered Web UI scope. Treat any other unavailable tool as a hard evidence gap only when that source or capability is explicitly required for acceptance or is the sole authority for a material rule.
+- An unavailable optional Figma, browser route, or convenience tool is not by itself a blocker. Continue with targeted source/code evidence or provider-neutral tests and record the limitation. Repomix is not optional for existing-code initialization. Treat another unavailable capability as a hard evidence gap only when it is explicitly required for acceptance or is the sole authority for a material rule.
+- For `external-integration`, also read `Credential and integration treatment`. For `web-ui` or `testsprite`, also read `Web UI and TestSprite treatment`. Do not load either conditional section when its trigger is absent.
+
+## Credential and integration treatment
+
 - During source intake and engineering-baseline work, inventory integrations and tool authorizations before affected task design, using the exact Schema/template fields. Declare `external-integration` on every affected task.
 - Record key names, contract source, treatment, safe local target, readiness status, mock/fallback and live TEST IDs, affected task/latest-needed gate, and redacted probe evidence. Consolidate user action into one notice grouped as needed now, safely deferrable, or optional; create a decision card only for a material product, cost, permission, or provider choice.
 - Prefer the project's existing secret-loading convention. When an evidenced integration lacks its local target, Codex may create a valid local-only scaffold during analysis with required key names, blank secret values, safe comments, and known non-secret defaults.
@@ -224,10 +228,13 @@ Finding severity is distinct from backlog priority.
 - For `equivalent-fallback`, record the approved runner or evidence source. For `non-substitutable`, notify when identified and block only the affected execution or declared gate.
 - After the user reports configuration complete, check required values for presence without rendering them, run the smallest authorized authentication/connectivity probe, record only redacted status and evidence, and automatically resume the affected gate. When real credentials arrive after mock-scoped work, invalidate only affected simulated integration evidence, run the frozen live tests, and re-enter design or implementation only if the real contract differs.
 - The final verification and any human-acceptance package must distinguish mock/fixture evidence from live sandbox evidence and explicitly report every integration not exercised with real authorized credentials. Mock evidence never proves live authentication, provider response shape/fill rate, limits, cost, accuracy, licence, or SLA.
+
+## Web UI and TestSprite treatment
+
 - For browser-rendered Web UI scope, declare both `web-ui` and `testsprite`. During task design, the independent verifier freezes provider-neutral TEST IDs and a source-backed coverage map for copy/content, layout/style, interaction/states, responsive viewports, accessibility, and affected regression.
 - Copy and visual categories always require TEST IDs; other inapplicable categories require a concrete reason. Product rules own wording; Figma, scoped Demo, the design system, or an accepted visual baseline owns visual expectations. Record explicit tolerances rather than unsupported pixel-perfect claims.
 - This global Web UI rule authorizes the minimum reversible host-level TestSprite MCP installation and configuration at readiness without another installation prompt. Use `npx @testsprite/testsprite-mcp@latest`; keep `API_KEY` only in the host MCP environment; reload the host; and verify tool discovery without exposing the key.
-- Inventory TestSprite readiness during baseline/design. If the API key, account, quota, or environment is missing, notify once with the exact secure configuration location. Continue safe requirements, design, implementation, and non-TestSprite checks, but block the final Web UI gate.
+- TestSprite is mandatory for the final gate of browser-rendered Web UI scope. Inventory its readiness during baseline/design. If the API key, account, quota, environment, or tool discovery is missing, notify once with the exact secure configuration location. Continue safe requirements, design, implementation, and non-TestSprite checks, but block the final Web UI gate.
 - This authority excludes obtaining or moving secrets, paid-plan purchase, administrator actions, runtime replacement, production access, and deployment.
 - Execute frozen UI cases only after the affected implementation exists. The serial implementer may run focused TestSprite or Playwright checks while iterating. The independent verifier runs all prerequisite suites, then TestSprite as the final automated UI acceptance execution on the fresh candidate and reviews its report plus screenshot/video evidence. Playwright may supplement development and regression but cannot replace the final TestSprite gate. TestSprite never replaces unit, integration, contract, security, or accessibility-specific checks that the frozen plan requires.
 - If Playwright is selected for supplemental checks and absent, install it project-locally with the detected package manager only when current implementation or verification authority permits test-tool changes; reuse the lockfile and never install it globally. `analysis-only` work may plan cases and runners but may not install project dependencies. Never claim unavailable-tool evidence as PASS, expose credentials, target production, or deploy without separate authority.
