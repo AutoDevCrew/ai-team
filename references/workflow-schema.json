@@ -1,5 +1,5 @@
 {
-  "workflow_revision": "ai-team-2026-08-14-r41",
+  "workflow_revision": "ai-team-2026-08-14-r42",
   "enums": {
     "gates": ["task-design", "implementation-ready", "verified-complete"],
     "task_states": ["analysis", "awaiting-human-decision", "task-design-ready", "implementation-ready", "implementing", "awaiting-verification", "complete", "cancelled/superseded"],
@@ -22,6 +22,40 @@
     "task-design": ["analysis-only", "implementation-authorized", "verification-only"],
     "implementation-ready": ["implementation-authorized"],
     "verified-complete": ["implementation-authorized", "verification-only"]
+  },
+  "state_contracts": {
+    "analysis": {
+      "owner_roles": ["delivery coordinator", "product analyst", "ux/ui designer", "technical lead", "independent verifier", "code and security reviewer"],
+      "next_gates": ["task-design"]
+    },
+    "awaiting-human-decision": {
+      "owner_roles": ["delivery coordinator"],
+      "next_gates": ["task-design", "implementation-ready", "verified-complete", "human-acceptance", "none"]
+    },
+    "task-design-ready": {
+      "owner_roles": ["delivery coordinator", "technical lead", "independent verifier", "code and security reviewer"],
+      "next_gates": ["implementation-ready"]
+    },
+    "implementation-ready": {
+      "owner_roles": ["serial implementation engineer"],
+      "next_gates": ["verified-complete"]
+    },
+    "implementing": {
+      "owner_roles": ["serial implementation engineer"],
+      "next_gates": ["verified-complete"]
+    },
+    "awaiting-verification": {
+      "owner_roles": ["independent verifier", "code and security reviewer"],
+      "next_gates": ["verified-complete"]
+    },
+    "complete": {
+      "owner_roles": ["delivery coordinator"],
+      "next_gates": ["human-acceptance", "none"]
+    },
+    "cancelled/superseded": {
+      "owner_roles": ["delivery coordinator"],
+      "next_gates": ["none"]
+    }
   },
   "lane_contracts": {
     "fast": {

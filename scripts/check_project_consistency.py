@@ -27,6 +27,13 @@ FINDING_ID_PATTERN = re.compile(r"\bFIND-[A-Za-z0-9._-]+\b", re.IGNORECASE)
 TERMINAL_STATES = {"complete", "cancelled", "cancelled/superseded", "superseded"}
 OWNER_ROLES = set(WORKFLOW_SCHEMA["enums"]["owner_roles"])
 NEXT_GATES = set(WORKFLOW_SCHEMA["enums"]["next_gates"])
+STATE_CONTRACTS = {
+    state.casefold(): {
+        "owner_roles": {value.casefold() for value in contract["owner_roles"]},
+        "next_gates": {value.casefold() for value in contract["next_gates"]},
+    }
+    for state, contract in WORKFLOW_SCHEMA["state_contracts"].items()
+}
 CHECKPOINT_MODES = set(WORKFLOW_SCHEMA["enums"]["checkpoint_modes"])
 CHECKPOINT_STATUSES = set(WORKFLOW_SCHEMA["enums"]["checkpoint_statuses"])
 BACKLOG_COLUMNS = tuple(WORKFLOW_SCHEMA["tables"]["backlog_columns"])
@@ -415,12 +422,26 @@ def task_inventory_errors(project_root: Path, task_root: Path, board: Path) -> l
         if task_id in row_ids:
             errors.append(f"duplicate backlog task ID: {task_id}")
         row_ids.add(task_id)
+        state = row.get("State", "").strip().casefold()
         owner = row.get("Owner role", "").strip().casefold()
         if owner not in OWNER_ROLES:
             errors.append(f"invalid backlog Owner role for {task_id}: {owner or 'missing'}")
         next_gate = row.get("Next gate", "").strip().casefold()
         if next_gate not in NEXT_GATES:
             errors.append(f"invalid backlog Next gate for {task_id}: {next_gate or 'missing'}")
+        state_contract = STATE_CONTRACTS.get(state)
+        if state_contract and owner in OWNER_ROLES and owner not in state_contract["owner_roles"]:
+            allowed = ", ".join(sorted(state_contract["owner_roles"]))
+            errors.append(
+                f"backlog Owner role conflicts with State for {task_id}: "
+                f"{owner} is not allowed for {state}; expected one of {allowed}"
+            )
+        if state_contract and next_gate in NEXT_GATES and next_gate not in state_contract["next_gates"]:
+            allowed = ", ".join(sorted(state_contract["next_gates"]))
+            errors.append(
+                f"backlog Next gate conflicts with State for {task_id}: "
+                f"{next_gate} is not allowed for {state}; expected one of {allowed}"
+            )
         blocker = row.get("Blocker / decision", "").strip()
         if blocker and not validator.is_none(blocker):
             task_refs = {

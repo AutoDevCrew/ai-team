@@ -107,6 +107,17 @@ class MarkdownSectionTests(unittest.TestCase):
         )
         self.assertIn("`Role assignment envelope`", roles)
 
+    def test_decision_card_uses_decision_log_status_vocabulary(self) -> None:
+        decision_card = extractor.extract_h2_section(
+            TEMPLATES.read_text(encoding="utf-8"), "Decision card"
+        )
+        self.assertIsNotNone(decision_card)
+        self.assertIn(
+            "- Status: open / pending / confirmed / rejected / obsolete",
+            decision_card,
+        )
+        self.assertNotIn("awaiting confirmation / confirmed / obsolete", decision_card)
+
     def test_run_delivery_policy_links_resolve_to_exact_h2_sections(self) -> None:
         skill = (SKILL_ROOT / "SKILL.md").read_text(encoding="utf-8")
         run_delivery = extractor.extract_h2_section(skill, "Run delivery")

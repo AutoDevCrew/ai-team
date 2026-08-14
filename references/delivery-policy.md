@@ -1,6 +1,6 @@
 # Delivery Policy
 
-Workflow revision: `ai-team-2026-08-14-r41`.
+Workflow revision: `ai-team-2026-08-14-r42`.
 
 This is the single global authority for AI-team delivery lanes, states, gates, handoffs, validation, severity, acceptance, and re-entry. Copy it to `.ai-team/governance/workflow.md` during project initialization. The project-local copy is the runtime authority for that project.
 
@@ -53,6 +53,8 @@ Fast path uses the lane-contract sections declared in the Schema and may claim `
 | Acceptance checkpoint | named ID plus `blocking` or `non-blocking` mode and `pending`, `accepted`, `rejected`, or `conditional` status; otherwise `none` / `not-required` | Human product review boundary |
 
 `complete` is the task state. `verified-complete` is the technical outcome that justifies it; they are not competing states. A named checkpoint may group completed tasks and does not change their technical outcome.
+
+In the backlog, `Owner role` means the role responsible for the next executable task action, not the coordinator's durable ownership of backlog state. `Next gate` means the gate expected after that action or decision resolves. Allowed state/owner/gate combinations come only from the Schema's `state_contracts`.
 
 ```text
 analysis → task-design-ready → implementation-ready → implementing → awaiting-verification → complete

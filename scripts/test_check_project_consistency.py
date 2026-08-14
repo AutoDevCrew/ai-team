@@ -60,6 +60,17 @@ def review_record(phase: str) -> str:
 
 
 class ProjectConsistencyTests(unittest.TestCase):
+    def test_state_contracts_cover_schema_enums(self) -> None:
+        self.assertEqual(
+            set(checker.WORKFLOW_SCHEMA["enums"]["task_states"]),
+            set(checker.STATE_CONTRACTS),
+        )
+        for contract in checker.STATE_CONTRACTS.values():
+            self.assertTrue(contract["owner_roles"])
+            self.assertTrue(contract["next_gates"])
+            self.assertLessEqual(contract["owner_roles"], checker.OWNER_ROLES)
+            self.assertLessEqual(contract["next_gates"], checker.NEXT_GATES)
+
     def materialize_project(self, root: Path) -> None:
         shutil.copytree(PROJECT_TEMPLATE, root, dirs_exist_ok=True)
         governance = root / ".ai-team/governance"
@@ -440,8 +451,11 @@ class ProjectConsistencyTests(unittest.TestCase):
             card_text = self.with_candidate_ledger(project, card_text)
             card.write_text(card_text, encoding="utf-8")
             backlog.write_text(
-                backlog.read_text(encoding="utf-8").replace(
-                    "| implementing |", "| awaiting-verification |"
+                backlog.read_text(encoding="utf-8")
+                .replace("| implementing |", "| awaiting-verification |")
+                .replace(
+                    "| serial implementation engineer |",
+                    "| independent verifier |",
                 ),
                 encoding="utf-8",
             )
@@ -462,8 +476,12 @@ class ProjectConsistencyTests(unittest.TestCase):
                 encoding="utf-8",
             )
             backlog.write_text(
-                backlog.read_text(encoding="utf-8").replace(
-                    "| awaiting-verification |", "| complete |"
+                backlog.read_text(encoding="utf-8")
+                .replace("| awaiting-verification |", "| complete |")
+                .replace("| independent verifier |", "| delivery coordinator |")
+                .replace(
+                    "| none | none | verified-complete |",
+                    "| none | none | none |",
                 ),
                 encoding="utf-8",
             )
@@ -776,6 +794,40 @@ class ProjectConsistencyTests(unittest.TestCase):
             errors = checker.check_project(project)
             self.assertTrue(any("Owner role" in error for error in errors), errors)
             self.assertTrue(any("Next gate" in error for error in errors), errors)
+
+    def test_backlog_owner_and_next_gate_must_match_state_contract(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            project = Path(temp_dir)
+            self.materialize_project(project)
+            _, backlog = self.prepare_standard_ready_project(project)
+            backlog.write_text(
+                backlog.read_text(encoding="utf-8").replace(
+                    "| TASK-EXAMPLE-STD-001 | Input validation | implementation-ready | standard | M | BATCH-EXAMPLE-01 | serial implementation engineer | none | none | verified-complete | [card](TASK-EXAMPLE-STD-001.md) |",
+                    "| TASK-EXAMPLE-STD-001 | Input validation | implementation-ready | standard | M | BATCH-EXAMPLE-01 | product analyst | none | none | none | [card](TASK-EXAMPLE-STD-001.md) |",
+                ),
+                encoding="utf-8",
+            )
+            errors = checker.check_project(project)
+            self.assertTrue(
+                any("Owner role conflicts with State" in error for error in errors),
+                errors,
+            )
+            self.assertTrue(
+                any("Next gate conflicts with State" in error for error in errors),
+                errors,
+            )
+
+    def test_triggered_reviewer_is_a_valid_awaiting_verification_owner(self) -> None:
+        contract = checker.STATE_CONTRACTS["awaiting-verification"]
+        self.assertIn("independent verifier", contract["owner_roles"])
+        self.assertIn("code and security reviewer", contract["owner_roles"])
+        self.assertEqual({"verified-complete"}, contract["next_gates"])
+
+    def test_human_decision_contract_preserves_resume_gate(self) -> None:
+        contract = checker.STATE_CONTRACTS["awaiting-human-decision"]
+        self.assertIn("task-design", contract["next_gates"])
+        self.assertIn("implementation-ready", contract["next_gates"])
+        self.assertIn("verified-complete", contract["next_gates"])
 
     def test_next_action_selects_first_unblocked_dependency_ready_task(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -1170,6 +1222,10 @@ class ProjectConsistencyTests(unittest.TestCase):
                 backlog.read_text(encoding="utf-8")
                 .replace(
                     "| implementation-ready |", "| awaiting-verification |"
+                )
+                .replace(
+                    "| serial implementation engineer |",
+                    "| independent verifier |",
                 )
                 .replace(
                     "| none | verified-complete | [card](TASK-EXAMPLE-STD-001.md) |",
