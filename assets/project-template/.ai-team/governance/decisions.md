@@ -19,10 +19,10 @@ This file records project decision entries with `- Status: open`, `pending`, `co
 ## POL-003: Agent roles and implementation model
 
 - Status: confirmed
-- **Decision:** Use Codex as the coordinator and temporary specialist roles; do not build a separate orchestration framework.
+- **Decision:** Use the active agent or session as the coordinator and temporary isolated specialist workers when available; do not build a separate orchestration framework.
 - **Implementation:** One serial implementation engineer modifies business code.
 - **Handoffs:** Use project artifacts; use `DISC-xxx` only for unresolved questions.
-- **Runtime topology:** Keep Codex as root coordinator, one writable serial implementer, and at most two concurrent temporary read-only specialists/reviewers; retire children after handoff.
+- **Runtime topology:** Keep the primary agent or session as coordinator, one writable serial implementer, and at most two concurrent temporary read-only specialists/reviewers; retire specialist workers after handoff. When isolation is unavailable, disclose that limitation and execute bounded role passes sequentially.
 
 ## POL-004: Autonomous decisions and human escalation
 

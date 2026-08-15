@@ -1,6 +1,6 @@
 # Role Protocol
 
-Workflow revision: `ai-team-2026-08-14-r43`.
+Workflow revision: `ai-team-2026-08-14-r44`.
 
 This is the single global authority for AI-team role responsibilities and boundaries. Copy it to `.ai-team/governance/roles.md` during project initialization. The project-local copy is the runtime authority.
 
@@ -23,17 +23,17 @@ Normal handoffs use project artifacts. Create `DISC-xxx` only for an unresolved 
 
 ## Agent orchestration and lifecycle
 
-When the host provides child agents, use actual temporary agents for independent specialist work:
+When the host provides isolated specialist workers, use temporary isolated workers for independent specialist work:
 
-1. Keep the root agent as the delivery coordinator and durable owner of backlog state.
+1. Keep the primary agent or session as the delivery coordinator and durable owner of backlog state.
 2. Allow exactly one writable serial implementation engineer. Never parallelize business-code writers.
 3. Allow at most two concurrent read-only specialists or reviewers, and only when their scopes are independent. Ordered artifact authorship still follows the delivery path.
-4. Before dispatching a child, complete the `Role assignment envelope` in `governance/templates.md`; bind it to one role, one bounded task/scope, and the current Snapshot.
+4. Before dispatching a specialist worker, complete the `Role assignment envelope` in `governance/templates.md`; bind it to one role, one bounded task/scope, and the current Snapshot.
 5. Reuse a specialist within the same task or batch while its role, scope, and frozen requirement/contract inputs remain unchanged. A code-only candidate change invalidates evidence, not the Agent; provide the refreshed Snapshot and diff before reuse.
-6. Retire a child when the task/batch scope closes, its role changes, requirement/contract authority changes, or its context cannot be refreshed safely. Do not accumulate duplicate reviewers or duplicate broad runs.
-7. If child agents are unavailable, execute the same roles sequentially with separate artifact authorship and disclose the limitation; do not weaken independent review criteria.
+6. Retire a specialist worker when the task/batch scope closes, its role changes, requirement/contract authority changes, or its context cannot be refreshed safely. Do not accumulate duplicate reviewers or duplicate broad runs.
+7. If isolated specialist workers are unavailable, execute the same role passes sequentially with fresh bounded inputs and role-attributed artifacts. Disclose that process independence was unavailable; never claim process isolation occurred, and preserve the same review and evidence criteria.
 
-The coordinator starts the next eligible child or performs the next eligible local action in the same turn. Preparing an assignment without dispatching or executing it is not progression.
+The coordinator starts the next eligible specialist worker or performs the next eligible local action in the same turn. Preparing an assignment without dispatching or executing it is not progression.
 
 ## Delivery coordinator
 
@@ -125,7 +125,7 @@ The coordinator starts the next eligible child or performs the next eligible loc
 ### Responsibilities
 
 1. Classify the repository as existing-code or greenfield, then derive the existing engineering baseline or author a greenfield baseline without replacing supported stack choices unnecessarily.
-2. For existing-code, run scoped `$repomix-explorer` before product analysis, baseline derivation, or task design. Prefer installed `repomix`; otherwise use `npx --yes repomix@latest`. Record version, runner, exact command, scope, exclusions, and metrics in the source register. Do not substitute targeted search when this initialization gate fails. After it passes, prefer Repomix for broad discovery and use targeted search for known symbols or paths.
+2. For existing-code, execute the Repomix initialization and discovery rules defined under `Sources and intake` in `governance/workflow.md` before product analysis, baseline derivation, or task design. Do not substitute targeted search when this initialization gate fails.
 3. Produce the minimal design, module/data boundaries, failure/recovery paths, risks, task dependencies, and requirement-to-design/test mapping.
 4. Declare each task's interface/protocol disposition and freeze changed contracts and compatibility expectations.
 5. Freeze runtime-chain and security treatments when the workflow triggers them.

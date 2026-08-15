@@ -1,6 +1,6 @@
 # Delivery Policy
 
-Workflow revision: `ai-team-2026-08-14-r43`.
+Workflow revision: `ai-team-2026-08-14-r44`.
 
 This is the single global authority for AI-team delivery lanes, states, gates, handoffs, validation, severity, acceptance, and re-entry. Copy it to `.ai-team/governance/workflow.md` during project initialization. The project-local copy is the runtime authority for that project.
 
@@ -25,7 +25,7 @@ The product analyst owns intended behavior. The UX/UI designer owns unspecified 
 - Classify a repository with business or test source as `existing-code`; otherwise classify it as `greenfield` and record a reasoned Repomix N/A.
 - Before product analysis, engineering-baseline work, or task design for existing code, the technical lead initializes discovery with an installed `repomix` or transient `npx --yes repomix@latest`—never a global install.
 - Resolve `<runner> --version`, then run `<runner> --compress --style xml --output <temporary-path> --ignore ".ai-team/**,node_modules/**,vendor/**,dist/**,build/**,coverage/**,.venv/**,**/.env*,**/*secret*,**/*credential*" <repository-root>`. Keep the raw pack temporary and local.
-- Record the version, runner, exact command, scope, exclusions, and file/token metrics in the source register. If Repomix cannot run, stop initialization and request only the minimum Node/npx or Repomix setup; targeted search is not a substitute.
+- Record the version, runner, exact command, scope, exclusions, and file/token metrics in the source register. If Repomix cannot run, stop initialization and request only the minimum Node/npx or Repomix setup; targeted search is not a substitute. After initialization, regenerate a temporary pack for broad architecture or cross-file discovery when relevant code changes, and use targeted local search for known symbols or exact paths.
 - The current product-requirement source must be `provided` or `no-prd intake`. Move superseded sources to history and replace the current entry; a superseded entry cannot authorize promoted work.
 - For a no-PRD request, create a lightweight acceptance specification. Classify each rule as evidence-backed, a reversible low-risk assumption with rationale, or awaiting a material human decision. An independent verifier freezes it only when scope, traceability, and testability are complete.
 - Before Standard/High-risk task promotion, freeze one project acceptance specification with an explicit REQ catalog and one project traceability matrix. List every evaluated REQ once as covered, out of scope with source/decision rationale, or awaiting decision; only covered rows map AC, TASK, and TEST IDs.
@@ -209,11 +209,10 @@ Finding severity is distinct from backlog priority.
 - Run the project consistency check with `--next-action`; repair its source-located `fix-consistency` action on FAIL, or dispatch/execute its eligible local action on PASS instead of returning a next-step report.
 - A closed implementation stage or pending upstream code does not stop allowed design, test, security, or review work when contracts are frozen.
 - Before returning, inspect the backlog. Stop only for a genuine human decision, missing required external evidence/authority, completion of all allowed work, a user pause/status request, or forced turn end.
-- Codex is not a background daemon. When a turn must end with work open, record the exact continuation point in the active task artifact.
+- Do not assume the agent host continues after returning a response. When a turn must end with work open, record the exact continuation point in the active task artifact.
 
 ## Tool use and degradation
 
-- For every existing-code repository, use scoped `$repomix-explorer` for the mandatory initialization above and prefer it for later broad architecture or cross-file discovery. Regenerate the temporary pack when relevant code changes. Use targeted local search for a known symbol or exact path after initialization.
 - An unavailable optional Figma, browser route, or convenience tool is not by itself a blocker. Continue with targeted source/code evidence or provider-neutral tests and record the limitation. Repomix is not optional for existing-code initialization. Treat another unavailable capability as a hard evidence gap only when it is explicitly required for acceptance or is the sole authority for a material rule.
 - For `external-integration`, also read `Credential and integration treatment`. For `web-ui` or `testsprite`, also read `Web UI and TestSprite treatment`. Do not load either conditional section when its trigger is absent.
 
@@ -221,7 +220,7 @@ Finding severity is distinct from backlog priority.
 
 - During source intake and engineering-baseline work, inventory integrations and tool authorizations before affected task design, using the exact Schema/template fields. Declare `external-integration` on every affected task.
 - Record key names, contract source, treatment, safe local target, readiness status, mock/fallback and live TEST IDs, affected task/latest-needed gate, and redacted probe evidence. Consolidate user action into one notice grouped as needed now, safely deferrable, or optional; create a decision card only for a material product, cost, permission, or provider choice.
-- Prefer the project's existing secret-loading convention. When an evidenced integration lacks its local target, Codex may create a valid local-only scaffold during analysis with required key names, blank secret values, safe comments, and known non-secret defaults.
+- Prefer the project's existing secret-loading convention. When an evidenced integration lacks its local target, the active agent may create a valid local-only scaffold during analysis with required key names, blank secret values, safe comments, and known non-secret defaults.
 - Create a scaffold only after confirming the application reads that location and the target is excluded from publication; add only a narrow ignore rule when authorized. Never overwrite an existing secret-bearing file, copy a secret, put credentials under `.ai-team/`, use non-empty fake secrets, or echo values. If the target exists, report only missing key names and let the user edit it locally.
 - Mockability changes when work blocks, never whether a missing credential is disclosed: keep every missing credential in the baseline and consolidated notice. Never ask the user to paste a secret into chat.
 - For `mockable`, require a known contract, provider-neutral adapter, and contract-faithful mock/fixture. Freeze mock and later live authentication/contract TEST IDs; label simulated evidence; list unexecuted live calls; and limit `verified-complete` to mock-scoped behavior until the declared live gate. Missing contract evidence is not safely mockable.
@@ -233,7 +232,7 @@ Finding severity is distinct from backlog priority.
 
 - For browser-rendered Web UI scope, declare both `web-ui` and `testsprite`. During task design, the independent verifier freezes provider-neutral TEST IDs and a source-backed coverage map for copy/content, layout/style, interaction/states, responsive viewports, accessibility, and affected regression.
 - Copy and visual categories always require TEST IDs; other inapplicable categories require a concrete reason. Product rules own wording; Figma, scoped Demo, the design system, or an accepted visual baseline owns visual expectations. Record explicit tolerances rather than unsupported pixel-perfect claims.
-- This global Web UI rule authorizes the minimum reversible host-level TestSprite MCP installation and configuration at readiness without another installation prompt. Use `npx @testsprite/testsprite-mcp@latest`; keep `API_KEY` only in the host MCP environment; reload the host; and verify tool discovery without exposing the key.
+- This global Web UI rule authorizes the minimum reversible TestSprite MCP installation and configuration in the agent host at readiness without another installation prompt. Use `npx @testsprite/testsprite-mcp@latest`; keep `API_KEY` only in the host MCP environment; restart or reload the agent host according to its MCP configuration mechanism; and verify tool discovery without exposing the key.
 - TestSprite is mandatory for the final gate of browser-rendered Web UI scope. Inventory its readiness during baseline/design. If the API key, account, quota, environment, or tool discovery is missing, notify once with the exact secure configuration location. Continue safe requirements, design, implementation, and non-TestSprite checks, but block the final Web UI gate.
 - This authority excludes obtaining or moving secrets, paid-plan purchase, administrator actions, runtime replacement, production access, and deployment.
 - Execute frozen UI cases only after the affected implementation exists. The serial implementer may run focused TestSprite or Playwright checks while iterating. The independent verifier runs all prerequisite suites, then TestSprite as the final automated UI acceptance execution on the fresh candidate and reviews its report plus screenshot/video evidence. Playwright may supplement development and regression but cannot replace the final TestSprite gate. TestSprite never replaces unit, integration, contract, security, or accessibility-specific checks that the frozen plan requires.

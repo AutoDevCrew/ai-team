@@ -1,7 +1,7 @@
 # AI Team Layout Manifest
 
 - Layout version: `ai-team-layout-1`
-- Workflow revision: `ai-team-2026-08-14-r43`
+- Workflow revision: `ai-team-2026-08-14-r44`
 - Governance root: `.ai-team/governance`
 - Source register: `.ai-team/sources.md`
 - Acceptance specification: `.ai-team/specs/acceptance.md`
@@ -22,4 +22,4 @@
 - Workflow schema: `.ai-team/governance/workflow-schema.json`
 - Project stage: `.ai-team/stage.md`
 
-The root `AGENTS.md` is only the Codex entry point. This manifest is the sole path authority for AI delivery artifacts. Only this current layout is supported; root-level `docs/`, `tasks/`, `discussions/`, and `scripts/` are not AI-team artifact locations.
+The root `AGENTS.md` is the agent entry point. This manifest is the sole path authority for AI delivery artifacts. Only this current layout is supported; root-level `docs/`, `tasks/`, `discussions/`, and `scripts/` are not AI-team artifact locations.

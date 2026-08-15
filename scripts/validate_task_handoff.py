@@ -36,7 +36,7 @@ def _load_workflow_schema() -> dict:
     for candidate in candidates:
         if candidate.is_file():
             return json.loads(candidate.read_text(encoding="utf-8"))
-    raise RuntimeError("workflow-schema.json was not found beside the project or global skill")
+    raise RuntimeError("workflow-schema.json was not found beside the project or installed workflow package")
 
 
 WORKFLOW_SCHEMA = _load_workflow_schema()

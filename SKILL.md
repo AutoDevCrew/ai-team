@@ -1,13 +1,13 @@
 ---
 name: ai-team
-description: Launch or refine a Codex-run local software delivery team from a PRD with optional Figma and/or Demo inputs. Use when setting up reusable AI-team project rules, role handoffs, Markdown task tracking, scoped Demo inspection, structured multi-agent discussions, and human decision gates without building a separate orchestration system.
+description: Launch or refine a local coding-agent software delivery team from a PRD with optional Figma and/or Demo inputs. Use when setting up reusable AI-team project rules, role handoffs, Markdown task tracking, scoped Demo inspection, structured multi-agent discussions, and human decision gates without building a separate orchestration system.
 ---
 
 # AI Team
 
-Run a Codex-native software delivery workflow from requirement input through local verification and named human acceptance checkpoints. Use one serial implementation engineer and independent verification; do not build another orchestration framework.
+Run a host-neutral software delivery workflow from requirement input through local verification and named human acceptance checkpoints. The agent host must provide local file access, shell execution, and Python 3. Use one serial implementation engineer and independent verification; do not build another orchestration framework.
 
-Workflow revision: `ai-team-2026-08-14-r43`. Projects use this current layout only; older workflow layouts are unsupported.
+Workflow revision: `ai-team-2026-08-14-r44`. Projects use this current layout only; older workflow layouts are unsupported.
 
 ## Authority model
 
@@ -26,7 +26,7 @@ Read the complete delivery policy and role protocol before initializing or mater
 
 After initialization, `.ai-team/manifest.md` is the sole path authority and `.ai-team/project-rules.md` defines project-local authority precedence. Follow their project-local workflow, role, schema, template, stage, decision, source, specification, traceability, task, and evidence paths.
 
-The global Skill is the installation source, not a project runtime dependency. Never link project artifacts to files under the installed Skill directory.
+The installed workflow package is the initialization source, not a project runtime dependency. Never link project artifacts to files under its installation directory.
 
 ## Initialize or refine a project
 
@@ -56,4 +56,4 @@ Follow the project-local workflow and role protocol; do not recreate their rules
 
 ## Improve this Skill
 
-Update project-local files for product-, stack-, organization-, or permission-specific rules. Update this global Skill only for reusable workflow improvements explicitly requested by the user. Use a deletion-first audit: a new mandatory artifact, field, state, or script must replace existing complexity or address a frequent uncovered delivery failure. Reject net growth by default. Change only the single authority and its executable/template consumers—not parallel summaries.
+Update project-local files for product-, stack-, organization-, or permission-specific rules. Update this installed workflow package only for reusable workflow improvements explicitly requested by the user. Use a deletion-first audit: a new mandatory artifact, field, state, or script must replace existing complexity or address a frequent uncovered delivery failure. Reject net growth by default. Change only the single authority and its executable/template consumers—not parallel summaries.
