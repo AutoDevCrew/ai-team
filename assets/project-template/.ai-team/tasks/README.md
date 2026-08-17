@@ -2,7 +2,7 @@
 
 This directory is the sole source of task state. Use one backlog and one task card per work item; do not use an external task system.
 
-Task cards use workflow revision `ai-team-2026-08-14-r44`.
+Task cards use workflow revision `ai-team-2026-08-16-r49`.
 
 ## Files and identifiers
 
@@ -18,6 +18,6 @@ Task cards use workflow revision `ai-team-2026-08-14-r44`.
 4. Follow `../governance/workflow.md` for lanes, states, gates, handoffs, validation, batching, completion, and re-entry.
 5. Follow `../governance/roles.md` for who may write the card, backlog, code, tests, findings, and verdicts.
 6. Keep the compact Handoff Snapshot current. Reference project-wide source/baseline/design/test defaults instead of copying them; keep raw or historical material in `.ai-team/evidence/`.
-7. At a boundary, run the checker once with `--task TASK-... --gate <gate> --next-action` and execute or dispatch the reported dependency-eligible local action.
+7. At a routine task boundary, run the checker with `--task TASK-... --gate <gate> --compact --next-action`; run `--audit --next-action` only at the full-audit triggers declared in `../governance/workflow.md`, then execute or dispatch the reported dependency-eligible local action.
 
 Do not restate global workflow or role rules here. Record project-specific deviations in `../project-rules.md` and authority-bearing choices in `../governance/decisions.md`.

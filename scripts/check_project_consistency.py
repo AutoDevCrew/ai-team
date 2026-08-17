@@ -39,7 +39,9 @@ CHECKPOINT_STATUSES = set(WORKFLOW_SCHEMA["enums"]["checkpoint_statuses"])
 BACKLOG_COLUMNS = tuple(WORKFLOW_SCHEMA["tables"]["backlog_columns"])
 BATCH_COLUMNS = tuple(WORKFLOW_SCHEMA["tables"]["batch_columns"])
 REVISION_AUTHORITY_FIELDS = tuple(
-    field for field in validator.LAYOUT_AUTHORITY_FIELDS if field != "Project stage:"
+    field
+    for field in validator.LAYOUT_AUTHORITY_FIELDS
+    if field not in {"Project stage:", "Intake package inventory helper:"}
 )
 SCHEMA_DRIVEN_AUTHORITY_FIELDS = {
     "Handoff validator:",
@@ -791,7 +793,7 @@ def check_project(project_root: Path) -> list[str]:
             if source is None or not source.is_file():
                 errors.append("active delivery requires the manifest-declared Source register")
             else:
-                errors.extend(validator.source_register_errors(source))
+                errors.extend(validator.source_register_errors(source, verify_package=True))
             if evidence_root is None or not evidence_root.is_dir():
                 errors.append("active delivery requires the manifest-declared Evidence root")
     errors.extend(link_errors(project_root, ai_team_root))
@@ -1034,31 +1036,154 @@ def next_eligible_action(project_root: Path) -> str | None:
 
 
 def selected_task_gate_errors(project_root: Path, task_id: str, gate: str) -> list[str]:
+    """Validate one task and its direct project relationships without a full audit."""
     project_root = project_root.resolve()
     manifest = project_root / ".ai-team/manifest.md"
     if not manifest.is_file():
         return ["selected task validation requires .ai-team/manifest.md"]
-    task_root = manifest_path(
-        project_root, manifest.read_text(encoding="utf-8"), "Task root:"
-    )
+    manifest_text = manifest.read_text(encoding="utf-8")
+    errors: list[str] = []
+    if revision_tokens(manifest_text) != {WORKFLOW_REVISION}:
+        errors.append(f"manifest workflow revision must be {WORKFLOW_REVISION}")
+    errors.extend(validator.project_authority_errors_from_root(project_root))
+    errors.extend(revision_errors(project_root, manifest_text))
+    task_root = manifest_path(project_root, manifest_text, "Task root:")
+    board = manifest_path(project_root, manifest_text, "Canonical task board:")
     if task_root is None or not task_root.is_dir():
-        return ["selected task validation requires the manifest-declared Task root"]
-    matches = [
-        card
-        for card in task_root.rglob("*.md")
-        if card.name != "README.md"
-        and card_identity(card, card.read_text(encoding="utf-8"))[0] == task_id.upper()
-    ]
+        errors.append("selected task validation requires the manifest-declared Task root")
+        return list(dict.fromkeys(errors))
+    if board is None or not board.is_file():
+        errors.append("selected task validation requires the manifest-declared canonical task board")
+        return list(dict.fromkeys(errors))
+    rows, row_errors = parse_backlog(board)
+    errors.extend(row_errors)
+    matches = [row for row in rows if row.get("ID", "").upper() == task_id.upper()]
     if len(matches) != 1:
-        return [f"selected task must resolve to one card: {task_id} -> {len(matches)} matches"]
-    card = matches[0]
+        errors.append(f"selected task must resolve to one backlog row: {task_id} -> {len(matches)} matches")
+        return list(dict.fromkeys(errors))
+    row = matches[0]
+    card = resolve_card_link(board, row.get("Card", ""))
+    if card is None:
+        errors.append(f"selected task has no local task-card link: {task_id}")
+        return list(dict.fromkeys(errors))
+    try:
+        card.relative_to(task_root)
+    except ValueError:
+        errors.append(f"selected task card is outside the manifest-declared Task root: {task_id}")
+        return list(dict.fromkeys(errors))
+    if not card.is_file():
+        errors.append(f"selected task card not found: {task_id} -> {relative_display(card, project_root)}")
+        return list(dict.fromkeys(errors))
     text = card.read_text(encoding="utf-8")
-    errors = validator.validate(text, gate=gate)
-    errors.extend(validator.gate_reference_errors(card, text, gate))
-    errors.extend(validator.project_stage_errors(card, gate))
+    card_id, state, lane, complexity, batch = card_identity(card, text)
+    if card_id.upper() != task_id.upper():
+        errors.append(f"selected backlog/card ID mismatch: {task_id} -> {card_id or 'missing'}")
+    for column, expected in (
+        ("State", state),
+        ("Lane", lane),
+        ("Complexity", complexity),
+        ("Batch", batch),
+    ):
+        actual = row.get(column, "").strip()
+        if expected and actual.casefold() != expected.casefold():
+            errors.append(
+                f"selected backlog/card {column} mismatch for {task_id}: {actual or 'missing'} != {expected}"
+            )
+    owner = row.get("Owner role", "").strip().casefold()
+    next_gate = row.get("Next gate", "").strip().casefold()
+    contract = STATE_CONTRACTS.get(state.casefold())
+    if owner not in OWNER_ROLES:
+        errors.append(f"invalid backlog Owner role for {task_id}: {owner or 'missing'}")
+    elif contract and owner not in contract["owner_roles"]:
+        errors.append(f"backlog Owner role conflicts with State for {task_id}: {owner} is not allowed for {state}")
+    if next_gate not in NEXT_GATES:
+        errors.append(f"invalid backlog Next gate for {task_id}: {next_gate or 'missing'}")
+    elif contract and next_gate not in contract["next_gates"]:
+        errors.append(f"backlog Next gate conflicts with State for {task_id}: {next_gate} is not allowed for {state}")
+
+    row_by_id = {item.get("ID", "").upper(): item for item in rows}
+    dependencies = {
+        match.group(0).upper()
+        for match in TASK_ID_PATTERN.finditer(row.get("Dependencies", ""))
+    }
+    card_dependencies = validator.task_dependencies(text)
+    if dependencies != card_dependencies:
+        errors.append(
+            f"selected backlog/card Dependencies mismatch for {task_id}: backlog={sorted(dependencies)} card={sorted(card_dependencies)}"
+        )
+    for dependency in sorted(dependencies):
+        dependency_row = row_by_id.get(dependency)
+        if dependency_row is None:
+            errors.append(f"selected task dependency not found: {task_id} -> {dependency}")
+        elif gate in {"implementation-ready", "verified-complete"} and dependency_row.get("State", "").strip().casefold() != "complete":
+            errors.append(f"selected promoted task has incomplete dependency: {task_id} -> {dependency}")
+
+    blocker = row.get("Blocker / decision", "").strip()
+    if blocker and not validator.is_none(blocker):
+        task_refs = {match.group(0).upper() for match in TASK_ID_PATTERN.finditer(blocker)}
+        decision_refs = {match.group(0).upper() for match in DECISION_ID_PATTERN.finditer(blocker)}
+        finding_refs = {match.group(0).upper() for match in FINDING_ID_PATTERN.finditer(blocker)}
+        if not task_refs and not decision_refs and not finding_refs:
+            errors.append(f"selected backlog blocker must reference a TASK-..., DEC-..., or FIND-... ID: {task_id}")
+        for reference in sorted(task_refs):
+            if reference not in row_by_id:
+                errors.append(f"selected backlog blocker task not found: {task_id} -> {reference}")
+        decisions = project_root / ".ai-team/governance/decisions.md"
+        known_decisions = (
+            {match.group(0).upper() for match in DECISION_ID_PATTERN.finditer(visible_markdown(decisions.read_text(encoding="utf-8")))}
+            if decisions.is_file()
+            else set()
+        )
+        for reference in sorted(decision_refs - known_decisions):
+            errors.append(f"selected backlog blocker decision not found: {task_id} -> {reference}")
+        if finding_refs:
+            card_findings = validator.identifiers(text, "FIND")
+            missing_findings = sorted(finding_refs - card_findings)
+            if missing_findings:
+                errors.append(f"selected backlog blocker finding is absent from its task card: {task_id} -> {', '.join(missing_findings)}")
+            severities, _ = validator.recorded_findings(text)
+            if not severities.intersection({"P0", "P1"}):
+                errors.append(f"selected backlog FIND blocker requires recorded P0/P1 severity in its task card: {task_id}")
+
+    batches, batch_errors = parse_batches(board)
+    errors.extend(batch_errors)
+    if not (lane == "fast" and batch.casefold().startswith("batch-not-applicable")):
+        batch_row = next((item for item in batches if item.get("Batch", "").strip() == batch), None)
+        if batch_row is None:
+            errors.append(f"selected task references an undefined implementation batch: {task_id} -> {batch or 'missing'}")
+        else:
+            members = [match.group(0).upper() for match in TASK_ID_PATTERN.finditer(batch_row.get("Member tasks", ""))]
+            order = [match.group(0).upper() for match in TASK_ID_PATTERN.finditer(batch_row.get("Serial implementation order", ""))]
+            if members.count(task_id.upper()) != 1:
+                errors.append(f"selected batch member list must include {task_id} exactly once: {batch}")
+            if order.count(task_id.upper()) != 1:
+                errors.append(f"selected batch serial order must include {task_id} exactly once: {batch}")
+            elif gate in {"implementation-ready", "verified-complete"}:
+                earlier = order[:order.index(task_id.upper())]
+                for prior in earlier:
+                    if row_by_id.get(prior, {}).get("State", "").strip().casefold() != "complete":
+                        errors.append(f"selected task has incomplete earlier serial batch member: {task_id} -> {prior}")
+                        break
+    if sum(row.get("State", "").strip().casefold() == "implementing" for row in rows) > 1:
+        errors.append("more than one task is implementing; one serial implementation engineer may own only one active implementation")
+
+    source = manifest_path(project_root, manifest_text, "Source register:")
+    if validator.section(text, "## Handoff Snapshot"):
+        if source is None or not source.is_file():
+            errors.append("selected active delivery requires the manifest-declared Source register")
+        else:
+            errors.extend(validator.source_register_errors(source))
+        evidence_root = manifest_path(project_root, manifest_text, "Evidence root:")
+        if evidence_root is None or not evidence_root.is_dir():
+            errors.append("selected active delivery requires the manifest-declared Evidence root")
+
+    task_errors = validator.validate(text, gate=gate)
+    task_errors.extend(validator.gate_reference_errors(card, text, gate))
+    task_errors.extend(validator.project_stage_errors(card, gate))
     if validator.candidate_fingerprint_required(text):
-        errors.extend(validator.fingerprint_errors(card, text))
-    return [located_error(card, project_root, error) for error in dict.fromkeys(errors)]
+        task_errors.extend(validator.fingerprint_errors(card, text))
+    errors.extend(located_error(card, project_root, error) for error in task_errors)
+    return list(dict.fromkeys(errors))
 
 
 def main() -> int:
@@ -1069,24 +1194,43 @@ def main() -> int:
         action="store_true",
         help="After a clean consistency check, print the first dependency-eligible continuation action.",
     )
-    parser.add_argument("--task", help="Validate one TASK-... card in the same project check.")
+    parser.add_argument("--task", help="Run a scoped gate for one TASK-... card.")
     parser.add_argument(
         "--gate",
         choices=validator.GATES,
-        help="Gate to validate for --task; combines task, project, fingerprint, and next-action checks.",
+        help="Gate to validate for --task.",
+    )
+    parser.add_argument(
+        "--audit",
+        action="store_true",
+        help="Run the full project audit, including all task cards, links, and required fingerprints.",
+    )
+    parser.add_argument(
+        "--compact",
+        action="store_true",
+        help="On failure, print the first source-located error and the number of additional errors.",
     )
     args = parser.parse_args()
-    errors = check_project(args.project_root)
-    if args.task or args.gate:
+    errors: list[str]
+    if args.audit and (args.task or args.gate):
+        errors = ["--audit cannot be combined with --task or --gate"]
+    elif args.task or args.gate:
         if not args.task or not args.gate:
-            errors.append("--task and --gate must be provided together")
+            errors = ["--task and --gate must be provided together"]
         else:
-            errors.extend(selected_task_gate_errors(args.project_root, args.task, args.gate))
+            errors = selected_task_gate_errors(args.project_root, args.task, args.gate)
+    elif args.audit:
+        errors = check_project(args.project_root)
+    else:
+        errors = ["select --task with --gate for a routine scoped gate, or --audit for a full project audit"]
     errors = list(dict.fromkeys(errors))
     if errors:
         print(f"FAIL {args.project_root.resolve()}")
-        for error in errors:
+        displayed_errors = errors[:1] if args.compact else errors
+        for error in displayed_errors:
             print(f"- {error}")
+        if args.compact and len(errors) > 1:
+            print(f"- {len(errors) - 1} additional error(s) suppressed; rerun with --audit for full diagnosis")
         if args.next_action:
             print(f"NEXT fix-consistency: {errors[0]}")
         return 1

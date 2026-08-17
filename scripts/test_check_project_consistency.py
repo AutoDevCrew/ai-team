@@ -91,6 +91,7 @@ class ProjectConsistencyTests(unittest.TestCase):
             "extract_markdown_section.py",
             "check_project_consistency.py",
             "render_fingerprint_ledger.py",
+            "intake_package_inventory.py",
         ):
             shutil.copy2(SKILL_ROOT / "scripts" / name, scripts / name)
 
@@ -103,6 +104,7 @@ class ProjectConsistencyTests(unittest.TestCase):
             "- Status: provided / no-PRD intake": "- Status: no-PRD intake",
             "- Version or updated at:": "- Version or updated at: N/A — initial request captured once",
             "- Read at:": "- Read at: 2026-08-11T10:00+08:00",
+            "- Applicability: applicable / N/A — one registered URL or verbatim request and no multi-file package": "- Applicability: N/A — one verbatim request and no multi-file delivery package",
         }
         for old, new in replacements.items():
             text = text.replace(old, new, 1)
@@ -246,6 +248,7 @@ class ProjectConsistencyTests(unittest.TestCase):
                     sys.executable,
                     str(project / ".ai-team/scripts/check_project_consistency.py"),
                     str(project),
+                    "--audit",
                 ],
                 check=False,
                 capture_output=True,
@@ -408,6 +411,128 @@ class ProjectConsistencyTests(unittest.TestCase):
                 "NEXT fix-consistency: .ai-team/evidence/EXAMPLE-STD-001-readiness.md:",
                 result.stdout,
             )
+
+    def test_scoped_gate_ignores_historical_fingerprint_drift_until_full_audit(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            project = Path(temp_dir)
+            self.materialize_project(project)
+            card, backlog = self.prepare_standard_ready_project(project)
+            historical = project / ".ai-team/tasks/TASK-EXAMPLE-HIST-002.md"
+            historical_text = self.with_candidate_ledger(project, card.read_text(encoding="utf-8")).replace(
+                "TASK-EXAMPLE-STD-001", "TASK-EXAMPLE-HIST-002"
+            ).replace(
+                "implementation-ready / not-complete", "complete / verified-complete"
+            )
+            historical_text = historical_text.replace(
+                hashlib.sha256((project / "src/calculator/input.ts").read_bytes()).hexdigest(),
+                "0" * 64,
+            )
+            historical.write_text(historical_text, encoding="utf-8")
+            backlog.write_text(
+                backlog.read_text(encoding="utf-8")
+                .replace(
+                    "| TASK-EXAMPLE-STD-001 | Input validation | implementation-ready | standard | M | BATCH-EXAMPLE-01 | serial implementation engineer | none | none | verified-complete | [card](TASK-EXAMPLE-STD-001.md) |",
+                    "| TASK-EXAMPLE-STD-001 | Input validation | implementation-ready | standard | M | BATCH-EXAMPLE-01 | serial implementation engineer | none | none | verified-complete | [card](TASK-EXAMPLE-STD-001.md) |\n"
+                    "| TASK-EXAMPLE-HIST-002 | Historical validation | complete | standard | M | BATCH-EXAMPLE-01 | delivery coordinator | none | none | none | [card](TASK-EXAMPLE-HIST-002.md) |",
+                )
+                .replace(
+                    "| BATCH-EXAMPLE-01 | Validate calculator input | TASK-EXAMPLE-STD-001 | TASK-EXAMPLE-STD-001 |",
+                    "| BATCH-EXAMPLE-01 | Validate calculator input | TASK-EXAMPLE-STD-001 TASK-EXAMPLE-HIST-002 | TASK-EXAMPLE-STD-001 TASK-EXAMPLE-HIST-002 |",
+                ),
+                encoding="utf-8",
+            )
+            self.assertEqual(
+                [],
+                checker.selected_task_gate_errors(
+                    project, "TASK-EXAMPLE-STD-001", "implementation-ready"
+                ),
+            )
+            audit_errors = checker.check_project(project)
+            self.assertTrue(
+                any(
+                    "TASK-EXAMPLE-HIST-002.md: fingerprint mismatch" in error
+                    for error in audit_errors
+                ),
+                audit_errors,
+            )
+
+    def test_compact_cli_suppresses_secondary_errors(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            project = Path(temp_dir)
+            self.materialize_project(project)
+            self.prepare_standard_ready_project(project)
+            evidence = project / ".ai-team/evidence/EXAMPLE-STD-001-readiness.md"
+            evidence.write_text("# damaged readiness evidence\n", encoding="utf-8")
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    str(project / ".ai-team/scripts/check_project_consistency.py"),
+                    str(project),
+                    "--task",
+                    "TASK-EXAMPLE-STD-001",
+                    "--gate",
+                    "implementation-ready",
+                    "--compact",
+                    "--next-action",
+                ],
+                check=False,
+                capture_output=True,
+                text=True,
+            )
+            self.assertEqual(1, result.returncode, result.stdout + result.stderr)
+            self.assertIn("additional error(s) suppressed", result.stdout)
+            self.assertIn("NEXT fix-consistency:", result.stdout)
+            detailed_errors = [
+                line
+                for line in result.stdout.splitlines()
+                if line.startswith("- ") and "additional error(s) suppressed" not in line
+            ]
+            self.assertEqual(1, len(detailed_errors), result.stdout)
+
+    def test_audit_cli_checks_historical_fingerprints(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            project = Path(temp_dir)
+            self.materialize_project(project)
+            card, _ = self.prepare_standard_ready_project(project)
+            card.write_text(
+                self.with_candidate_ledger(project, card.read_text(encoding="utf-8"))
+                .replace("implementation-ready / not-complete", "complete / verified-complete")
+                .replace(
+                    hashlib.sha256((project / "src/calculator/input.ts").read_bytes()).hexdigest(),
+                    "0" * 64,
+                ),
+                encoding="utf-8",
+            )
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    str(project / ".ai-team/scripts/check_project_consistency.py"),
+                    str(project),
+                    "--audit",
+                ],
+                check=False,
+                capture_output=True,
+                text=True,
+            )
+            self.assertEqual(1, result.returncode, result.stdout + result.stderr)
+            self.assertIn("fingerprint mismatch", result.stdout)
+
+    def test_cli_requires_an_explicit_gate_or_audit_mode(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            project = Path(temp_dir)
+            self.materialize_project(project)
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    str(project / ".ai-team/scripts/check_project_consistency.py"),
+                    str(project),
+                ],
+                check=False,
+                capture_output=True,
+                text=True,
+            )
+            self.assertEqual(1, result.returncode, result.stdout + result.stderr)
+            self.assertIn("select --task with --gate", result.stdout)
 
     def test_stage_template_prompts_initialization_timestamp(self) -> None:
         stage = (PROJECT_TEMPLATE / ".ai-team/stage.md").read_text(encoding="utf-8")

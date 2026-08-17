@@ -1,6 +1,6 @@
 # Role Protocol
 
-Workflow revision: `ai-team-2026-08-14-r44`.
+Workflow revision: `ai-team-2026-08-16-r49`.
 
 This is the single global authority for AI-team role responsibilities and boundaries. Copy it to `.ai-team/governance/roles.md` during project initialization. The project-local copy is the runtime authority.
 
@@ -21,17 +21,21 @@ Every role assignment declares:
 
 Normal handoffs use project artifacts. Create `DISC-xxx` only for an unresolved ambiguity, conflict, or material tradeoff. Route human decisions through the delivery coordinator.
 
+Host-inherited chat or worker context is not project authority. Before acting, resolve the assignment binding, named authority sections, inputs, and write boundaries from the envelope and current project artifacts. If any required item is missing, contradictory, or stale, return `blocked` with the exact gap and make no writes.
+
 ## Agent orchestration and lifecycle
 
-When the host provides isolated specialist workers, use temporary isolated workers for independent specialist work:
+Before the first specialist assignment in each host session, inspect the available worker/subagent controls. Do not default to sequential role-play. If worker availability is unclear, make one bounded dispatch attempt with the completed envelope; do not repeatedly retry the same unavailable path unless host capability changes.
 
-1. Keep the primary agent or session as the delivery coordinator and durable owner of backlog state.
-2. Allow exactly one writable serial implementation engineer. Never parallelize business-code writers.
-3. Allow at most two concurrent read-only specialists or reviewers, and only when their scopes are independent. Ordered artifact authorship still follows the delivery path.
-4. Before dispatching a specialist worker, complete the `Role assignment envelope` in `governance/templates.md`; bind it to one role, one bounded task/scope, and the current Snapshot.
-5. Reuse a specialist within the same task or batch while its role, scope, and frozen requirement/contract inputs remain unchanged. A code-only candidate change invalidates evidence, not the Agent; provide the refreshed Snapshot and diff before reuse.
-6. Retire a specialist worker when the task/batch scope closes, its role changes, requirement/contract authority changes, or its context cannot be refreshed safely. Do not accumulate duplicate reviewers or duplicate broad runs.
-7. If isolated specialist workers are unavailable, execute the same role passes sequentially with fresh bounded inputs and role-attributed artifacts. Disclose that process independence was unavailable; never claim process isolation occurred, and preserve the same review and evidence criteria.
+1. When worker creation is available, use isolated specialist workers for specialist roles instead of having the primary agent impersonate them. Keep the primary agent or session as the delivery coordinator and durable owner of backlog state.
+2. When the host supports context selection, launch each worker with no inherited conversation history beyond the completed envelope. Shared project files are allowed; shared conversational memory is not authority. If the host unavoidably inherits conversation context, keep the worker and require it to ignore that context unless the envelope cites the same fact from project authority; inherited context alone is not a reason to downgrade.
+3. Allow exactly one writable serial implementation engineer. Never parallelize business-code writers.
+4. Allow at most two concurrent read-only specialists or reviewers, and only when their scopes are independent. Ordered artifact authorship still follows the delivery path.
+5. Before dispatching a specialist worker, complete the `Role assignment envelope` in `governance/templates.md`. Bind task work to one role, one bounded task, and the current Snapshot; bind pre-task work to one bounded project scope and the exact current source/stage authority. Do not dispatch with an unresolved binding, objective, authority section, input, write boundary, return contract, receiver, or invalidation condition.
+6. On return, reject a result with a stale or mismatched Agent/binding, a missing required return item, or any observed or reported write outside `Allowed writes`. Use available host change information, local diff/status, Snapshot, and fingerprint evidence; do not claim absolute write isolation when the host cannot prove it. A rejected result is not gate evidence or a PASS.
+7. Reuse a specialist within the same task or batch while its role, scope, and frozen requirement/contract inputs remain unchanged. A code-only candidate change invalidates evidence, not the Agent; provide the refreshed Snapshot and diff before reuse.
+8. Retire a specialist worker when the task/batch scope closes, its role changes, requirement/contract authority changes, or its context cannot be refreshed safely. Do not accumulate duplicate reviewers or duplicate broad runs.
+9. Sequential role passes are a fallback only when the host exposes no worker control, the bounded dispatch attempt fails, or the worker cannot access a required project file or tool. Do not fall back for convenience, latency, token cost, or because no worker was pre-existing. Record the exact fallback reason, execute each role pass with fresh bounded inputs and role-attributed artifacts, disclose that process independence was unavailable, and never claim process isolation occurred.
 
 The coordinator starts the next eligible specialist worker or performs the next eligible local action in the same turn. Preparing an assignment without dispatching or executing it is not progression.
 
@@ -44,7 +48,7 @@ The coordinator starts the next eligible specialist worker or performs the next 
 ### Responsibilities
 
 1. Select the current phase and launch only the bounded specialist agents required by the workflow, following the lifecycle and concurrency limits above.
-2. Maintain backlog, task cards, discussions, decisions, batches, duplicate-free serial order, and named checkpoint mode/status together with the active Handoff Snapshot.
+2. Maintain source-package inventory dispatch and coverage closure during intake, then backlog, task cards, discussions, decisions, batches, duplicate-free serial order, and named checkpoint mode/status together with the active Handoff Snapshot.
 3. Assign task lane, complexity, dependencies, write boundaries, exit conditions, and the compact control-trigger set. Make the final slice/retention decision from the technical lead's boundary/dependency proposal and the product/verifier AC/TEST evidence, using the project workflow.
 4. Keep project-wide source, baseline, design, commands, and traceability out of task cards; reference their current artifacts and record only task deltas.
 5. Distinguish design blockers, implementation blockers, quality findings, human decisions, acceptance checkpoints, and credential setup actions. Consolidate credential actions into one safe, path-specific notice; after the user reports setup complete, dispatch the redacted readiness probe and resume the affected gate without waiting for another prompt.
@@ -178,7 +182,7 @@ The coordinator starts the next eligible specialist worker or performs the next 
 
 ### Responsibilities
 
-1. Independently review no-PRD intake and engineering baseline when the workflow requires them.
+1. Independently run the manifest-declared intake inventory verification, reconcile its computed coverage counts before product analysis, and review no-PRD intake and engineering baseline when the workflow requires them.
 2. Produce stable test IDs and a pre-implementation plan covering normal, boundary/error, permission, regression, and applicable contract/UI scenarios.
 3. For every client UI task, map applicable TEST IDs to source-backed copy/content, visual layout and styling, interaction and component states, viewport/device adaptation, accessibility, and affected regression; record a reason for each inapplicable category. For browser-rendered Web UI, always assign copy and visual TEST IDs and map the frozen set to the mandatory final TestSprite gate. Compare only current-scope Figma/Demo/design-system/accepted-baseline evidence, use explicit visual tolerances rather than unsupported pixel-perfect assumptions, and identify non-automatable visual checks for human acceptance.
 4. Freeze the compact task Test Manifest. Inherit project-default commands from the engineering baseline and record only task-specific checks, environment differences, and batch regression timing. For a mockable external integration, freeze both contract-faithful mock checks and the later live authentication/contract TEST IDs.

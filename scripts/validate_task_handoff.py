@@ -26,6 +26,19 @@ except ImportError:
         visible_markdown,
     )
 
+try:
+    from .intake_package_inventory import (
+        inventory_errors as package_inventory_errors,
+        load_manifest as load_package_inventory,
+        manifest_counts as package_inventory_counts,
+    )
+except ImportError:
+    from intake_package_inventory import (
+        inventory_errors as package_inventory_errors,
+        load_manifest as load_package_inventory,
+        manifest_counts as package_inventory_counts,
+    )
+
 
 def _load_workflow_schema() -> dict:
     script_dir = Path(__file__).resolve().parent
@@ -100,6 +113,7 @@ TASK_ROOT_FIELD = "Task root:"
 CHANGE_INVENTORY_FIELD = "Change-set file inventory:"
 LAYOUT_AUTHORITY_FIELDS = _values("layout_authority")
 SOURCE_REGISTER_FIELDS = _values("source_register")
+DELIVERY_PACKAGE_COVERAGE_FIELDS = _values("delivery_package_coverage")
 CODE_BASELINE_FIELDS = _values("code_baseline")
 ACCEPTANCE_INTAKE_FIELDS = _values("acceptance_intake")
 ACCEPTANCE_SCOPE_FIELDS = _values("acceptance_scope")
@@ -823,7 +837,7 @@ def project_stage_errors(task_card: Path, gate: str) -> list[str]:
     return errors
 
 
-def source_register_errors(source: Path) -> list[str]:
+def source_register_errors(source: Path, *, verify_package: bool = False) -> list[str]:
     text = source.read_text(encoding="utf-8")
     product = section(text, "## Product requirement source")
     if not product:
@@ -847,7 +861,113 @@ def source_register_errors(source: Path) -> list[str]:
     if not re.search(r"\b\d{4}-\d{2}-\d{2}(?=[T\s]|$)", read_at):
         errors.append("Source register Read at needs an ISO-style date")
 
+    errors.extend(delivery_package_coverage_errors(source, verify_package=verify_package))
     errors.extend(code_baseline_errors(source))
+    return errors
+
+
+def delivery_package_coverage_errors(
+    source: Path, *, verify_package: bool = False
+) -> list[str]:
+    text = source.read_text(encoding="utf-8")
+    coverage = section(text, "## Delivery package coverage")
+    if not coverage:
+        return ["Source register is missing the Delivery package coverage section"]
+
+    applicability_values = field_values(coverage, "Applicability:")
+    if not applicability_values:
+        return ["Source register Delivery package coverage missing field: Applicability:"]
+    if len(applicability_values) > 1:
+        return ["duplicate field in Source register Delivery package coverage: Applicability:"]
+
+    applicability = applicability_values[0]
+    if has_reasoned_na(applicability):
+        return duplicate_field_errors(
+            coverage,
+            DELIVERY_PACKAGE_COVERAGE_FIELDS,
+            "Source register Delivery package coverage",
+        )
+
+    errors = concrete_value_errors(
+        coverage,
+        DELIVERY_PACKAGE_COVERAGE_FIELDS,
+        "Source register Delivery package coverage",
+    )
+    if applicability.strip().lower() != "applicable":
+        errors.append(
+            "Delivery package coverage Applicability must be applicable or reasoned N/A"
+        )
+
+    counts_value = field_value(coverage, "Coverage counts:")
+    pairs = re.findall(
+        r"\b(total|reviewed|excluded|gap)\s*=\s*(\d+)\b",
+        counts_value,
+        flags=re.IGNORECASE,
+    )
+    counts = {name.lower(): int(value) for name, value in pairs}
+    if len(pairs) != 4 or set(counts) != {"total", "reviewed", "excluded", "gap"}:
+        errors.append(
+            format_error(
+                "Delivery package coverage counts are incomplete or duplicated",
+                counts_value,
+                "delivery_package_counts",
+            )
+        )
+    else:
+        if counts["total"] < 1:
+            errors.append("Delivery package coverage total must be at least 1")
+        if counts["reviewed"] + counts["excluded"] + counts["gap"] != counts["total"]:
+            errors.append(
+                "Delivery package coverage counts must satisfy reviewed + excluded + gap = total"
+            )
+        if counts["gap"] != 0:
+            errors.append("Delivery package coverage cannot PASS with unresolved gaps")
+
+    if not is_none(field_value(coverage, "Unresolved gaps:")):
+        errors.append("Delivery package coverage Unresolved gaps must be none before PASS")
+
+    inventory = field_value(coverage, "Inventory manifest:")
+    review = field_value(coverage, "Independent intake review:")
+    if not has_reference(inventory):
+        errors.append("Delivery package coverage Inventory manifest requires a project-relative path")
+    if not (
+        is_pass(review)
+        and first_identifier(review, "AGENT")
+        and first_identifier(review, "EVID")
+        and has_reference(review)
+        and iso_datetime(review)
+    ):
+        errors.append(format_error("Delivery package independent intake review", review, "intake_review"))
+
+    ai_team_root = next(
+        (ancestor for ancestor in source.resolve().parents if ancestor.name == ".ai-team"),
+        None,
+    )
+    if ai_team_root:
+        project_root = ai_team_root.parent
+        inventory_path = first_existing_project_path(project_root, inventory)
+        if inventory_path is None:
+            errors.append("Delivery package coverage Inventory manifest path does not exist")
+        else:
+            try:
+                package_manifest = load_package_inventory(inventory_path)
+            except ValueError as exc:
+                errors.append(str(exc))
+            else:
+                errors.extend(
+                    f"Delivery package {error}"
+                    for error in package_inventory_errors(
+                        package_manifest, rescan=verify_package
+                    )
+                )
+                computed = package_inventory_counts(package_manifest)
+                if set(counts) == {"total", "reviewed", "excluded", "gap"} and counts != computed:
+                    errors.append(
+                        "Delivery package coverage counts do not match the inventory manifest: "
+                        f"declared={counts} computed={computed}"
+                    )
+        if not first_existing_project_path(project_root, review):
+            errors.append("Delivery package independent intake review evidence path does not exist")
     return errors
 
 

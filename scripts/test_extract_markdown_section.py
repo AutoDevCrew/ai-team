@@ -102,10 +102,32 @@ class MarkdownSectionTests(unittest.TestCase):
     def test_role_assignment_envelope_is_referenced_by_role_protocol(self) -> None:
         templates = TEMPLATES.read_text(encoding="utf-8")
         roles = ROLES.read_text(encoding="utf-8")
-        self.assertIsNotNone(
-            extractor.extract_h2_section(templates, "Role assignment envelope")
-        )
+        envelope = extractor.extract_h2_section(templates, "Role assignment envelope")
+        self.assertIsNotNone(envelope)
+        for label in (
+            "Agent and binding:",
+            "Allowed writes:",
+            "Required return:",
+            "Invalidation and lifecycle:",
+        ):
+            with self.subTest(label=label):
+                self.assertIn(label, envelope)
         self.assertIn("`Role assignment envelope`", roles)
+
+    def test_role_protocol_prefers_workers_before_sequential_fallback(self) -> None:
+        roles = ROLES.read_text(encoding="utf-8")
+        orchestration = extractor.extract_h2_section(
+            roles, "Agent orchestration and lifecycle"
+        )
+        self.assertIsNotNone(orchestration)
+        for rule in (
+            "Do not default to sequential role-play.",
+            "make one bounded dispatch attempt",
+            "no inherited conversation history beyond the completed envelope",
+            "Sequential role passes are a fallback only",
+        ):
+            with self.subTest(rule=rule):
+                self.assertIn(rule, orchestration)
 
     def test_decision_card_uses_decision_log_status_vocabulary(self) -> None:
         decision_card = extractor.extract_h2_section(

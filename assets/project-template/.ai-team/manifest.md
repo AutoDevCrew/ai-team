@@ -1,7 +1,7 @@
 # AI Team Layout Manifest
 
 - Layout version: `ai-team-layout-1`
-- Workflow revision: `ai-team-2026-08-14-r44`
+- Workflow revision: `ai-team-2026-08-16-r49`
 - Governance root: `.ai-team/governance`
 - Source register: `.ai-team/sources.md`
 - Acceptance specification: `.ai-team/specs/acceptance.md`
@@ -15,6 +15,7 @@
 - Markdown section extractor: `.ai-team/scripts/extract_markdown_section.py`
 - Project consistency checker: `.ai-team/scripts/check_project_consistency.py`
 - Fingerprint ledger helper: `.ai-team/scripts/render_fingerprint_ledger.py`
+- Intake package inventory helper: `.ai-team/scripts/intake_package_inventory.py`
 - Project rules: `.ai-team/project-rules.md`
 - Delivery policy: `.ai-team/governance/workflow.md`
 - Role protocol: `.ai-team/governance/roles.md`

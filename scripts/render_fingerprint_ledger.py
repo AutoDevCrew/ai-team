@@ -8,7 +8,8 @@ import hashlib
 from pathlib import Path
 
 
-WORKFLOW_REVISION = "ai-team-2026-08-14-r44"
+# Project consistency checks inspect this copied-script revision marker.
+WORKFLOW_REVISION = "ai-team-2026-08-16-r49"
 
 
 def render(project_root: Path, paths: list[str]) -> str:

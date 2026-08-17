@@ -10,6 +10,15 @@ Fill the product requirement source before product analysis. Add optional eviden
 - Version or updated at:
 - Read at:
 
+## Delivery package coverage
+- Applicability: applicable / N/A — one registered URL or verbatim request and no multi-file package
+- Package root or source set:
+- Inventory manifest: `.ai-team/evidence/intake-package.json`
+- Coverage counts: total=<n>; reviewed=<n>; excluded=<n>; gap=<n>
+- Excluded classes and rationale: none / <classes and concrete rationale>
+- Unresolved gaps: none / <item and access or format gap>
+- Independent intake review: PASS — AGENT-<id> / EVID-<id> / `.ai-team/evidence/<intake-review>.md` / <ISO timestamp>
+
 ## Figma (optional)
 - URL / page / node:
 - Authority: visual, layout, component-state evidence

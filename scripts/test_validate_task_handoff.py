@@ -2,7 +2,9 @@
 """Regression and adversarial tests for compact AI-team task validation."""
 
 from pathlib import Path
+from contextlib import redirect_stdout
 import hashlib
+import io
 import re
 import shutil
 import subprocess
@@ -11,8 +13,10 @@ import tempfile
 import unittest
 
 try:
+    from . import intake_package_inventory as package_inventory
     from . import validate_task_handoff as validator
 except ImportError:
+    import intake_package_inventory as package_inventory
     import validate_task_handoff as validator
 
 
@@ -119,6 +123,7 @@ class HandoffValidatorTests(unittest.TestCase):
             "extract_markdown_section.py",
             "check_project_consistency.py",
             "render_fingerprint_ledger.py",
+            "intake_package_inventory.py",
         ):
             shutil.copy2(SKILL_ROOT / "scripts" / name, scripts / name)
         (ai_team / "sources.md").write_text(
@@ -131,6 +136,9 @@ class HandoffValidatorTests(unittest.TestCase):
 - Status: no-prd intake
 - Version or updated at: N/A — initial request captured once
 - Read at: 2026-08-12T10:00+08:00
+
+## Delivery package coverage
+- Applicability: N/A — one verbatim request and no multi-file delivery package
 
 ## Code baseline
 - Repository / directory: `.`
@@ -241,6 +249,7 @@ class HandoffValidatorTests(unittest.TestCase):
             "testsprite_completion_extra": template_catalog,
             "layout_authority": manifest,
             "source_register": source_register,
+            "delivery_package_coverage": source_register,
             "code_baseline": source_register,
             "acceptance_intake": template_catalog,
             "acceptance_scope": template_catalog,
@@ -284,6 +293,9 @@ class HandoffValidatorTests(unittest.TestCase):
 - Version or updated at: N/A — initial request captured once
 - Read at: 2026-08-14T10:00+08:00
 
+## Delivery package coverage
+- Applicability: N/A — one verbatim request and no multi-file delivery package
+
 ## Code baseline
 - Repository / directory: `.`
 - Mode: greenfield
@@ -317,6 +329,103 @@ class HandoffValidatorTests(unittest.TestCase):
                 encoding="utf-8",
             )
             self.assertEqual([], validator.source_register_errors(source))
+
+    def test_delivery_package_coverage_requires_closed_counts_and_independent_review(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            project = Path(temp_dir)
+            ai_team = project / ".ai-team"
+            evidence = ai_team / "evidence"
+            evidence.mkdir(parents=True)
+            package = project / "delivery"
+            package.mkdir()
+            for name in ("requirements.md", "screen-01.png", "screen-02.png", "generated.txt"):
+                (package / name).write_text(name + "\n", encoding="utf-8")
+            inventory_path = evidence / "intake-package.json"
+            review_path = evidence / "intake-review.md"
+            with redirect_stdout(io.StringIO()):
+                package_inventory.snapshot_command(package, inventory_path)
+                package_inventory.mark_command(
+                    inventory_path,
+                    "reviewed",
+                    ["requirements.md", "screen-01.png", "screen-02.png"],
+                    [],
+                    ["EVID-INTAKE-001#reviewed-items"],
+                    "",
+                )
+                package_inventory.mark_command(
+                    inventory_path,
+                    "excluded",
+                    ["generated.txt"],
+                    [],
+                    [],
+                    "generated output derived from reviewed source",
+                )
+            review_path.write_text("# EVID-INTAKE-REVIEW-001\n\nIndependent coverage reconciliation PASS.\n", encoding="utf-8")
+            source = ai_team / "sources.md"
+            source.write_text(
+                """# Source Register
+
+## Product requirement source
+- Type: PRD
+- URL or verbatim request: `delivery/requirements.md`
+- Authority: primary business-rule source
+- Status: provided
+- Version or updated at: 2026-08-16
+- Read at: 2026-08-16T10:00+08:00
+
+## Delivery package coverage
+- Applicability: applicable
+- Package root or source set: `delivery/`
+- Inventory manifest: `.ai-team/evidence/intake-package.json`
+- Coverage counts: total=4; reviewed=3; excluded=1; gap=0
+- Excluded classes and rationale: build output excluded because it is generated from reviewed source
+- Unresolved gaps: none
+- Independent intake review: PASS — AGENT-IV-INTAKE / EVID-INTAKE-REVIEW-001 / `.ai-team/evidence/intake-review.md` / 2026-08-16T10:30+08:00
+
+## Code baseline
+- Repository / directory: `.`
+- Mode: greenfield
+- Repomix initialization: N/A — no pre-existing business or test source
+- Baseline description: delivery intake only; implementation has not started
+- Modules and tests inspected: N/A — no prior source
+- Read at: 2026-08-16T10:35+08:00
+""",
+                encoding="utf-8",
+            )
+            self.assertEqual([], validator.source_register_errors(source))
+            (package / "requirements.md").write_text("changed requirements\n", encoding="utf-8")
+            self.assertEqual([], validator.source_register_errors(source))
+            freshness_errors = validator.source_register_errors(
+                source, verify_package=True
+            )
+            self.assertTrue(
+                any("changed after snapshot: requirements.md" in error for error in freshness_errors),
+                freshness_errors,
+            )
+            (package / "requirements.md").write_text("requirements.md\n", encoding="utf-8")
+
+            source.write_text(
+                source.read_text(encoding="utf-8").replace(
+                    "total=4; reviewed=3; excluded=1; gap=0",
+                    "total=5; reviewed=3; excluded=1; gap=0",
+                ),
+                encoding="utf-8",
+            )
+            errors = validator.source_register_errors(source)
+            self.assertTrue(any("reviewed + excluded + gap = total" in error for error in errors), errors)
+
+            source.write_text(
+                source.read_text(encoding="utf-8")
+                .replace(
+                    "total=5; reviewed=3; excluded=1; gap=0",
+                    "total=5; reviewed=3; excluded=1; gap=1",
+                )
+                .replace("- Unresolved gaps: none", "- Unresolved gaps: screenshot-04 is unreadable"),
+                encoding="utf-8",
+            )
+            errors = validator.source_register_errors(source)
+            self.assertTrue(any("cannot PASS with unresolved gaps" in error for error in errors), errors)
+            self.assertTrue(any("Unresolved gaps must be none" in error for error in errors), errors)
 
     def test_identifier_ranges_are_rejected_at_task_and_matrix_boundaries(self) -> None:
         self.assertEqual(

@@ -1,6 +1,6 @@
 # Canonical Artifact Templates
 
-Workflow revision: `ai-team-2026-08-14-r44`.
+Workflow revision: `ai-team-2026-08-16-r49`.
 
 ## Catalog navigation
 
@@ -360,16 +360,15 @@ active / summarized / awaiting human decision / resolved
 ```md
 # Role Assignment: <role> / <task or scope>
 
-- Agent identity: AGENT-<id>
-- Current snapshot: SNAP-<id> in `TASK-...md`
+- Agent and binding: AGENT-<id> / TASK-<id> + SNAP-<id>, or pre-task project scope + exact source/stage revision
+- Objective and done condition:
 - Required authority sections: `Shared assignment contract`; `<exact role H2>`; `<exact workflow H2/gate>`
 - Read-only inputs: exact project-relative paths and sections
 - Allowed writes: exact paths, or none
 - Forbidden writes/actions: exact paths plus business-code/Git/deployment restrictions
-- Expected artifact or verdict:
+- Required return: status `completed` or `blocked`; artifact/verdict and path; observed or reported changed files; commands/evidence; findings/gaps/blocker; recommended next receiver
 - Receiving role: delivery coordinator / named next role
-- Exit condition:
-- Agent lifecycle: reuse within the same frozen task/batch scope after reading the refreshed Snapshot and diff; retire on role, scope, requirement, or contract change
+- Invalidation and lifecycle: invalidate on binding/source/stage/Snapshot/requirement/contract change; reuse only after the required refresh; retire when scope or role changes
 ```
 
 ## Review evidence record
@@ -425,7 +424,7 @@ This complete Fast-only skeleton contains every section required by strict valid
 # TASK-EXAMPLE-001: Clarify local contributor documentation
 
 ## Handoff Snapshot
-- Workflow revision: ai-team-2026-08-14-r44
+- Workflow revision: ai-team-2026-08-16-r49
 - Snapshot ID and updated at: SNAP-EXAMPLE-001-01 / 2026-08-12T10:00+08:00
 - Current state and technical outcome: awaiting-verification / not-complete
 - Scope, source, decision, and contract references: REQ-EXAMPLE-001 / AC-EXAMPLE-001 / TEST-EXAMPLE-001 / `.ai-team/sources.md`; no decision or contract change
@@ -460,7 +459,7 @@ This compact example passes the `implementation-ready` gate. Shared requirements
 # TASK-EXAMPLE-STD-001: Add validation for calculator expression input
 
 ## Handoff Snapshot
-- Workflow revision: ai-team-2026-08-14-r44
+- Workflow revision: ai-team-2026-08-16-r49
 - Snapshot ID and updated at: SNAP-EXAMPLE-STD-001-01 / 2026-08-12T11:00+08:00
 - Current state and technical outcome: implementation-ready / not-complete
 - Scope, source, decision, and contract references: REQ-EXAMPLE-STD-001 / AC-EXAMPLE-STD-001 / TEST-EXAMPLE-STD-001 TEST-EXAMPLE-STD-002 / `.ai-team/sources.md`; no decision or contract change
