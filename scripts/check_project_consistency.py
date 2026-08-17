@@ -21,6 +21,9 @@ WORKFLOW_REVISION = validator.WORKFLOW_REVISION
 REVISION_PATTERN = re.compile(r"\bai-team-\d{4}-\d{2}-\d{2}-r\d+\b")
 LINK_PATTERN = re.compile(r"!?\[[^\]]*\]\(([^)]+)\)")
 BACKTICK_PATH_PATTERN = re.compile(r"`([^`]+)`")
+EVIDENCE_PATH_PATTERN = re.compile(
+    r"(?:`)?(\.ai-team/evidence/[^`\s|)]+\.md)(?:`)?", re.IGNORECASE
+)
 TASK_ID_PATTERN = re.compile(r"\bTASK-[A-Za-z0-9._-]+\b", re.IGNORECASE)
 DECISION_ID_PATTERN = re.compile(r"\bDEC-[A-Za-z0-9._-]+\b", re.IGNORECASE)
 FINDING_ID_PATTERN = re.compile(r"\bFIND-[A-Za-z0-9._-]+\b", re.IGNORECASE)
@@ -130,6 +133,50 @@ def link_errors(project_root: Path, ai_team_root: Path) -> list[str]:
                     errors.append(
                         f"local Markdown link target not found: {relative_display(markdown_file, project_root)}:{line_number} -> {target}"
                     )
+    return errors
+
+
+def referenced_pre_task_evidence_errors(
+    project_root: Path, ai_team_root: Path, manifest_text: str
+) -> list[str]:
+    """Validate stage freshness only for pre-task PASS records referenced by current artifacts."""
+    evidence_root = manifest_path(project_root, manifest_text, "Evidence root:")
+    if evidence_root is None or not evidence_root.is_dir():
+        return []
+    referenced: set[Path] = set()
+    for markdown_file in sorted(ai_team_root.rglob("*.md")):
+        try:
+            markdown_file.relative_to(evidence_root)
+            continue
+        except ValueError:
+            pass
+        text = visible_markdown(markdown_file.read_text(encoding="utf-8"))
+        for match in EVIDENCE_PATH_PATTERN.finditer(text):
+            candidate = (project_root / match.group(1)).resolve()
+            try:
+                candidate.relative_to(evidence_root)
+            except ValueError:
+                continue
+            if candidate.is_file():
+                referenced.add(candidate)
+
+    errors: list[str] = []
+    for evidence in sorted(referenced):
+        text = evidence.read_text(encoding="utf-8")
+        if not all(
+            validator.field_value(text, field)
+            for field in (
+                "Reviewer identity:",
+                "Review phase:",
+                "Snapshot and Manifest:",
+                "Verdict:",
+            )
+        ):
+            continue
+        errors.extend(
+            f"{relative_display(evidence, project_root)}: {error}"
+            for error in validator.review_stage_binding_errors(evidence, text)
+        )
     return errors
 
 
@@ -797,6 +844,9 @@ def check_project(project_root: Path) -> list[str]:
             if evidence_root is None or not evidence_root.is_dir():
                 errors.append("active delivery requires the manifest-declared Evidence root")
     errors.extend(link_errors(project_root, ai_team_root))
+    errors.extend(
+        referenced_pre_task_evidence_errors(project_root, ai_team_root, manifest_text)
+    )
     return list(dict.fromkeys(errors))
 
 

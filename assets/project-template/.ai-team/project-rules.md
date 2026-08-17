@@ -1,6 +1,6 @@
 # AI Team Project Rules
 
-Workflow revision: `ai-team-2026-08-16-r49`.
+Workflow revision: `ai-team-2026-08-17-r50`.
 
 This file is the project authority index and override surface. It does not redefine delivery rules, role responsibilities, or artifact fields.
 
@@ -22,4 +22,4 @@ For an active task, read its compact Handoff Snapshot and exact project referenc
 
 Delivery boundaries are defined in `governance/workflow.md` and `governance/roles.md`. This project currently has no deviations.
 
-Add only product-, stack-, organization-, permission-, or authority-specific deviations here. Identify the affected workflow section and confirmed decision when human authority is required.
+Add only durable product-, stack-, organization-, permission-, or authority-specific deviations here. Identify the affected workflow section and confirmed decision when human authority is required. Keep the mutable current stage and authorization only in `.ai-team/stage.md`; do not duplicate them here.

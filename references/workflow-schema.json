@@ -1,5 +1,5 @@
 {
-  "workflow_revision": "ai-team-2026-08-16-r49",
+  "workflow_revision": "ai-team-2026-08-17-r50",
   "enums": {
     "gates": ["task-design", "implementation-ready", "verified-complete"],
     "task_states": ["analysis", "awaiting-human-decision", "task-design-ready", "implementation-ready", "implementing", "awaiting-verification", "complete", "cancelled/superseded"],
@@ -138,7 +138,7 @@
     "code_baseline": ["Repository / directory:", "Mode:", "Repomix initialization:", "Baseline description:", "Modules and tests inspected:", "Read at:"],
     "acceptance_intake": ["Source:", "Status:", "Product analyst:", "Independent review:", "Evidence-backed rules:", "Conventional low-risk MVP assumptions and rationale:", "Awaiting material human decision:"],
     "acceptance_scope": ["In scope:", "Out of scope:"],
-    "review_evidence": ["Reviewer identity:", "Role:", "Review phase:", "Snapshot and Manifest:", "Reviewed scope and inputs:", "Commands or inspection performed:", "Evidence and findings:", "Verdict:", "Invalidated by:", "Recorded at:"],
+    "review_evidence": ["Reviewer identity:", "Role:", "Review phase:", "Snapshot and Manifest:", "Stage binding:", "Reviewed scope and inputs:", "Commands or inspection performed:", "Evidence and findings:", "Verdict:", "Invalidated by:", "Recorded at:"],
     "cancellation": ["Date:", "Outcome:", "Feedback and evidence:", "Classification:", "Linked requirements and tasks:", "Decision:", "Next action:"],
     "credential_readiness": ["Applicability:", "Consolidated user-action notice:"]
   },

@@ -1,6 +1,6 @@
 # Delivery Policy
 
-Workflow revision: `ai-team-2026-08-16-r49`.
+Workflow revision: `ai-team-2026-08-17-r50`.
 
 This is the single global authority for AI-team delivery lanes, states, gates, handoffs, validation, severity, acceptance, and re-entry. Copy it to `.ai-team/governance/workflow.md` during project initialization. The project-local copy is the runtime authority for that project.
 
@@ -68,6 +68,8 @@ analysis → task-design-ready → implementation-ready → implementing → awa
 ## Gate authority
 
 Across this policy, each gate checklist controls its gate. Supporting prose explains evidence and exceptions; when a checklist delegates to another section, apply that section only to the scope named by the checklist.
+
+The manifest-declared `stage.md` is the sole mutable current-stage authority. Keep durable project deviations in `project-rules.md`, but never restate a current stage or current authorization there.
 
 ## Engineering baseline PASS
 
@@ -145,8 +147,9 @@ Pending upstream implementation or a closed project stage is an implementation b
 - Refresh the snapshot or compact Test Manifest reference after material source, decision, contract, code, test, command, fixture, environment, finding, or next-action changes.
 - Within one reviewer role, review phase, and Snapshot/Manifest binding, aggregate related checks, commands, and findings into one Review evidence record. Use separate records only when the reviewer role, phase, candidate/freshness binding, or independence requirement differs.
 - Record one Schema-declared review phase in every Review evidence record: `intake`, `baseline`, `task-design`, `implementation-readiness`, `fast-design-readiness`, `verification`, or `code-security`. Design/readiness records remain historical inputs at completion and retain their original Snapshot binding while still matching the current frozen Manifest; a Manifest or design-input change invalidates them. Verification and code-security records must bind the current completion Snapshot and Manifest. Never substitute one phase's PASS for another.
+- A pre-task PASS with no concrete task Snapshot records `Stage binding: <stage Updated at> / <stage SHA-256>` when its declared validity depends on stage, or a reasoned stage-independent N/A. A current artifact may reuse a stage-dependent PASS only while both values still match the manifest-declared stage file; a stage change requires a narrow affected-scope re-review, not a full analysis restart.
 - At a routine task boundary, run `<script-root>/check_project_consistency.py <project-root> --task TASK-... --gate <task-design|implementation-ready|verified-complete> --compact --next-action`. This scoped gate checks the selected card, its backlog row, direct dependencies, direct batch order, current candidate fingerprint, stage, and linked evidence. On FAIL it emits one source-located repair action plus the number of suppressed errors; repair it locally and rerun. If the same first repair action appears again after that repair, run the full audit before another attempt. Use `validate_task_handoff.py --strict` only for focused card debugging.
-- Run `<script-root>/check_project_consistency.py <project-root> --audit --next-action` after initialization or workflow revision; after completing a batch plan and before its first implementation; at batch exit; before a named human-acceptance checkpoint; after changing a project-scoped authority, source register, acceptance specification, traceability matrix, baseline, or decision log; and when the same compact repair action appears again. The full audit checks every task card, local Markdown link, and required historical fingerprint.
+- Run `<script-root>/check_project_consistency.py <project-root> --audit --next-action` after initialization or workflow revision; after completing a batch plan and before its first implementation; at batch exit; before a named human-acceptance checkpoint; after changing `stage.md` or another project-scoped authority, source register, acceptance specification, traceability matrix, baseline, or decision log; and when the same compact repair action appears again. The full audit checks every task card, local Markdown link, current referenced pre-task PASS binding, and required historical fingerprint.
 - For test code, production code, protocol, generated-output, dependency, runtime, Standard, or High-risk work, use `Fingerprint policy: required`. A pure Fast-path documentation/style/metadata task may use a reasoned `N/A`.
 - Gate validation locates the nearest ancestor manifest; rejects duplicate authoritative sections and fenced/comment-only fields; and checks revision, state/outcome, reviewer separation, dispositions, test environment, gate semantics, linked evidence, and authority layout.
 - A required candidate ledger becomes mandatory only at `awaiting-verification` and `verified-complete`. Before then, use `N/A — candidate files do not exist yet` when no candidate exists, or record an optional existing-input ledger without planned paths.

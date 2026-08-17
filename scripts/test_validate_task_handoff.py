@@ -50,6 +50,7 @@ def review_record(
 - Role: {role}
 - Review phase: {phase}
 - Snapshot and Manifest: {snapshot} / {manifest}
+- Stage binding: N/A — task-bound evidence is checked by the current task gate
 - Reviewed scope and inputs: current task scope, compact plan, and candidate
 - Commands or inspection performed: declared task checks and independent diff inspection
 - Evidence and findings: no blocking discrepancy found in the current scoped evidence

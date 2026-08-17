@@ -7,7 +7,7 @@ description: Launch or refine a local coding-agent software delivery team from a
 
 Run a host-neutral software delivery workflow from requirement input through local verification and named human acceptance checkpoints. The agent host must provide local file access, shell execution, and Python 3. Use one serial implementation engineer and independent verification; do not build another orchestration framework.
 
-Workflow revision: `ai-team-2026-08-16-r49`. Projects use this current layout only; older workflow layouts are unsupported.
+Workflow revision: `ai-team-2026-08-17-r50`. Projects use this current layout only; older workflow layouts are unsupported.
 
 ## Authority model
 
@@ -19,7 +19,7 @@ Do not restate one rule across several files. Use these global authorities:
 - `assets/project-template/.ai-team/governance/templates.md` — exact artifact fields and Markdown syntax.
 - `scripts/validate_task_handoff.py` — executable structural, semantic, layout, and fingerprint validation.
 - `scripts/extract_markdown_section.py` — fence-aware, section-scoped reads of one named Markdown H2 section.
-- `scripts/check_project_consistency.py` — read-only revision, layout, source, backlog, state-gate, evidence, and active-task drift checks.
+- `scripts/check_project_consistency.py` — read-only revision, layout, source, backlog, state-gate, current pre-task evidence freshness, and active-task drift checks.
 - `scripts/render_fingerprint_ledger.py` — read-only generation of the declared change-set inventory and SHA-256 ledger.
 - `scripts/intake_package_inventory.py` — deterministic snapshot, classification, and freshness verification for multi-file delivery packages.
 

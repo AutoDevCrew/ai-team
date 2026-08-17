@@ -780,6 +780,22 @@ def project_authority_errors_from_root(project_root: Path) -> list[str]:
             continue
         if not resolved.is_file():
             errors.append(f"layout authority file not found for {field} {value}")
+    project_rules_value = markdown_path_value(field_value(manifest_text, "Project rules:"))
+    if project_rules_value:
+        project_rules = (project_root / project_rules_value).resolve()
+        if project_rules.is_file():
+            rules_text = visible_markdown(project_rules.read_text(encoding="utf-8"))
+            stage_values = "|".join(
+                re.escape(value) for value in WORKFLOW_SCHEMA["enums"]["project_stages"]
+            )
+            if re.search(
+                rf"^[ \t]*[-*][ \t]*Current[ \t]+(?:project[ \t]+)?(?:stage|authorization)\b[^\n]*\b(?:{stage_values})\b",
+                rules_text,
+                flags=re.IGNORECASE | re.MULTILINE,
+            ):
+                errors.append(
+                    "project-rules.md must not restate the mutable current stage; update the manifest-declared stage file instead"
+                )
     return errors
 
 
@@ -1415,7 +1431,12 @@ def review_evidence_errors(
     allow_conditional_pass: bool = False,
 ) -> list[str]:
     text = path.read_text(encoding="utf-8")
-    errors = concrete_value_errors(text, REVIEW_EVIDENCE_FIELDS, "Review evidence record")
+    errors = concrete_value_errors(
+        text,
+        REVIEW_EVIDENCE_FIELDS,
+        "Review evidence record",
+        allow_reasoned_na={"Stage binding:"},
+    )
     reviewer = first_identifier(field_value(text, "Reviewer identity:"), "AGENT")
     if not reviewer:
         errors.append("Review evidence record requires an AGENT-... reviewer identity")
@@ -1462,6 +1483,67 @@ def review_evidence_errors(
         r"\b\d{4}-\d{2}-\d{2}(?=[T\s]|$)", field_value(text, "Recorded at:")
     ):
         errors.append("Review evidence record requires an ISO-style recorded-at date")
+    errors.extend(review_stage_binding_errors(path, text))
+    return errors
+
+
+def review_stage_binding_errors(path: Path, text: str | None = None) -> list[str]:
+    """Require a current stage hash/time binding for a pre-task authoritative PASS."""
+    evidence_text = text if text is not None else path.read_text(encoding="utf-8")
+    verdict = field_value(evidence_text, "Verdict:").strip(" `*_\t")
+    if not is_pass(verdict):
+        return []
+    snapshot_binding = field_value(evidence_text, "Snapshot and Manifest:")
+    if first_identifier(snapshot_binding, "SNAP"):
+        return []
+    binding = field_value(evidence_text, "Stage binding:")
+    invalidated_by = field_value(evidence_text, "Invalidated by:").casefold()
+    if "stage" not in invalidated_by:
+        return [] if has_reasoned_na(binding) else [
+            "stage-independent pre-task PASS requires a reasoned Stage binding N/A"
+        ]
+
+    evidence_path = path.resolve()
+    ai_team_root = next(
+        (
+            ancestor
+            for ancestor in evidence_path.parents
+            if ancestor.name == ".ai-team" and (ancestor / "manifest.md").is_file()
+        ),
+        None,
+    )
+    if ai_team_root is None:
+        return ["pre-task PASS Stage binding requires an ancestor .ai-team/manifest.md"]
+    project_root = ai_team_root.parent.resolve()
+    manifest_text = (ai_team_root / "manifest.md").read_text(encoding="utf-8")
+    stage_value = markdown_path_value(field_value(manifest_text, "Project stage:"))
+    if not stage_value:
+        return ["pre-task PASS Stage binding requires the manifest-declared project stage"]
+    stage_path = (project_root / stage_value).resolve()
+    if not stage_path.is_file():
+        return [f"pre-task PASS Stage binding stage file not found: {stage_value}"]
+
+    bound_time = iso_datetime(binding)
+    bound_hash = re.search(r"\b[0-9a-fA-F]{64}\b", binding)
+    if not bound_time or not bound_hash:
+        return [
+            "pre-task PASS requires Stage binding: <stage Updated at> / <stage SHA-256>"
+        ]
+
+    stage_text = visible_markdown(stage_path.read_text(encoding="utf-8"))
+    current_time = iso_datetime(field_value(stage_text, "Updated at:"))
+    current_hash = hashlib.sha256(stage_path.read_bytes()).hexdigest()
+    errors: list[str] = []
+    if current_time is None:
+        errors.append("current project stage Updated at is not an ISO timestamp")
+    elif bound_time != current_time:
+        errors.append(
+            f"stale Stage binding: evidence={bound_time.isoformat()} current={current_time.isoformat()}"
+        )
+    if bound_hash.group(0).lower() != current_hash:
+        errors.append(
+            f"stale Stage binding: evidence SHA-256 {bound_hash.group(0).lower()} != current {current_hash}"
+        )
     return errors
 
 

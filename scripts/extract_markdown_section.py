@@ -10,7 +10,7 @@ import sys
 
 
 # Project consistency checks inspect this copied-script revision marker.
-WORKFLOW_REVISION = "ai-team-2026-08-16-r49"
+WORKFLOW_REVISION = "ai-team-2026-08-17-r50"
 
 
 def normalize_heading(value: str) -> str:

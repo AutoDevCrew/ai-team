@@ -50,6 +50,7 @@ def review_record(phase: str) -> str:
 - Role: independent verifier
 - Review phase: {phase}
 - Snapshot and Manifest: SNAP-EXAMPLE-STD-001-01 / TEM-EXAMPLE-STD-001-01
+- Stage binding: N/A — task-bound evidence is checked by the current task gate
 - Reviewed scope and inputs: current task design, manifest, and candidate
 - Commands or inspection performed: scoped review and command inspection
 - Evidence and findings: no blocking discrepancy found
@@ -539,6 +540,89 @@ class ProjectConsistencyTests(unittest.TestCase):
         skill = (SKILL_ROOT / "SKILL.md").read_text(encoding="utf-8")
         self.assertIn("current ISO timestamp during initialization", stage)
         self.assertIn("stage.md` updated-at placeholder", skill)
+
+    def test_project_rules_cannot_restate_mutable_current_stage(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            project = Path(temp_dir)
+            self.materialize_project(project)
+            rules = project / ".ai-team/project-rules.md"
+            rules.write_text(
+                rules.read_text(encoding="utf-8")
+                + "\n- Current authorization is limited to Stage 2 under `analysis-only`.\n",
+                encoding="utf-8",
+            )
+
+            errors = checker.check_project(project)
+            self.assertTrue(
+                any("must not restate the mutable current stage" in error for error in errors),
+                errors,
+            )
+
+    def test_audit_rejects_stale_stage_bound_pre_task_pass(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            project = Path(temp_dir)
+            self.materialize_project(project)
+            stage = project / ".ai-team/stage.md"
+            stage.write_text(
+                "# Project Stage\n\n- Stage: analysis-only\n"
+                "- Authority: bounded product and experience analysis\n"
+                "- Scope: product and experience analysis\n"
+                "- Updated at: 2026-08-17T09:00:00+08:00\n",
+                encoding="utf-8",
+            )
+            stage_hash = hashlib.sha256(stage.read_bytes()).hexdigest()
+            evidence = project / ".ai-team/evidence/EVID-PHASE-001.md"
+            evidence.parent.mkdir(parents=True, exist_ok=True)
+            evidence.write_text(
+                """# EVID-PHASE-001: Pre-task review
+
+- Reviewer identity: AGENT-IV-PHASE-001
+- Role: independent verifier
+- Review phase: intake
+- Snapshot and Manifest: N/A — pre-task product and experience scope
+"""
+                f"- Stage binding: 2026-08-17T09:00:00+08:00 / {stage_hash}\n"
+                """- Reviewed scope and inputs: current stage, sources, acceptance, and experience design
+- Commands or inspection performed: source and artifact consistency inspection
+- Evidence and findings: no blocking discrepancy in the bounded pre-task scope
+- Verdict: **PASS**
+- Invalidated by: any project stage or reviewed source change
+- Recorded at: 2026-08-17T09:30:00+08:00
+""",
+                encoding="utf-8",
+            )
+            spec = project / ".ai-team/specs/phase.md"
+            spec.parent.mkdir(parents=True, exist_ok=True)
+            spec.write_text(
+                "# Current phase\n\n- Independent review: `.ai-team/evidence/EVID-PHASE-001.md`\n",
+                encoding="utf-8",
+            )
+
+            current_evidence = evidence.read_text(encoding="utf-8")
+            evidence.write_text(
+                re.sub(r"^- Stage binding:.*\n", "", current_evidence, flags=re.MULTILINE),
+                encoding="utf-8",
+            )
+            missing_errors = checker.check_project(project)
+            self.assertTrue(
+                any("pre-task PASS requires Stage binding" in error for error in missing_errors),
+                missing_errors,
+            )
+            evidence.write_text(current_evidence, encoding="utf-8")
+            self.assertEqual([], checker.check_project(project))
+
+            stage.write_text(
+                "# Project Stage\n\n- Stage: implementation-authorized\n"
+                "- Authority: unrelated local article change request\n"
+                "- Scope: all tasks\n"
+                "- Updated at: 2026-08-17T13:10:00+08:00\n",
+                encoding="utf-8",
+            )
+            errors = checker.check_project(project)
+            self.assertTrue(
+                any("stale Stage binding" in error for error in errors),
+                errors,
+            )
 
     def test_standard_task_state_walk_reaches_batch_regression_and_completion(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
